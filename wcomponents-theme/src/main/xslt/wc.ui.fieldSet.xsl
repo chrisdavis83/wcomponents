@@ -1,12 +1,15 @@
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0" 
-	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0">
 
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
+	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0"
+	exclude-result-prefixes="xsl ui html">
 	<!--
 		Transform for ui:fieldset which is the XML output of WFieldSet.
 	-->
 	<xsl:template match="ui:fieldset">
 		<xsl:variable name="additional">
-			<xsl:apply-templates select="ui:margin"/>
+			<xsl:value-of select="@class"/>
+			<xsl:apply-templates select="ui:margin" mode="asclass"/>
 			<xsl:if test="@frame eq 'noborder' or @frame eq 'none'">
 				<xsl:text> wc_noborder</xsl:text>
 			</xsl:if>
@@ -14,7 +17,7 @@
 				<xsl:text> wc_req</xsl:text>
 			</xsl:if>
 		</xsl:variable>
-		<fieldset id="{@id}" class="{normalize-space(concat('wc-fieldset ', @class, ' ', $additional))}">
+		<fieldset id="{@id}" class="{normalize-space(concat('wc-fieldset ', $additional))}">
 			<xsl:if test="@hidden">
 				<xsl:attribute name="hidden">
 					<xsl:text>hidden</xsl:text>

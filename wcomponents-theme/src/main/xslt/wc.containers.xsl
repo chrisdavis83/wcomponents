@@ -1,8 +1,8 @@
-<xsl:stylesheet
-	xmlns:html="http://www.w3.org/1999/xhtml" 
+
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
-	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-	version="2.0" >
+	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0"
+	exclude-result-prefixes="xsl ui html">
 
 	<xsl:template name="gapClass">
 		<xsl:param name="gap" select="''"/>
@@ -41,7 +41,7 @@
 			</xsl:choose>
 		</xsl:variable>
 		<xsl:variable name="additionalClass">
-			<xsl:apply-templates select="ui:margin"/>
+			<xsl:value-of select="@class"/>
 			<xsl:choose>
 				<xsl:when test="(@mode eq 'lazy' and @hidden)">
 					<xsl:text> wc_magic</xsl:text>
@@ -53,9 +53,7 @@
 			<xsl:if test="@type">
 				<xsl:value-of select="concat(' wc-panel-type-', @type)"/>
 			</xsl:if>
-			<xsl:if test="@class">
-				<xsl:value-of select="concat(' ', @class)"/>
-			</xsl:if>
+			<xsl:apply-templates select="ui:margin" mode="asclass"/>
 		</xsl:variable>
 		<xsl:element name="{$containerElement}">
 			<xsl:attribute name="id">
@@ -110,7 +108,7 @@
 					so that implementations can easily override the way templates are
 					applied. Call this last.
 				-->
-				<xsl:apply-templates select="*[not(self::ui:margin)]"/>
+				<xsl:apply-templates />
 			</xsl:if>
 		</xsl:element>
 	</xsl:template>
@@ -152,7 +150,7 @@
 					<xsl:apply-templates select="ui:west"/>
 					<xsl:apply-templates select="ui:center"/>
 					<xsl:apply-templates select="ui:east"/>
-					
+
 				</div>
 			</xsl:if>
 			<xsl:apply-templates select="ui:south"/>
@@ -175,7 +173,7 @@
 		<div>
 			<xsl:attribute name="class">
 				<xsl:value-of select="concat('wc-',local-name(.))"/>
-				<!-- 
+				<!--
 					IE8 needs more help because it does not know about last child or flex layouts.
 					We should be able to remove all this stuff (eventually) when flex-grow: 3 differs from flex-grow: 1 on all target browsers
 					(wishful thinking?).
@@ -303,9 +301,9 @@
 			variable colPos
 			This variable is used to find the ui:column which holds the meta-data pertinent
 			to the column being constructed.
-			
+
 			The columns built in this template are columns 2...n but are called from a
-			sibling using following-siblings and therefore their position() is 1...n-1. 
+			sibling using following-siblings and therefore their position() is 1...n-1.
 			Therefore to match the equivalent ui:column we have to use position() + 1.
 		-->
 		<xsl:variable name="colPos" select="position() + 1"/>
@@ -337,7 +335,7 @@
 
 	<!--
 		ui:flowlayout is one of the possible child elements of WPanel
-		
+
 		A flowLayout is used to place elements in a particular linear relationship to
 		each other using the align property.
 	-->
@@ -384,17 +382,17 @@
 	<!--
 		Creates a pseudo-grid where each column is the same width and each row is the height of the tallest cell in the row. This is a very rough
 		emulation of an AWT GridLayout. ui:gridlayout is one of the possible child elements of ui:panel.
-		
+
 		NOTE: this Layout is being phased out and should be replaced with a more web-focused grid system.
-		
+
 		Child elements
-		
-		* ui:cell (minOccurs 0, maxOccurs unbounded) Each component placed into a gridLayout is output in a ui:cell. 
+
+		* ui:cell (minOccurs 0, maxOccurs unbounded) Each component placed into a gridLayout is output in a ui:cell.
 		Empty cells are ouput into the UI to maintain grid positioning of content.
-		
-		This template determines the order in which cell child elements templates are applied based on calculations of 
+
+		This template determines the order in which cell child elements templates are applied based on calculations of
 		rows and columns in the grid. The recursion rules of XSLT 1, and its lack of incrementers etc, mean that when
-		applying templates which have to have wrappers around certain elements we have to split the call and make the 
+		applying templates which have to have wrappers around certain elements we have to split the call and make the
 		siblings into temporary pseudo-parents. Not as hard as it sounds.
 	-->
 	<xsl:template match="ui:gridlayout">
@@ -405,7 +403,7 @@
 				The raw number of columns may not give an accurate reflection of the intended state of the grid as @cols
 				has an inclusiveMin of 0. For this reason we use @cols if it is greater than 0, if not we look at @rows
 				and if it is greater than 0 we calculate the number of columns by ceiling(count(ui:cell) div @rows).
-				Otherwise we assume 1 column (which I grant is a bad assumption; maybe ceiling the square-root of the 
+				Otherwise we assume 1 column (which I grant is a bad assumption; maybe ceiling the square-root of the
 				number of cells would be better?). Practically the Java API requires at least one of @cols or @rows to
 				be non-zero.
 			-->
@@ -458,7 +456,7 @@
 
 	<!--
 		This template creates a rows of cells and then applies templates to the cell's following-siblings up to the number of columns in the row.
-		
+
 		param cols: the number of columns in the row. This is used to apply templates on following-siblings up to 1 less than cols (this cell is the
 		  first col)
 		param colWidth: the width of each cell in the grid.
@@ -496,7 +494,7 @@
 
 	<!--
 		This template outputs each cell in a row other than the first.
-		
+
 		param width: the width of each cell in the grid (only set if more than 12 cols).
 	-->
 	<xsl:template match="ui:cell" mode="inRow">
@@ -508,7 +506,7 @@
 
 	<!--
 		Helper template to create each cell in a gridLayout.
-		
+
 		param width: The width of the cells in percent or '' if cols no more than 12.
 	-->
 	<xsl:template name="gridCell">
@@ -595,6 +593,7 @@
 	-->
 	<xsl:template match="ui:row">
 		<xsl:variable name="additional">
+			<xsl:value-of select="@class"/>
 			<xsl:if test="@gap">
 				<xsl:call-template name="gapClass">
 					<xsl:with-param name="gap" select="@gap"/>
@@ -603,38 +602,40 @@
 			<xsl:if test="@align">
 				<xsl:value-of select="concat(' wc-align-', @align)"/>
 			</xsl:if>
-			<xsl:if test="@class">
-				<xsl:value-of select="concat(' ', @class)"/>
-			</xsl:if>
+			<xsl:apply-templates select="ui:margin" mode="asclass"/>
 		</xsl:variable>
-		<xsl:variable name="margin">
-			<xsl:apply-templates select="ui:margin"/>
-		</xsl:variable>
-		<div id="{@id}" class="{normalize-space(concat('wc-row ', $additional, ' ', $margin))}">
+		<div id="{@id}" class="{normalize-space(concat('wc-row ', $additional))}">
 			<xsl:apply-templates select="ui:column"/>
 		</div>
 	</xsl:template>
-	
+
 	<!-- Transform for WColumn. -->
 	<xsl:template match="ui:column">
 		<xsl:variable name="additional">
-			<xsl:apply-templates select="ui:margin"/>
-			<xsl:if test="not(@align)">
-				<xsl:text> wc-align-left</xsl:text>
-			</xsl:if>
+			<xsl:value-of select="@class"/>
+			<xsl:text> wc-align-</xsl:text>
+			<xsl:choose>
+				<xsl:when test="@align">
+					<xsl:value-of select="@align"/>
+				</xsl:when>
+				<xsl:otherwise>
+					<xsl:text>left</xsl:text>
+				</xsl:otherwise>
+			</xsl:choose>
 			<xsl:if test="@width and number(@width) ne 0">
 				<xsl:value-of select="concat(' wc_col_',@width)"/>
 			</xsl:if>
+			<xsl:apply-templates select="ui:margin" mode="asclass"/>
 		</xsl:variable>
-		<div id="{@id}" class="{normalize-space(concat('wc-column ', $additional, ' ', @class))}">
-			<xsl:apply-templates />
+		<div id="{@id}" class="{normalize-space(concat('wc-column ', $additional))}">
+			<xsl:apply-templates select="node()[not(self::ui:margin)]" />
 		</div>
 	</xsl:template>
 
 	<!--
-		ui:content is a child node of a number of components in its most basic form it merely passes through. Some components have their own content 
+		ui:content is a child node of a number of components in its most basic form it merely passes through. Some components have their own content
 		implementation:
-		
+
 		Generic template for unmoded content elements. Pass content through without any form of wrapper.
 	-->
 	<xsl:template match="ui:content">

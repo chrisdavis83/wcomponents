@@ -1,8 +1,8 @@
-<xsl:stylesheet version="2.0"
-	xmlns:html="http://www.w3.org/1999/xhtml"
-	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
-	xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
+	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0"
+	exclude-result-prefixes="xsl ui html">
 	<!-- Transforms for WMultiDropdown -->
 	<xsl:template match="ui:multidropdown[@readOnly]">
 		<ul id="{@id}" class="{normalize-space(concat('wc-multidropdown wc-vgap-sm ', @class))}" data-wc-component="multidropdown" >
@@ -20,12 +20,13 @@
 	<xsl:template match="ui:multidropdown">
 		<fieldset aria-atomic="false" aria-relevant="additions removals" id="{@id}">
 			<xsl:variable name="additional">
+				<xsl:value-of select="@class"/>
 				<xsl:if test="@required">
-					<xsl:text>wc_req</xsl:text>
+					<xsl:text> wc_req</xsl:text>
 				</xsl:if>
 			</xsl:variable>
 			<xsl:attribute name="class">
-				<xsl:value-of select="normalize-space(concat('wc-multidropdown wc_mfc wc_noborder ', @class, ' ', $additional))"/>
+				<xsl:value-of select="normalize-space(concat('wc-multidropdown wc_mfc wc_noborder ', $additional))"/>
 			</xsl:attribute>
 			<xsl:if test="@hidden">
 				<xsl:attribute name="hidden">
@@ -84,6 +85,9 @@
 		<xsl:variable name="id" select="$mdd/@id"/>
 		<xsl:variable name="selectId" select="concat($id, generate-id(), '-', position())"/>
 		<li>
+			<label for="{$selectId}" class="wc-off">
+				<xsl:value-of select="@title"/>
+			</label>
 			<select id="{$selectId}" name="{$id}">
 				<xsl:if test="$mdd/@submitOnChange">
 					<xsl:attribute name="class">
@@ -98,11 +102,6 @@
 				<xsl:if test="$mdd/@data">
 					<xsl:attribute name="data-wc-list">
 						<xsl:value-of select="$mdd/@data"/>
-					</xsl:attribute>
-				</xsl:if>
-				<xsl:if test="$mdd/@autocomplete">
-					<xsl:attribute name="autocomplete">
-						<xsl:value-of select="$mdd/@autocomplete"/>
 					</xsl:attribute>
 				</xsl:if>
 				<xsl:apply-templates mode="mfcInList" select="$mdd/*">

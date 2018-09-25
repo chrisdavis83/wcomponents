@@ -10,9 +10,8 @@ define(["wc/dom/attribute",
 	"wc/ui/ajaxRegion",
 	"wc/ui/ajax/processResponse",
 	"wc/ui/selectboxSearch",
-	"wc/ui/modalShim",
 	"wc/ui/fieldset"],
-	function(attribute, event, initialise, focus, formUpdateManager, getBox, shed, tag, Widget, ajaxRegion, processResponse, selectboxSearch, modal, fieldset) {
+	function(attribute, event, initialise, focus, formUpdateManager, getBox, shed, tag, Widget, ajaxRegion, processResponse, selectboxSearch, fieldset) {
 		"use strict";
 
 		/**
@@ -95,7 +94,7 @@ define(["wc/dom/attribute",
 			 * @function
 			 * @private
 			 * @param {Element} list A select list from a MultiSelectPair component.
-			 * @returns {?int} The opposite "LIST_TYPE_" of the list. Returns null if we cannot determine.
+			 * @returns {int} The opposite "LIST_TYPE_" of the list. Returns null if we cannot determine.
 			 */
 			function getOppositeListType(list) {
 				var type = instance.getListType(list);
@@ -111,7 +110,7 @@ define(["wc/dom/attribute",
 			 * @function
 			 * @private
 			 * @param {Element} element A button element.
-			 * @returns {?Function} The action to perform for a button of this type.
+			 * @returns {Function} The action to perform for a button of this type.
 			 */
 			function getAction(element) {
 				var result;
@@ -439,7 +438,7 @@ define(["wc/dom/attribute",
 			 * @function module:wc/ui/multiSelectPair.getListType
 			 * @public
 			 * @param {Element} element Any select element component of a WMultiSelectPair.
-			 * @returns {?int} The type of the element as defined in LISTS or null.
+			 * @returns {int} The type of the element as defined in LISTS or null.
 			 */
 			this.getListType = function(element) {
 				var list;
@@ -489,7 +488,7 @@ define(["wc/dom/attribute",
 			 * @public
 			 * @param {Element} element Any component element of a multiSelectPair (ie any of the lists or buttons).
 			 * @param {String} type One of the types defined in LISTS.
-			 * @returns {?Element} The list of the type represented by the type argument.
+			 * @returns {Element} The list of the type represented by the type argument.
 			 */
 			this.getListByType = function(element, type) {
 				var result = null,
@@ -536,22 +535,6 @@ define(["wc/dom/attribute",
 			};
 
 			/**
-			 * Wait for page load modal shim to remove before trying to calculate initial select width and height.
-			 * See https://github.com/BorderTech/wcomponents/issues/1066. This function unsubscribes itself as the only time we are interested in
-			 * the removal of a modal shim is the page load shim, not the shim associated with a WDialog or image editor.
-			 *
-			 * @function
-			 * @private
-			 */
-			function modalSubscriber() {
-				try {
-					fixWidthHeight();
-				} finally {
-					modal.unsubscribe(modalSubscriber);
-				}
-			}
-
-			/**
 			 * Set up initial event handlers.
 			 *
 			 * @function module:wc/ui/multiSelectPair.initialise
@@ -559,7 +542,7 @@ define(["wc/dom/attribute",
 			 * @param {Element} element The element being initialised: usually document.body
 			 */
 			this.initialise = function(element) {
-				modal.subscribe(modalSubscriber);
+				fixWidthHeight();
 				if (event.canCapture) {
 					event.add(element, event.TYPE.focus, focusEvent, null, null, true);
 				} else {

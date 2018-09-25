@@ -1,7 +1,8 @@
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" 
-	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0" 
-	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0">
 
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
+	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0"
+	exclude-result-prefixes="xsl ui html">
 	<!-- WApplication -->
 	<xsl:template match="ui:application">
 		<xsl:param name="nojs" select="0"/>
@@ -9,11 +10,12 @@
 			<xsl:value-of select="@ajaxUrl"/>
 		</xsl:variable>
 		<xsl:variable name="additional">
+			<xsl:value-of select="@class"/>
 			<xsl:if test="@unsavedChanges or .//html:button[@class and contains(@class, 'wc_unsaved')] or .//ui:menuitem[@unsavedChanges]">
 				<xsl:text> wc_unsaved</xsl:text>
 			</xsl:if>
 		</xsl:variable>
-		<form action="{@applicationUrl}" method="post" id="{@id}" data-wc-datalisturl="{$baseAjaxUrl}" novalidate="novalidate" class="{normalize-space(concat('wc-application ', @class, $additional))}">
+		<form action="{@applicationUrl}" method="post" id="{@id}" data-wc-datalisturl="{$baseAjaxUrl}" novalidate="novalidate" class="{normalize-space(concat('wc-application ', $additional))}">
 			<xsl:attribute name="data-wc-ajaxurl">
 				<xsl:value-of select="$baseAjaxUrl"/>
 				<xsl:if test="ui:param">

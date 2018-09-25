@@ -1,6 +1,8 @@
-<xsl:stylesheet version="2.0" xmlns:html="http://www.w3.org/1999/xhtml" xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
-	xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
+	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0"
+	exclude-result-prefixes="xsl ui html">
 	<xsl:template match="ui:multitextfield[@readOnly]">
 		<ul id="{@id}" class="{normalize-space(concat('wc-multitextfield wc-vgap-sm ',  @class))}" data-wc-component="multitextfield">
 			<xsl:if test="@hidden">
@@ -15,12 +17,13 @@
 	<xsl:template match="ui:multitextfield">
 		<fieldset aria-atomic="false" aria-relevant="additions removals" id="{@id}">
 			<xsl:variable name="additional">
+				<xsl:value-of select="@class"/>
 				<xsl:if test="@required">
 					<xsl:text> wc_req</xsl:text>
 				</xsl:if>
 			</xsl:variable>
 			<xsl:attribute name="class">
-				<xsl:value-of select="normalize-space(concat('wc-multitextfield wc_mfc wc_noborder ', @class, ' ', $additional))" />
+				<xsl:value-of select="normalize-space(concat('wc-multitextfield wc_mfc wc_noborder ', $additional))" />
 			</xsl:attribute>
 			<xsl:if test="@hidden">
 				<xsl:attribute name="hidden">
@@ -66,6 +69,10 @@
 					</xsl:when>
 					<xsl:otherwise>
 						<li>
+							<xsl:variable name="inputId" select="concat(@id, generate-id())"/>
+							<label for="{$inputId}" class="wc-off">
+								<xsl:value-of select="@title"/>
+							</label>
 							<xsl:element name="input">
 								<xsl:attribute name="type">
 									<xsl:text>text</xsl:text>
@@ -74,10 +81,7 @@
 									<xsl:value-of select="@id"/>
 								</xsl:attribute>
 								<xsl:attribute name="id">
-									<xsl:value-of select="concat(@id, generate-id())"/>
-									<xsl:if test="self::ui:value">
-										<xsl:value-of select="concat('-', position())"/>
-									</xsl:if>
+									<xsl:value-of select="$inputId"/>
 								</xsl:attribute>
 								<xsl:if test="@size">
 									<xsl:attribute name="size">
@@ -102,11 +106,6 @@
 								<xsl:if test="@placeholder">
 									<xsl:attribute name="placeholder">
 										<xsl:value-of select="@placeholder"/>
-									</xsl:attribute>
-								</xsl:if>
-								<xsl:if test="@autocomplete">
-									<xsl:attribute name="autocomplete">
-										<xsl:value-of select="@autocomplete"/>
 									</xsl:attribute>
 								</xsl:if>
 								<xsl:if test="@disabled">
@@ -136,11 +135,14 @@
 
 	<!-- Transforms for each value in a multiTextField. -->
 	<xsl:template match="ui:value">
-		<li>
+		<li class="wc-value">
 			<xsl:variable name="fieldId">
 				<xsl:value-of select="../@id"/>
 			</xsl:variable>
 			<xsl:variable name="inputId" select="concat($fieldId, generate-id(), '-', position())"/>
+			<label for="{$inputId}" class="wc-off">
+				<xsl:text>{{#i18n}}mfc_value{{/i18n}}</xsl:text>
+			</label>
 			<xsl:element name="input">
 				<xsl:attribute name="type">
 					<xsl:text>text</xsl:text>
@@ -174,11 +176,6 @@
 				<xsl:if test="../@placeholder">
 					<xsl:attribute name="placeholder">
 						<xsl:value-of select="../@placeholder"/>
-					</xsl:attribute>
-				</xsl:if>
-				<xsl:if test="../@autocomplete">
-					<xsl:attribute name="autocomplete">
-						<xsl:value-of select="../@autocomplete"/>
 					</xsl:attribute>
 				</xsl:if>
 				<xsl:if test="../@disabled">

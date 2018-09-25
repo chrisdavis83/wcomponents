@@ -1,14 +1,11 @@
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0" 
-	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0">
+
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
+	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0"
+	exclude-result-prefixes="xsl ui html">
 	<!-- Transforms for WVideo. -->
 	<xsl:template match="ui:video">
-		<xsl:variable name="class">
-			<xsl:text>wc-video</xsl:text>
-			<xsl:if test="@class">
-				<xsl:value-of select="concat(' ', @class)"/>
-			</xsl:if>
-		</xsl:variable>
-		<span class="{$class}" id="{@id}">
+		<span class="{normalize-space(concat('wc-video ', @class))}" id="{@id}">
 			<xsl:if test="@toolTip">
 				<xsl:attribute name="title">
 					<xsl:value-of select="@toolTip"/>
@@ -107,7 +104,7 @@
 			</xsl:if>
 		</track>
 	</xsl:template>
-	
+
 	<!--
 	 Output an A element linking to a track file.
 	-->

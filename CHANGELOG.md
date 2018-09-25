@@ -8,13 +8,142 @@
 
 ### Bug Fixes
 
-## Release 1.5.3
-
-### API Changes
+## Release 1.5.14
 
 ### Enhancements
 
+* Implement dependency vulnerability scan.
+* Update dependencies to remove vulnerabilities.
+
+### Bug Fixes
+
+* Fixed WFileWidget and WMultiFileWidget to accept filetypes of both MIME and extension type #1584
+* Fix issue rendering custom class names in WTree #1589.
+
+## Release 1.5.13
+
+### Bug Fixes
+
+* Fixed a bug which could cause some server validation messages to be deleted in JavaScript #1580
+* Fixed a minor strutural CSS error which resulted in an unwanted indent in horizontal bar-separated lists.
+
+## Release 1.5.12
+
+### Bug Fixes
+
+* Fixed duplicate component models being created unnecessarily #1014.
+* Added workaround for IE 11 focus flaw #1575.
+
+## Release 1.5.11
+
+### Enhancements
+
+* Restored ability to override XSLT in themes.
+
+## Release 1.5.10
+
+### Bug Fixes
+
+* Fixed XSLT error which caused WPartialDateField to lose its value on submit #1565.
+* Restored AjaxTarget interface on WDecoratedLabel which was removed in error in 1.5.8 #1562.
+
+## Release 1.5.9
+
+### Bug Fixes
+
+* Fixed a JavaScript error which would cause dialogs to fail to open if they were marked as open on page load #1559.
+* Fixed XSLT flaw which caused JavaScript Error if WDataTable has row selection and pagination #1556.
+
+## Release 1.5.8
+
+### Enhancements
+
+* Remove style CSS from default theme combo, ensure combo button is same height as combo text input #1552.
+
+### Bug Fixes
+
+* Restore tab cursor #1553.
+* Fixed missing WColumn alignment in themes #1551.
+
+## Release 1.5.7
+
+### Bug Fixes
+
+* Restored theme build-time concatenation of XSLT to work around an application container flaw #1547.
+
+## Release 1.5.6
+
+### Enhancements
+
+* Ensure the xml preamble and opening `xsl:stylesheet` tag is consistent in all XSLT files - help to reduce likelihood of namespace issues in transformed HTML.
+* Enforce Sass lint at theme build time. See wcomponents-theme/.sass-lint.yml for default rules.
+* Updated all internal uses of `org.apache.commons.lang.*` to use ``org.apache.commons.lang3.*` which is the direct dependency in WComponents. #1539
+
+### Bug Fixes
+
+* Updated WMenuGroup XSLT to prevent double separators #1544.
+* Update version of npm sass module to fix build failure on Windows #1541.
+* Fixed a flaw which would cause themes to fail to build if the inherit file had a terminating empty line. Part of #1492.
+
+    Requires themes which inherit from any theme other than wcomponents-default to replace the theme in `inherit.txt` with a Maven property in POM.xml of `theme.inherit`. May be a path to a ZIP or directory tree (relative and absolute paths are both acceptable).
+
+    ``` xml
+<properties>
+  <theme.inherit>/PATH/TO/the_parent_theme</theme.inherit>
+</properties>
+    ```
+
+    The previous method of trying to guess the parent theme from a name assuming a theme path is partially supported by using the previous `inherit.txt` value along with a second Maven property `theme.inheritance.dir`. This, it is plain, is a bit of a pointless waste of time since the path could be added directly to the `theme.inherit` property.
+
+    ``` xml
+<properties>
+  <theme.inherit>the_parent_theme</theme.inherit>
+  <theme.inheritance.dir>/some/path</theme.inheritance.dir>
+</properties>
+    ```
+
+## Release 1.5.5
+
+### Bug Fixes
+
+* Fixed an error which caused WSelectToggle to fail #1529.
+* Removed superfluous layout CSS from WFigure which could result in unexpected display in IE 11.
+* Partial (cosmetic) fix of a flaw which could result in visible suggestions for a combo if it was in read-only mode #1527.
+
+## Release 1.5.4
+
+### API Changes
+
+* Added support for autocomplete to WDropdown, WEmailField, WNumberField, WPasswordField, WPhoneNumberField, WTextArea
+  and WTextField #1007.
+* Changed message property name
+  `public static final String DEFAULT_MULTI_FORM_COMPONENT_TIP = "bordertech.wcomponents.message.multiFormComponent.tip";`
+  to `public static final String DEFAULT_MULTIDROPDOWN_TIP = "bordertech.wcomponents.message.multiDropdown.tip";`
+  as the tip is not suitable for use with WMultiTextField #1508.
+* Added message property
+  `public static final String DEFAULT_MULTITEXTFIELD_TIP = "bordertech.wcomponents.message.multiTextField.tip";` with
+  default (en) value of "Enter a value" #1508.
+
+### Enhancements
+
+* Removed some style (rather than structure) CSS for mandatory indicators. Style should be the remit of themes.
 * Added JavaScript unit tests for missing modules.
+
+### Bug Fixes
+
+* Fixed XSLT error which resulted in WToggleButton not reporting its state #1525.
+* Fixed missing custom class on WDefinitionList #1519.
+* Fixed XSLT error causing WHeading content to include text equating to the value of its margin classes #1514.
+* Fixed potential flaw caused by application-level custom CSS source order #1516.
+* Fixed a flaw which caused selenium tests to fail if no class was defined in the URL #1510.
+* Fixed missing inner labels on WMultiDropdown and WMultiTextField #1508.
+* Fixed issue causing 'required' placeholders to be left when making a field optional #1506.
+* Fixed missing name attribute on WDateField #1507
+
+## Release 1.5.3
+
+### Enhancements
+
 * Improved handling of the publication of selected state changes of native radio buttons and check boxes.
 * Update package.json to latest working node module versions and removed tildes to prevent unwanted updates.
 * Added support for success and info level diagnostics/field indicators as part of #1496.

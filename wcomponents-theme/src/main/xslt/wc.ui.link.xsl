@@ -1,7 +1,10 @@
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0" 
-	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0">
+
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
+	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0"
+	exclude-result-prefixes="xsl ui html">
 	<!--
-		WLink and WInternalLink. 
+		WLink and WInternalLink.
 	-->
 	<xsl:template match="ui:link">
 		<xsl:param name="imageAltText" select="''"/>
@@ -27,7 +30,7 @@
 					<xsl:text> wc_a_ilb</xsl:text>
 				</xsl:if>
 				<xsl:if test="@type">
-					<xsl:value-of select="concat('wc-link-type-', @type)"/>
+					<xsl:value-of select="concat(' wc-link-type-', @type)"/>
 				</xsl:if>
 				<xsl:if test="@class">
 					<xsl:value-of select="concat(' ', @class)"/>

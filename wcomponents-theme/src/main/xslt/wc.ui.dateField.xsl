@@ -1,6 +1,8 @@
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
-	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0">
 
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
+	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0"
+	exclude-result-prefixes="xsl ui html">
 	<xsl:template match="ui:datefield[@readOnly and @allowPartial]">
 		<span id="{@id}" class="{normalize-space(concat('wc-datefield ', @class))}" data-wc-component="datefield">
 			<xsl:if test="@hidden">
@@ -20,7 +22,7 @@
 			</xsl:choose>
 		</span>
 	</xsl:template>
-	
+
 	<xsl:template match="ui:datefield[@readOnly]">
 		<time id="{@id}" class="{normalize-space(concat('wc-datefield ', @class))}" data-wc-component="datefield">
 			<xsl:if test="@hidden">
@@ -40,7 +42,7 @@
 			</xsl:choose>
 		</time>
 	</xsl:template>
-	
+
 	<xsl:template match="ui:datefield">
 		<div id="{@id}" class="{normalize-space(concat('wc-datefield wc-input-wrapper ', @class))}">
 			<xsl:if test="@disabled">
@@ -56,6 +58,9 @@
 			<xsl:element name="input">
 				<xsl:attribute name="id">
 					<xsl:value-of select="concat(@id, '_input')"/>
+				</xsl:attribute>
+				<xsl:attribute name="name">
+					<xsl:value-of select="@id"/>
 				</xsl:attribute>
 				<xsl:attribute name="type">
 					<xsl:text>date</xsl:text>
@@ -180,6 +185,9 @@
 				</xsl:attribute>
 				<xsl:attribute name="type">
 					<xsl:text>text</xsl:text>
+				</xsl:attribute>
+				<xsl:attribute name="name">
+					<xsl:value-of select="@id"/>
 				</xsl:attribute>
 				<xsl:if test="@toolTip">
 					<xsl:attribute name="title">

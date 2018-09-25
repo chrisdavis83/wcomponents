@@ -3,6 +3,7 @@ package com.github.bordertech.wcomponents;
 import com.github.bordertech.wcomponents.WMultiFileWidget.FileWidgetUpload;
 import com.github.bordertech.wcomponents.file.FileItemWrap;
 import com.github.bordertech.wcomponents.util.mock.MockFileItem;
+import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -122,6 +123,23 @@ public class WMultiFileWidget_Test extends AbstractWComponentTestCase {
 		widget.setData(UPLOADED_1_2);
 		Assert.assertEquals("File2 should be returned for index 1", TEST_FILE_ITEM_WRAP2, widget.
 				getFile("2"));
+	}
+	
+	
+
+	@Test
+	public void testGetMimeType() {
+		WMultiFileWidget widget = new WMultiFileWidget();
+		widget.setLocked(true);
+		setActiveContext(createUIContext());
+
+		// Null
+		Assert.assertNull("If no file uploaded then MIME is null", widget.getMimeType("X"));
+
+		// Set file1, file2 as uploaded
+		widget.setData(UPLOADED_1_2);
+		Assert.assertEquals("application/octet-stream", widget.getMimeType("2"));
+		Assert.assertNull("If file not found then MIME is null", widget.getMimeType("X"));
 	}
 
 	@Test
@@ -306,6 +324,19 @@ public class WMultiFileWidget_Test extends AbstractWComponentTestCase {
 	public void testMaxFileSizeAccessors() {
 		assertAccessorsCorrect(new WMultiFileWidget(), "maxFileSize", (long) 10240000, (long) 1,
 				(long) 2);
+	}
+
+	@Test
+	public void testDuplicateComponentModels() {
+		WMultiFileWidget multiFileWidget = new WMultiFileWidget();
+		assertNoDuplicateComponentModels(multiFileWidget,"maxFileSize", 2012312312);
+		assertNoDuplicateComponentModels(multiFileWidget, "maxFiles", 123);
+		assertNoDuplicateComponentModels(multiFileWidget, "newUpload", true);
+		assertNoDuplicateComponentModels(multiFileWidget, "useThumbnails", true);
+		assertNoDuplicateComponentModels(multiFileWidget, "thumbnailPosition", WLink.ImagePosition.SOUTH);
+		assertNoDuplicateComponentModels(multiFileWidget, "thumbnailSize", new Dimension(22,33));
+		// TODO: See issue #1574 https://github.com/BorderTech/wcomponents/issues/1574
+//		assertNoDuplicateComponentModels(multiFileWidget, "fileUploadRequestId", "testId"); // No such method exception as it's a private method
 	}
 
 	@Test

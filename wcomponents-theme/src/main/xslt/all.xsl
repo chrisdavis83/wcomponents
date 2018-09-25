@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
 	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0"
@@ -6,6 +6,7 @@
 	<xsl:output encoding="UTF-8" indent="no" method="html"
 		doctype-system="about:legacy-compat" omit-xml-declaration="yes" />
 	<xsl:strip-space elements="*" />
+	<xsl:include href="wc.html.ie9minus.xsl"/>
 
 	<!--
 		Debug flag. This is a global parameter as it is pulled out of the
@@ -113,11 +114,10 @@
 							 />
 						</xsl:call-template>
 					</xsl:variable>
-					<link type="text/css" rel="stylesheet" href="{$debugCssUrl}"
-						media="screen" />
+					<link type="text/css" rel="stylesheet" href="{$debugCssUrl}" media="screen" />
 				</xsl:if>
-				<link type="text/css" rel="stylesheet"
-					href="{concat($resourceRoot, 'resource/fontawesome/css/font-awesome.min.css')}" media="screen" />
+				<link type="text/css" rel="stylesheet" href="{concat($resourceRoot, 'resource/fontawesome/css/font-awesome.min.css')}" media="screen" />
+				<xsl:call-template name="addOldIECSS"/>
 				<!--
 					We need to set up the require config very early. This mess
 					constructs the require config which is necessary to commence
@@ -149,7 +149,6 @@
 					fabric: "</xsl:text><xsl:value-of select="$libScriptDir" /><xsl:text>/fabric",
 					ccv: "</xsl:text><xsl:value-of select="$libScriptDir" /><xsl:text>/ccv",
 					face: "</xsl:text><xsl:value-of select="$libScriptDir" /><xsl:text>/face",
-					tracking: "</xsl:text><xsl:value-of select="$libScriptDir" /><xsl:text>/tracking/build/tracking-min",
 					getUserMedia: "</xsl:text><xsl:value-of select="$libScriptDir" /><xsl:text>/getusermedia-js/getUserMedia.min",
 					axs: "</xsl:text><xsl:value-of select="$libScriptDir" /><xsl:text>/axs_testing",
 					axe: "</xsl:text><xsl:value-of select="$libScriptDir" /><xsl:text>/axe.min"
@@ -161,7 +160,6 @@
 							this.tinyMCE.DOM.events.domLoaded = true;
 							return this.tinyMCE;
 						}},
-					tracking: {exports: "tracking"},
 					Promise: {exports: "Promise"},
 					fabric: {exports: "fabric"},
 					ccv: {exports: "ccv"},
@@ -339,15 +337,12 @@
 		<xsl:variable name="popups" select=".//ui:popup" />
 		<xsl:variable name="redirects" select=".//ui:redirect" />
 		<xsl:variable name="rtfs" select=".//ui:textarea[ui:rtf]" />
-		<xsl:variable name="selectToggles"
-			select=".//ui:selecttoggle | .//ui:rowselection[@selectAll]" />
 		<xsl:variable name="subordinates" select=".//ui:subordinate" />
 		<xsl:variable name="eagerness" select="//*[@mode eq 'eager']" />
 		<xsl:variable name="hasAjaxTriggers" select=".//ui:ajaxtrigger" />
 		<xsl:variable name="timeoutWarn" select=".//ui:session[1]" />
 		<xsl:variable name="editors" select=".//html:wc-imageedit" />
-		<xsl:variable name="tableActions"
-			select=".//ui:table/ui:actions/ui:action" />
+		<xsl:variable name="tableActions" select=".//ui:table/ui:actions/ui:action" />
 
 		<xsl:variable name="libs">
 			<xsl:if test=".//ui:datefield">
@@ -390,12 +385,8 @@
 			</xsl:if>
 			<!--
 				These are in order of 'likelihood'. We use or rather than | as most decent processors will stop after the
-				first successful nodeset is found. You REALLY want wc/ui/wrappedInput in your wc.common.js though.
+				first successful nodeset is found.
 			-->
-			<xsl:if
-				test=".//ui:textfield[not(@readOnly)] or .//ui:numberfield[not(@readOnly)] or .//ui:emailfield[not(@readOnly)] or .//ui:passwordfield[not(@readOnly)] or .//ui:phonenumberfield[not(@readOnly)]">
-				<xsl:text>"wc/ui/wrappedInput",</xsl:text>
-			</xsl:if>
 			<xsl:if test=".//@accessKey">
 				<xsl:text>"wc/ui/tooltip",</xsl:text>
 			</xsl:if>
@@ -450,7 +441,7 @@
 				<xsl:text>"wc/ui/multiSelectPair",</xsl:text>
 			</xsl:if>
 			<xsl:if test=".//ui:multitextfield[not(@readOnly)]">
-				<xsl:text>"wc/ui/multiFormComponent","wc/ui/wrappedInput",</xsl:text>
+				<xsl:text>"wc/ui/multiFormComponent",</xsl:text>
 			</xsl:if>
 			<xsl:if
 				test=".//html:button[@class and contains(@class, 'wc-printbutton')]">
@@ -459,6 +450,9 @@
 			<xsl:if
 				test=".//ui:radiobuttonselect[not(@readOnly)] or .//ui:radiobutton[not(@readOnly)]">
 				<xsl:text>"wc/ui/radioButtonSelect",</xsl:text>
+			</xsl:if>
+			<xsl:if test=".//ui:selecttoggle|.//ui:rowselection[@selectAll]">
+				<xsl:text>"wc/ui/selectToggle",</xsl:text>
 			</xsl:if>
 			<xsl:if
 				test=".//ui:shuffler[not(@readOnly)] or .//ui:multiselectpair[@shuffle and not(@readOnly)]">
@@ -527,9 +521,6 @@
 				<xsl:text>require(["wc/ui/dialog"], function(c){c.register([</xsl:text>
 				<xsl:apply-templates select="$dialogs" mode="JS" />
 				<xsl:text>]</xsl:text>
-				<xsl:if test="ancestor::ui:ajaxresponse">
-					<xsl:text>,true</xsl:text>
-				</xsl:if>
 				<xsl:text>);});</xsl:text>
 			</xsl:if>
 			<xsl:if test="$dataListCombos">
@@ -774,7 +765,7 @@
 	###########################################################################
 	###########################################################################
 	-->
-	<xsl:include href="wc.ajax.xsl" />
+	<!--<xsl:include href="wc.ajax.xsl" />
 	<xsl:include href="wc.checkablegroup.xsl" />
 	<xsl:include href="wc.containers.xsl" />
 	<xsl:include href="wc.fileupload.xsl" />
@@ -789,7 +780,7 @@
 	<xsl:include href="wc.ui.definitionList.xsl" />
 	<xsl:include href="wc.ui.dialog.xsl" />
 	<xsl:include href="wc.ui.dropdown.xsl" />
-  <xsl:include href="wc.ui.fieldindicator.xsl"/>
+	<xsl:include href="wc.ui.fieldindicator.xsl"/>
 	<xsl:include href="wc.ui.fieldLayout.xsl" />
 	<xsl:include href="wc.ui.fieldSet.xsl" />
 	<xsl:include href="wc.ui.figure.xsl" />
@@ -800,7 +791,7 @@
 	<xsl:include href="wc.ui.listbox.xsl" />
 	<xsl:include href="wc.ui.margin.xsl" />
 	<xsl:include href="wc.ui.menu.xsl" />
-  <xsl:include href="wc.ui.messagebox.xsl"/>
+	<xsl:include href="wc.ui.messagebox.xsl"/>
 	<xsl:include href="wc.ui.multidropdown.xsl" />
 	<xsl:include href="wc.ui.multitextfield.xsl" />
 	<xsl:include href="wc.ui.numberfield.xsl" />
@@ -821,6 +812,6 @@
 	<xsl:include href="wc.ui.togglebutton.xsl" />
 	<xsl:include href="wc.ui.tree.xsl" />
 	<xsl:include href="wc.ui.version.xsl" />
-	<xsl:include href="wc.ui.video.xsl" />
+	<xsl:include href="wc.ui.video.xsl" />-->
 
 </xsl:stylesheet>

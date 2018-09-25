@@ -1,16 +1,17 @@
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
-	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0">
+
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
+	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0"
+	exclude-result-prefixes="xsl ui html">
 	<!--
 		This template builds the basic tabset. The tabset is a wrapper container. It has a list of tabs and content.
 	-->
 	<xsl:template match="ui:tabset">
 		<xsl:variable name="additional">
-			<xsl:apply-templates select="ui:margin"/>
+			<xsl:value-of select="@class"/>
+			<xsl:apply-templates select="ui:margin" mode="asclass"/>
 			<xsl:if test="@type">
 				<xsl:value-of select="concat(' wc-tabset-type-', @type)"/>
-			</xsl:if>
-			<xsl:if test="@class">
-				<xsl:value-of select="concat(' ', @class)"/>
 			</xsl:if>
 		</xsl:variable>
 		<div id="{@id}" class="{normalize-space(concat('wc-tabset ', $additional))}">
@@ -47,9 +48,9 @@
 		</div>
 	</xsl:template>
 	<!--
-		Tranform for WTab. Outputs the tab opener (the tab bit of the tab). If the type is accordion also outputs the 
+		Tranform for WTab. Outputs the tab opener (the tab bit of the tab). If the type is accordion also outputs the
 		content.
-		
+
 		NOTE: OPEN TAB(S)
 		Tabsets other than accordion only output one open tab and will always output one open tab even if no tabs are
 		explicitly open (this is not in the schema but is enforced in the Java API). This open tab may be disabled.
@@ -135,7 +136,7 @@
 			</xsl:apply-templates>
 		</xsl:if>
 	</xsl:template>
-	
+
 	<!--
 		Apply the tab content.
 	-->
@@ -144,7 +145,7 @@
 			<xsl:with-param name="tabset" select="parent::ui:tabset"/>
 		</xsl:apply-templates>
 	</xsl:template>
-	
+
 	<!-- The content of the tab. -->
 	<xsl:template match="ui:tabcontent">
 		<xsl:param name="tabset"/>

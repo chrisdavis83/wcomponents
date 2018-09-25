@@ -1,19 +1,16 @@
-<xsl:stylesheet
-	xmlns:html="http://www.w3.org/1999/xhtml" 
-	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
-	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-	version="2.0" >
 
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
+	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0"
+	exclude-result-prefixes="xsl ui html">
 	<!-- Transform for WSection. -->
 	<xsl:template match="ui:section">
 		<xsl:variable name="mode" select="@mode"/>
 		<xsl:variable name="additional">
-			<xsl:apply-templates select="ui:margin"/>
+			<xsl:value-of select="@class"/>
+			<xsl:apply-templates select="ui:margin" mode="asclass"/>
 			<xsl:if test="@mode eq 'lazy' and @hidden">
 				<xsl:text> wc_magic</xsl:text>
-			</xsl:if>
-			<xsl:if test="@class">
-				<xsl:value-of select="concat(' ', @class)"/>
 			</xsl:if>
 		</xsl:variable>
 		<section id="{@id}" class="{normalize-space(concat('wc-section ', $additional))}">
@@ -32,13 +29,14 @@
 	</xsl:template>
 
 	<xsl:template match="ui:decoratedlabel" mode="section">
-		
+
 		<xsl:variable name="additional">
+			<xsl:value-of select="@class"/>
 			<xsl:if test="@type">
 				<xsl:value-of select="concat(' wc-decoratedlabel-type-', @type)"/>
 			</xsl:if>
 		</xsl:variable>
-		<header id="{@id}" class="{normalize-space(concat('wc-decoratedlabel ', @class, $additional))}">
+		<header id="{@id}" class="{normalize-space(concat('wc-decoratedlabel ', $additional))}">
 			<xsl:if test="@hidden">
 				<xsl:attribute name="hidden">
 					<xsl:text>hidden</xsl:text>

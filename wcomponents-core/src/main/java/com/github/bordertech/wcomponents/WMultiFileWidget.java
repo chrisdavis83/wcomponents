@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.commons.fileupload.FileItem;
@@ -28,7 +29,13 @@ import org.apache.commons.logging.LogFactory;
  * The WMultiFileWidget component allows multiple file input elements to be uploaded, without requiring an entire page
  * reload for each item. After a file is uploaded to the server the client displays the file information with a checkbox
  * adjacent to it. The file information is a link that pops up the file content. Use {@link #getFiles()} to retrieve all
- * files uploaded by the client, use {@link #getSelectedFiles()} to retrieve only the selected file items.
+ * files uploaded by the client, use {@link #getSelectedFiles()} to retrieve only the selected file items. 
+ * </p>
+ * <p>
+ * If one or more file types is set {@link #setFileTypes(java.util.Collection)}, then each uploaded file will be validated
+ * against the accepted list. If accepted list contains any extension(s) then uploaded files will be first checked against 
+ * them. Developers can choose to have custom validation of file by retrieving it's MIME type, 
+ * see {@link #getMimeType(java.lang.String)}.
  * </p>
  * <p>
  * The maximum number of allowed files, maximum individual file size, and allowed file types can be configured.
@@ -158,6 +165,21 @@ public class WMultiFileWidget extends AbstractInput implements Targetable, AjaxI
 	}
 
 	/**
+	 * Retrieves an mime type of the uploaded file's contents.
+	 * This is not the content type passed by the browser.
+	 *
+	 * @param fileId the file id
+	 * @return an file's mime type, or null if no file has been uploaded
+	 */
+	public String getMimeType(final String fileId) {
+		FileWidgetUpload fileWidget = getFile(fileId);
+		if (fileWidget != null) {
+			return FileUtil.getFileMimeType(fileWidget.getFile());
+		}
+		return null;
+	}
+
+	/**
 	 * Returns only the selected file items. The file is selected if the checkbox adjacent to the uploaded file name is
 	 * checked by the user.
 	 *
@@ -206,16 +228,27 @@ public class WMultiFileWidget extends AbstractInput implements Targetable, AjaxI
 
 	/**
 	 * Determines the file types accepted by this widget. Note that duplicates are not allowed and these are not case
-	 * sensitive. A file type may be one of the following:
+	 * sensitive.<br>
+	 * The file type(s) can be either:
 	 * <ul>
-	 * <li>The string audio/* (Indicates that sound files are accepted.)</li>
-	 * <li>The string video/* (Indicates that video files are accepted.)</li>
-	 * <li>The string image/* (Indicates that image files are accepted.)</li>
-	 * <li>A valid MIME type with no parameters (Indicates that files of the specified type are accepted.)</li>
-	 * <li>A string whose first character is a "." (U+002E) character (Indicates that files with the specified file
-	 * extension are accepted).</li>
+	 * <li><strong>MIME type</strong></li>
+	 * <li><strong>Extension</strong></li>
 	 * </ul>
-	 *
+	 * <strong>MIME type</strong>: it is <em>type/subtype</em>, where <em>type</em> is <code>text, image, application</code> etc,
+	 * and <em>subtype</em> is <code>plain, jpeg, *</code> etc. Some example MIME types are:
+	 * <ul>
+	 * <li><code>text/*</code> - indicates that all text files MIME types are accepted, <code>text/html, text/plain</code> etc.</li>
+	 * <li><code>image/jpeg</code> - indicates that only jpeg image files are accepted.</li>
+	 * </ul>
+	 * Setting mime type is more reliable, as the contents of the file is validated against accepted list.
+	 * <br>
+	 * <strong>Extension</strong>: A string whose first character is a "." (U+002E) character (Indicates that files with the specified file
+	 * extension are accepted). Some example extensions are: 
+	 * <ul>
+	 * <li><code>.txt</code> - indicates any files with extension <code>txt</code> are accepted.</li>
+	 * <li><code>.jpg</code> - indicates any files with extension <code>jpg</code> are accepted.</li>
+	 * </ul>
+	 * Setting extension is less reliable, as only the extension of uploaded file (if available) is validated against accepted list.
 	 * @param types The file types that will be accepted by the file input. Note that this is not additive, it will
 	 * overwrite any previously set fileTypes. Pass null or and empty collection to clear all file types.
 	 */
@@ -293,7 +326,9 @@ public class WMultiFileWidget extends AbstractInput implements Targetable, AjaxI
 	 * @param bytes The maximum size (in bytes) that can be uploaded by this input.
 	 */
 	public void setMaxFileSize(final long bytes) {
-		getOrCreateComponentModel().maxFileSize = bytes;
+		if (bytes != getMaxFileSize()) {
+			getOrCreateComponentModel().maxFileSize = bytes;
+		}
 	}
 
 	/**
@@ -328,7 +363,9 @@ public class WMultiFileWidget extends AbstractInput implements Targetable, AjaxI
 	 * @param maxFiles The maximum number of files that can be uploaded by this input.
 	 */
 	public void setMaxFiles(final int maxFiles) {
-		getOrCreateComponentModel().maxFiles = maxFiles;
+		if (maxFiles != getMaxFiles()) {
+			getOrCreateComponentModel().maxFiles = maxFiles;
+		}
 	}
 
 	/**
@@ -404,7 +441,10 @@ public class WMultiFileWidget extends AbstractInput implements Targetable, AjaxI
 		if (cols != null && cols < 0) {
 			throw new IllegalArgumentException("Must have zero or more columns");
 		}
-		getOrCreateComponentModel().cols = cols;
+		Integer currColumns = getColumns();
+		if (!Objects.equals(cols, currColumns)) {
+			getOrCreateComponentModel().cols = cols;
+		}
 	}
 
 	/**
@@ -427,7 +467,9 @@ public class WMultiFileWidget extends AbstractInput implements Targetable, AjaxI
 	 * @param newUpload true if a new file has been uploaded
 	 */
 	public void setNewUpload(final boolean newUpload) {
-		getOrCreateComponentModel().newUpload = newUpload;
+		if (newUpload != isNewUpload()) {
+			getOrCreateComponentModel().newUpload = newUpload;
+		}
 	}
 
 	/**
@@ -445,7 +487,9 @@ public class WMultiFileWidget extends AbstractInput implements Targetable, AjaxI
 	 * @param useThumbnails true if generate thumb nails for the file links.
 	 */
 	public void setUseThumbnails(final boolean useThumbnails) {
-		getOrCreateComponentModel().useThumbnails = useThumbnails;
+		if (useThumbnails != isUseThumbnails()) {
+			getOrCreateComponentModel().useThumbnails = useThumbnails;
+		}
 	}
 
 	/**
@@ -464,7 +508,9 @@ public class WMultiFileWidget extends AbstractInput implements Targetable, AjaxI
 	 * @param thumbnailPosition the position of the image
 	 */
 	public void setThumbnailPosition(final ImagePosition thumbnailPosition) {
-		getOrCreateComponentModel().thumbnailPosition = thumbnailPosition;
+		if (thumbnailPosition != getThumbnailPosition()) {
+			getOrCreateComponentModel().thumbnailPosition = thumbnailPosition;
+		}
 	}
 
 	/**
@@ -486,6 +532,8 @@ public class WMultiFileWidget extends AbstractInput implements Targetable, AjaxI
 	 * @param thumbnailSize the thumbnail size or null for default
 	 */
 	public void setThumbnailSize(final Dimension thumbnailSize) {
+		Dimension currSize = getThumbnailSize();
+
 		if (thumbnailSize != null) {
 			if (thumbnailSize.height == 0 || thumbnailSize.width == 0) {
 				throw new IllegalArgumentException(
@@ -496,7 +544,9 @@ public class WMultiFileWidget extends AbstractInput implements Targetable, AjaxI
 						"Thumbnail size cannot have both height and width set to -1.");
 			}
 		}
-		getOrCreateComponentModel().thumbnailSize = thumbnailSize;
+		if (!Objects.equals(thumbnailSize, currSize)) {
+			getOrCreateComponentModel().thumbnailSize = thumbnailSize;
+		}
 	}
 
 	/**
@@ -887,8 +937,12 @@ public class WMultiFileWidget extends AbstractInput implements Targetable, AjaxI
 	/**
 	 * @param fileId the file id that has been uploaded successfully
 	 */
-	private void setFileUploadRequestId(final String fileId) {
-		getOrCreateComponentModel().fileUploadRequestId = fileId;
+	 private void setFileUploadRequestId(final String fileId) {
+		String currFileId = getFileUploadRequestId();
+
+		if (!Objects.equals(fileId, currFileId)) {
+			getOrCreateComponentModel().fileUploadRequestId = fileId;
+		}
 	}
 
 	/**

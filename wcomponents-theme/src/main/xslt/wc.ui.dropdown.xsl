@@ -1,6 +1,8 @@
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0" 
-	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0">
-	
+
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
+	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0"
+	exclude-result-prefixes="xsl ui html">
 	<!-- WDropdown -->
 	<xsl:template match="ui:dropdown[@readOnly]">
 		<span id="{@id}" class="{normalize-space(concat('wc-dropdown wc-ro-input ', @class))}" data-wc-component="dropdown">
@@ -12,14 +14,15 @@
 			<xsl:apply-templates mode="readOnly" select=".//ui:option"/>
 		</span>
 	</xsl:template>
-	
+
 	<xsl:template match="ui:dropdown">
 		<xsl:variable name="additional">
+			<xsl:value-of select="@class"/>
 			<xsl:if test="@type">
 				<xsl:value-of select="concat(' wc-dropdown-type-', @type)"/>
 			</xsl:if>
 		</xsl:variable>
-		<span id="{@id}" class="{normalize-space(concat('wc-dropdown wc-input-wrapper ', @class, $additional))}">
+		<span id="{@id}" class="{normalize-space(concat('wc-dropdown wc-input-wrapper ', $additional))}">
 			<xsl:if test="@disabled">
 				<xsl:attribute name="aria-disabled">
 					<xsl:text>true</xsl:text>
@@ -232,14 +235,14 @@
 			<xsl:apply-templates select="ui:fieldindicator"/>
 		</span>
 	</xsl:template>
-	
+
 	<!--
 		Outputs nested ui:option elements. Optgroups are not supported in datalist.
 	-->
 	<xsl:template match="ui:optgroup" mode="comboDataList">
 		<xsl:apply-templates mode="comboDataList"/>
 	</xsl:template>
-	
+
 	<!--
 		Output the options in a datalist element for a native HTML5 Combo. NOTE: we do not output a name attribute as in WComponents for
 		WDropdown.COMBO the name and value are always identical.
@@ -250,5 +253,5 @@
 			<xsl:value-of select="$value"/>
 		</span>
 	</xsl:template>
-	
+
 </xsl:stylesheet>

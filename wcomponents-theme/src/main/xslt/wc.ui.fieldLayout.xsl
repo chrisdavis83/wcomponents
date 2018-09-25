@@ -1,13 +1,13 @@
-<xsl:stylesheet 
-	xmlns:xsl="http://www.w3.org/1999/XSL/Transform" 
-	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0" 
-	xmlns:html="http://www.w3.org/1999/xhtml" 
-	version="2.0">
 
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
+	xmlns:html="http://www.w3.org/1999/xhtml" version="2.0"
+	exclude-result-prefixes="xsl ui html">
 	<!-- WFieldLayout -->
 	<xsl:template match="ui:fieldlayout">
 		<xsl:variable name="additional">
-			<xsl:apply-templates select="ui:margin"/>
+			<xsl:value-of select="@class"/>
+			<xsl:apply-templates select="ui:margin" mode="asclass"/>
 			<xsl:if test="@labelWidth">
 				<xsl:value-of select="concat(' wc_fld_lblwth_',@labelWidth)"/>
 			</xsl:if>
@@ -15,11 +15,11 @@
 				<xsl:text> wc_ordered</xsl:text>
 			</xsl:if>
 			<xsl:if test="@layout">
-				<xsl:value-of select="concat(' wc-fieldlayout-layout-', @layout)"/>
+				<xsl:value-of select="concat(' wc-layout-', @layout)"/>
 			</xsl:if>
 		</xsl:variable>
 		<!-- yes, I know the role is superfluous -->
-		<div role="presentation" id="{@id}" class="{normalize-space(concat('wc-fieldlayout ', @class, ' ', $additional))}">
+		<div role="presentation" id="{@id}" class="{normalize-space(concat('wc-fieldlayout ', $additional))}">
 			<xsl:if test="@hidden">
 				<xsl:attribute name="hidden">
 					<xsl:text>hidden</xsl:text>
@@ -39,11 +39,12 @@
 	-->
 	<xsl:template match="ui:field">
 		<xsl:variable name="additional">
+			<xsl:value-of select="@class"/>
 			<xsl:if test="@inputWidth">
 				<xsl:value-of select="concat(' wc_inputwidth wc_fld_inpw_', @inputWidth)"/>
 			</xsl:if>
 		</xsl:variable>
-		<div id="{@id}" class="{normalize-space(concat('wc-field ', @class, $additional))}">
+		<div id="{@id}" class="{normalize-space(concat('wc-field ', $additional))}">
 			<!--
 				If we are part of an ajaxResponse and we don't have a parent ui:fieldlayout we need to add a transient attribute to act as a flag
 				for the ajax subscriber.

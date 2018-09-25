@@ -11,9 +11,8 @@ define(["wc/dom/classList",
 	"wc/ui/containerload",
 	"wc/timers",
 	"wc/ui/dialogFrame",
-	"wc/ui/getForm",
-	"wc/ui/modalShim"],
-	function(classList, event, initialise, shed, tag, uid, Widget, i18n, ajaxRegion, processResponse, eagerLoader, timers, dialogFrame, getForm, modalShim) {
+	"wc/ui/getForm"],
+	function(classList, event, initialise, shed, tag, uid, Widget, i18n, ajaxRegion, processResponse, eagerLoader, timers, dialogFrame, getForm) {
 		"use strict";
 
 		/**
@@ -45,43 +44,6 @@ define(["wc/dom/classList",
 					el = document.getElementById(id);
 				if (el && !el.getAttribute(popupAttr)) {
 					el.setAttribute(popupAttr, "true");
-				}
-			}
-
-			/**
-			 * Open a dialog on page load (if required).
-			 *
-			 * @function
-			 * @private
-			 */
-			function openOnLoad() {
-				try {
-					if (openThisDialog) {
-						if (openOnLoadTimer) {
-							timers.clearTimeout(openOnLoadTimer);
-						}
-						openOnLoadTimer = timers.setTimeout(openDlg, 0, openThisDialog);
-					}
-				} finally {
-					modalShim.unsubscribe(openOnLoad);
-				}
-			}
-
-			/**
-			 * Opens a dialog on page load.
-			 * @function
-			 * @private
-			 * @param {boolean} isAjax `true` if the setup is part of an ajax response.
-			 */
-			function setup(isAjax) {
-				var o;
-				for (o in registry) {
-					if (registry.hasOwnProperty(o)) {
-						setHasPopup(o);
-					}
-				}
-				if (isAjax) {
-					openOnLoad();
 				}
 			}
 
@@ -141,7 +103,7 @@ define(["wc/dom/classList",
 			 * @private
 			 * @param {Element} element the start element
 			 * @param {boolean} ignoreAncestor if {@code} true then stop without checking ancestors for a trigger
-			 * @returns {?Element} a dialog trigger element if found
+			 * @returns {Element} a dialog trigger element if found
 			 */
 			function getTrigger(element, ignoreAncestor) {
 				var parent,
@@ -318,7 +280,7 @@ define(["wc/dom/classList",
 			/**
 			 * Get a registry object based on a WDialog id attribute.
 			 * @param {String} id the ID of the WDialog to get.
-			 * @returns {?module:wc/ui/dialog~regObject} the registry object if found.
+			 * @returns {module:wc/ui/dialog~regObject} the registry object if found.
 			 */
 			function getRegistryObjectByDialogId(id) {
 				var triggerId = registryByDialogId[id];
@@ -389,15 +351,24 @@ define(["wc/dom/classList",
 			 * @function module:wc/ui/dialog.register
 			 * @public
 			 * @param {module:wc/ui/dialog~regObject[]} array An array of dialog definition objects.
-			 * @param {boolean} isAjax `true` if registration is from an ajax response.
 			 */
-			this.register = function(array, isAjax) {
+			this.register = function(array) {
 				if (array && array.length) {
-					modalShim.subscribe(openOnLoad);
-					initialise.addCallback(function() {
-						setup(isAjax);
-					});
 					array.forEach(_register);
+					initialise.addCallback(function() {
+						var o;
+						for (o in registry) {
+							if (registry.hasOwnProperty(o)) {
+								setHasPopup(o);
+							}
+						}
+						if (openThisDialog) {
+							if (openOnLoadTimer) {
+								timers.clearTimeout(openOnLoadTimer);
+							}
+							openOnLoadTimer = timers.setTimeout(openDlg, 0, openThisDialog);
+						}
+					});
 				}
 			};
 

@@ -1,18 +1,30 @@
 <project name="BuildXslt" default="build" >
 	<import file="build-import.xml"/>
-
-	<target name="build"
-		description="Copies XSLT artifacts">
+	<target name="build" description="Builds XSLT artifacts">
 		<!--
 			NOTE: we use two copies here to ensure output order.
 			TODO: remove theme XSLT override.
 		-->
-		<copy todir="${target.rootdir}/xslt" overwrite="true">
-			<fileset dir="${common.src.rootdir}/xslt" includes="*.xsl" />
+		<copy todir="${tmp.dir}/xslt" quiet="true">
+			<fileset dir="${component.rootdir}/src/main/xslt" includes="*.xsl" />
+		</copy>
+		<copy todir="${tmp.dir}/xslt" overwrite="true" quiet="true">
+			<fileset dir="${impl.src.dir}/src/main/xslt" includes="*.xsl" erroronmissingdir="false"/>
 			<filterchain>
 				<expandproperties/>
 			</filterchain>
 		</copy>
+		<concat destfile="${tmp.dir}/all-int.xsl" fixlastline="yes" ignoreempty="false">
+			<header filtering="no">&lt;concat&gt;</header>
+			<footer filtering="no">&lt;/concat&gt;</footer>
+			<fileset dir="${tmp.dir}/xslt" includes="*.xsl"/>
+		</concat>
+		<copy file="${component.rootdir}/build_all.xsl" todir="${tmp.dir}" overwrite="true"/>
+		<xslt in="${tmp.dir}/all-int.xsl"
+			out="${target.rootdir}/xslt/all.xsl"
+			style="${tmp.dir}/build_all.xsl">
+			<factory name="net.sf.saxon.TransformerFactoryImpl"/>
+		</xslt>
 		<copy file="${target.rootdir}/xslt/all.xsl"
 			tofile="${target.rootdir}/xslt/all_debug.xsl"/>
 		<replaceregexp file="${target.rootdir}/xslt/all_debug.xsl"

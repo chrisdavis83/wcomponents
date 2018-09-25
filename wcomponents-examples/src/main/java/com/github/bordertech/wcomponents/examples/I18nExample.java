@@ -5,6 +5,7 @@ import com.github.bordertech.wcomponents.ActionEvent;
 import com.github.bordertech.wcomponents.HeadingLevel;
 import com.github.bordertech.wcomponents.Margin;
 import com.github.bordertech.wcomponents.MessageContainer;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.UIContextHolder;
 import com.github.bordertech.wcomponents.WAjaxControl;
 import com.github.bordertech.wcomponents.WButton;
@@ -71,6 +72,7 @@ public class I18nExample extends WPanel implements MessageContainer {
 		buttons.add(new ChangeLocaleButton(null));
 		buttons.add(new ChangeLocaleButton(new Locale("en")));
 		buttons.add(new ChangeLocaleButton(new Locale("fr", "CA")));
+		buttons.add(new ChangeLocaleButton(new Locale("en", "US")));
 
 		add(new WHeading(HeadingLevel.H2, "Internationalisation example"));
 
@@ -87,7 +89,7 @@ public class I18nExample extends WPanel implements MessageContainer {
 
 		final WFieldLayout layout = new WFieldLayout();
 		add(layout);
-		layout.setMargin(new Margin(0, 0, 12, 0));
+		layout.setMargin(new Margin(null, null, Size.LARGE, null));
 		layout.addField("CLIENT_SIDE_PROMPT", useClientValidation);
 		layout.addField(new WLabel("ENTER_NAME_PROMPT"), nameField);
 		layout.addField("DATE_PROMPT", dateField);

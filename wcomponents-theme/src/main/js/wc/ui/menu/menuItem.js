@@ -9,9 +9,9 @@
  * @requires module:wc/dom/isAcceptableTarget
  */
 define(["wc/dom/ariaAnalog",
-		"wc/dom/initialise",
-		"wc/dom/Widget",
-		"wc/dom/isAcceptableTarget"],
+	"wc/dom/initialise",
+	"wc/dom/Widget",
+	"wc/dom/isAcceptableTarget"],
 	/** @param ariaAnalog @param initialise @param Widget @param isAcceptableEventTarget @ignore */
 	function(ariaAnalog, initialise, Widget, isAcceptableEventTarget) {
 		"use strict";
@@ -46,7 +46,7 @@ define(["wc/dom/ariaAnalog",
 
 			/**
 			 * A selectable menu item with a checkbox modality.
-			 * @see {@link http://www.w3.org/TR/wai-aria-practices/#menuitemcheckbox}
+			 * @see http://www.w3.org/TR/wai-aria-practices/#menuitemcheckbox
 			 *
 			 * @constructor module:wc/ui/menu/menuItem~MenuItem~MenuItemCheckbox
 			 * @extends module:wc/dom/ariaAnalog~AriaAnalog
@@ -95,7 +95,7 @@ define(["wc/dom/ariaAnalog",
 
 			/**
 			 * Model of a menu item which is selectable with a radio button modality.
-			 * @see {@link http://www.w3.org/TR/wai-aria-practices/#menuitemradio}
+			 * @see http://www.w3.org/TR/wai-aria-practices/#menuitemradio
 			 *
 			 * @constructor module:wc/ui/menu/menuItem~MenuItem~MenuItemRadio
 			 * @extends module:wc/dom/ariaAnalog~AriaAnalog

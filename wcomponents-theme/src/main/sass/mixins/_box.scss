@@ -1,0 +1,159 @@
+// Mixins for controlling the box model and content sizing.
+
+// Allow Vendor Prefix in mixins.
+// sass-lint:disable no-vendor-prefixes
+
+// #############################################################################
+// BOX SIZING and POSITION
+// #############################################################################
+// Set an element's box-sizing to border-box.
+@mixin border-box {
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+// Set an element's box-sizing to content-box.
+@mixin content-box {
+  -moz-box-sizing: content-box;
+  box-sizing: content-box;
+}
+
+// Apply a simple margin to an element.
+// @param {String} $pos [all] Where to apply the margin. If 'all' then the
+//     margin is placed around all sides of the element; otherwise any one of
+//     top, right, bottom, left to set a margin only on that side of the
+//     element.
+// @param {dimension} $size [$wc-gap-small] The size of the margin to apply.
+@mixin margin ($pos: all, $size: $wc-gap-small) {
+  @if $pos == all {
+    margin: $size;
+  } @else {
+    margin-#{$pos}: $size;
+  }
+}
+
+@mixin wc-opaque-box {
+  background-color: $wc-clr-global-bg;
+}
+
+// #############################################################################
+// CONTENT CONTAINMENT
+// CSS3 width settings.
+// #############################################################################
+// Allow duplicate width declarations
+// sass-lint:disable no-duplicate-properties
+
+// Size a container to fit its content.
+// @param {rule} $what [width] The rule to set: width or height.
+// @param {int} $imp [0] make all rules important 0 is not important, anything
+//     other than zero is important.
+@mixin fit-content($what: width, $imp: 0, $fallback: auto) {
+  @if $imp == 0 {
+    #{$what}: $fallback;
+    #{$what}: -webkit-fit-content;
+    #{$what}: -moz-fit-content;
+    #{$what}: fit-content;
+  } @else {
+    // Important needed for some reason!
+    // sass-lint:disable no-important
+    #{$what}: $fallback !important;
+    #{$what}: -webkit-fit-content !important;
+    #{$what}: -moz-fit-content !important;
+    #{$what}: fit-content !important;
+    // sass-lint:enable no-important
+  }
+}
+
+// Size a container to fit its max-content.
+@mixin max-content {
+  width: auto;
+  width: -webkit-max-content;
+  width: -moz-max-content;
+  width: max-content;
+}
+
+// Size a container to fit its min-content.
+@mixin min-content {
+  width: auto;
+  width: -webkit-min-content;
+  width: -moz-min-content;
+  width: min-content;
+}
+// sass-lint:enable no-duplicate-properties
+
+
+// #############################################################################
+// BOXES with (or without) padding and optional border.
+// #############################################################################
+// Make a container into a simple padded box with a standard border.
+// @param {dimension} $pad [$wc-gap-normal] The amount of padding.
+// @param {int} $border [true] set a border on the box. Set to -1 to not have a
+//  standard border.
+// @param {color|-1} $color [-1] The foreground color. Set to -1 to ignore.
+// @param {color|-1} $bg-color [-1] The background color. Set to -1 to ignore.
+@mixin padded-box($pad: $wc-gap-normal, $border: true, $color: -1, $bg-color: -1) {
+  @if $border == true {
+    @include border;
+  }
+  @if $pad != 0 {
+    padding: $pad;
+  }
+  @if $bg-color != -1 {
+    background-color: $bg-color;
+  }
+  @if $color != -1 {
+    color: $color;
+  }
+}
+
+// Set margin and padding to .
+@mixin tight-box {
+  margin: 0;
+  padding: 0;
+}
+
+
+// #############################################################################
+// MOVE OUT OF VIEWPORT
+// #############################################################################
+// Move an element out of viewport.
+@mixin offscreen($important: 0) {
+  @if $important == 1 {
+    // Require important to ensure we are really off screen
+    // sass-lint:disable no-important
+    left: -9999px !important;
+    // not 0 or the item may appear 'hidden' to dom/shed
+    max-height: 1rem !important;
+    // smaller than left but not 0 or the item may appear 'hidden' to dom/shed
+    max-width: 1rem !important;
+    overflow: hidden !important;
+    position: absolute !important;
+  } @else {
+    left: -9999px;
+    max-height: 1rem;
+    max-width: 1rem;
+    overflow: hidden;
+    position: absolute;
+  }
+}
+
+// Move an element back into viewport.
+@mixin onscreen($important: 0, $position: static, $left: 0, $max-height: none, $max-width: none, $overfow: visible) {
+  @if $important == 1 {
+    // Require important to ensure we are really off screen
+    // sass-lint:disable no-important
+    left: $left !important;
+    // not 0 or the item may appear 'hidden' to dom/shed
+    max-height: $max-height !important;
+    // smaller than left but not 0 or the item may appear 'hidden' to dom/shed
+    max-width: $max-width !important;
+    overflow: $overfow !important;
+    position: $position !important;
+  } @else {
+    left: $left;
+    max-height: $max-height;
+    max-width: $max-width;
+    overflow: $overfow;
+    position: $position;
+  }
+}

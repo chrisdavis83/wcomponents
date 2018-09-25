@@ -7,6 +7,7 @@ import com.github.bordertech.wcomponents.WMultiFileWidget.FileWidgetUpload;
 import com.github.bordertech.wcomponents.XmlStringBuilder;
 import com.github.bordertech.wcomponents.servlet.WebXmlRenderContext;
 import com.github.bordertech.wcomponents.util.SystemException;
+import com.github.bordertech.wcomponents.validation.Diagnostic;
 import java.util.Iterator;
 import java.util.List;
 
@@ -18,6 +19,10 @@ import java.util.List;
  */
 final class WMultiFileWidgetRenderer extends AbstractWebXmlRenderer {
 
+	/**
+	 * XML element name.
+	 */
+	private static final String TAG_NAME = "ui:multifileupload";
 	/**
 	 * Paints the given WMultiFileWidget.
 	 *
@@ -38,7 +43,7 @@ final class WMultiFileWidgetRenderer extends AbstractWebXmlRenderer {
 		boolean readOnly = widget.isReadOnly();
 
 
-		xml.appendTagOpen("ui:fileupload");
+		xml.appendTagOpen(TAG_NAME);
 		xml.appendAttribute("id", component.getId());
 		xml.appendOptionalAttribute("class", component.getHtmlClass());
 		xml.appendOptionalAttribute("track", component.isTracking(), "true");
@@ -53,7 +58,6 @@ final class WMultiFileWidgetRenderer extends AbstractWebXmlRenderer {
 
 			xml.appendOptionalAttribute("disabled", widget.isDisabled(), "true");
 			xml.appendOptionalAttribute("required", widget.isMandatory(), "true");
-			xml.appendOptionalAttribute("tabIndex", widget.hasTabIndex(), widget.getTabIndex());
 			xml.appendOptionalAttribute("toolTip", widget.getToolTip());
 			xml.appendOptionalAttribute("accessibleText", widget.getAccessibleText());
 			xml.appendOptionalAttribute("acceptedMimeTypes", typesToString(widget.getFileTypes()));
@@ -76,8 +80,14 @@ final class WMultiFileWidgetRenderer extends AbstractWebXmlRenderer {
 			xml.appendAttribute("ajax", "true");
 		}
 
+		List<Diagnostic> diags = readOnly ? null : widget.getDiagnostics(Diagnostic.ERROR);
+
 		if (widget.getFiles().isEmpty()) {
-			xml.appendEnd();
+			if (readOnly || diags == null || diags.isEmpty()) {
+				xml.appendEnd();
+				return;
+			}
+			xml.appendClose();
 		} else {
 			xml.appendClose();
 			// Render files
@@ -85,8 +95,11 @@ final class WMultiFileWidgetRenderer extends AbstractWebXmlRenderer {
 			for (FileWidgetUpload file : widget.getFiles()) {
 				FileWidgetRendererUtil.renderFileElement(widget, xml, file, i++);
 			}
-			xml.appendEndTag("ui:fileupload");
 		}
+		if (!readOnly && diags != null && !diags.isEmpty()) {
+			DiagnosticRenderUtil.renderDiagnostics(widget, renderContext);
+		}
+		xml.appendEndTag(TAG_NAME);
 	}
 
 	/**

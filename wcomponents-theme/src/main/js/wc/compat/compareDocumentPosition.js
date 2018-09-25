@@ -22,7 +22,7 @@ define(["wc/has"],/** @param has wc/has @ignore */ function(has) {
 	 * @function
 	 * @private
 	 * @alias module:wc/compat/compareDocumentPosition
-	 * @see {@link http://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-compareDocumentPosition}
+	 * @see http://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-compareDocumentPosition
 	 * @param {Element} b The element being compared.
 	 * @returns {number} The bitmask equivalent of a native compareDocumentPosition.
 	 */
@@ -33,8 +33,7 @@ define(["wc/has"],/** @param has wc/has @ignore */ function(has) {
 					(a !== b && b.contains(a) && 8) +
 					(a.sourceIndex >= 0 && b.sourceIndex >= 0 ?
 			(a.sourceIndex < b.sourceIndex && 4) + (a.sourceIndex > b.sourceIndex && 2) : 1) + 0;
-		}
-		else {
+		} else {
 			result = 0;
 		}
 		return result;

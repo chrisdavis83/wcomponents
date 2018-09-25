@@ -1,6 +1,8 @@
 package com.github.bordertech.wcomponents.examples.theme;
 
 import com.github.bordertech.wcomponents.HeadingLevel;
+import com.github.bordertech.wcomponents.Margin;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WContainer;
 import com.github.bordertech.wcomponents.WDecoratedLabel;
 import com.github.bordertech.wcomponents.WHeading;
@@ -14,7 +16,7 @@ import com.github.bordertech.wcomponents.util.HtmlClassProperties;
 /**
  * This component demonstrates the {@link WHeading} component.
  *
- * @author Yiannis Paschalidis
+ * @author Mark Reeves
  * @since 1.0.0
  */
 public class WHeadingExample extends WContainer {
@@ -88,7 +90,84 @@ public class WHeadingExample extends WContainer {
 		iconHeading.setHtmlClass(HtmlClassProperties.ICON_INFO_AFTER);
 		add(iconHeading);
 
+		WHeading marginHeading = new WHeading(HeadingLevel.H1, "H1 with extra large margin");
+		marginHeading.setMargin(new Margin(Size.XL));
+		add(marginHeading);
+
+		marginHeading = new WHeading(HeadingLevel.H2, "H2 with extra large margin");
+		marginHeading.setMargin(new Margin(Size.XL));
+		add(marginHeading);
+
+		marginHeading = new WHeading(HeadingLevel.H3, "H3 with extra large margin");
+		marginHeading.setMargin(new Margin(Size.XL));
+		add(marginHeading);
+
+		marginHeading = new WHeading(HeadingLevel.H4, "H4 with extra large margin");
+		marginHeading.setMargin(new Margin(Size.XL));
+		add(marginHeading);
+
+		marginHeading = new WHeading(HeadingLevel.H5, "H5 with extra large margin");
+		marginHeading.setMargin(new Margin(Size.XL));
+		add(marginHeading);
+
+		marginHeading = new WHeading(HeadingLevel.H6, "H6 with extra large margin");
+		marginHeading.setMargin(new Margin(Size.XL));
+		add(marginHeading);
+
+		marginHeading = new WHeading(HeadingLevel.H1, "H1 with mixed margin");
+		marginHeading.setMargin(new Margin(null, Size.XL, Size.ZERO, Size.SMALL));
+		add(marginHeading);
+
+		marginHeading = new WHeading(HeadingLevel.H2, "H2 with mixed margin");
+		marginHeading.setMargin(new Margin(null, Size.XL, Size.ZERO, Size.SMALL));
+		add(marginHeading);
+
+		marginHeading = new WHeading(HeadingLevel.H3, "H3 with mixed margin");
+		marginHeading.setMargin(new Margin(null, Size.XL, Size.ZERO, Size.SMALL));
+		add(marginHeading);
+
+		marginHeading = new WHeading(HeadingLevel.H4, "H4 with mixed margin");
+		marginHeading.setMargin(new Margin(null, Size.XL, Size.ZERO, Size.SMALL));
+		add(marginHeading);
+
+		marginHeading = new WHeading(HeadingLevel.H5, "H5 with mixed margin");
+		marginHeading.setMargin(new Margin(null, Size.XL, Size.ZERO, Size.SMALL));
+		add(marginHeading);
+
+		marginHeading = new WHeading(HeadingLevel.H6, "H6 with mixed margin");
+		marginHeading.setMargin(new Margin(null, Size.XL, Size.ZERO, Size.SMALL));
+		add(marginHeading);
+
 		// you should NEVER set an icon as the ONLY visible text content of a WHeading
+		add(new WHorizontalRule());
+
+		add(new WHeading(HeadingLevel.H2, "Heading anti patterns"));
+		add(new ExplanatoryText("Bad heading examples - do NOT use these!"));
+		add(new WHeading(HeadingLevel.H3, "Empty headings"));
+
+		add(new WHeading(HeadingLevel.H1, ""));
+		add(new WHeading(HeadingLevel.H2, ""));
+		add(new WHeading(HeadingLevel.H3, ""));
+		add(new WHeading(HeadingLevel.H4, ""));
+		add(new WHeading(HeadingLevel.H5, ""));
+		add(new WHeading(HeadingLevel.H6, ""));
+
+		add(new WHeading(HeadingLevel.H3, "Almost empty headings"));
+		add(new WHeading(HeadingLevel.H1, "\u00a0"));
+		add(new WHeading(HeadingLevel.H2, "\u00a0"));
+		add(new WHeading(HeadingLevel.H3, "\u00a0"));
+		add(new WHeading(HeadingLevel.H4, "\u00a0"));
+		add(new WHeading(HeadingLevel.H5, "\u00a0"));
+		add(new WHeading(HeadingLevel.H6, "\u00a0"));
+
+		add(new WHeading(HeadingLevel.H3, "Bad image headings"));
+		add(new ExplanatoryText("The image in these headings has no description."));
+		add(new WHeading(HeadingLevel.H1, makeAntiPatternLabel()));
+		add(new WHeading(HeadingLevel.H2, makeAntiPatternLabel()));
+		add(new WHeading(HeadingLevel.H3, makeAntiPatternLabel()));
+		add(new WHeading(HeadingLevel.H4, makeAntiPatternLabel()));
+		add(new WHeading(HeadingLevel.H5, makeAntiPatternLabel()));
+		add(new WHeading(HeadingLevel.H6, makeAntiPatternLabel()));
 	}
 
 	/**
@@ -99,6 +178,14 @@ public class WHeadingExample extends WContainer {
 	private WDecoratedLabel makeHeadingLabel(final String text, final String statusText) {
 		return new WDecoratedLabel(new WImage("/image/information.png", "Informative heading"),
 				new WText(text), new WStyledText(statusText, WStyledText.Type.EMPHASISED));
+	}
+
+	/**
+	 *
+	 * @return a decorated label containing an undescribed image.
+	 */
+	private WDecoratedLabel makeAntiPatternLabel() {
+		return new WDecoratedLabel(new WImage("/image/information.png", ""));
 	}
 
 }

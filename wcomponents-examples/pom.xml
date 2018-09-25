@@ -8,7 +8,7 @@
 	<parent>
 		<groupId>com.github.bordertech.wcomponents</groupId>
 		<artifactId>wcomponents-parent</artifactId>
-		<version>1.3.4-SNAPSHOT</version>
+		<version>1.5.15-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -40,7 +40,7 @@
 		<dependency>
 			<groupId>commons-validator</groupId>
 			<artifactId>commons-validator</artifactId>
-			<version>1.4.0</version>
+			<version>1.6</version>
 		</dependency>
 
 		<dependency>
@@ -62,19 +62,19 @@
 			<scope>test</scope>
 			<groupId>org.ehcache</groupId>
 			<artifactId>ehcache</artifactId>
-			<version>3.0.0.m4</version>
+			<version>3.6.0</version>
 		</dependency>
 		<dependency>
 			<scope>test</scope>
 			<groupId>org.terracotta</groupId>
 			<artifactId>management-model</artifactId>
-			<version>2.0.0</version>
+			<version>2.3.0</version>
 		</dependency>
 
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>
-			<version>2.4</version>
+			<version>2.5</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -122,11 +122,23 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>${surefire.version}</version>
 				<configuration>
+					<parallel>methods</parallel>
+					<parallelTestsTimeoutForcedInSeconds>0</parallelTestsTimeoutForcedInSeconds>
+					<parallelTestsTimeoutInSeconds>0</parallelTestsTimeoutInSeconds>
+					<threadCount>4</threadCount>
+					<perCoreThreadCount>false</perCoreThreadCount>
+					<rerunFailingTestsCount>2</rerunFailingTestsCount>
+					<properties>
+						<property>
+							<name>listener</name>
+							<value>com.github.bordertech.wcomponents.test.selenium.server.ServerStartStopListener</value>
+						</property>
+					</properties>
 					<systemPropertyVariables>
 						<phantomjs.binary.path>${phantomjs.binary}</phantomjs.binary.path>
 					</systemPropertyVariables>
 					<!-- Arg set by jacoco. -->
-					<argLine>${surefireArgLine}</argLine>
+					<argLine>${surefireArgLine} -Xmx512m -XX:MaxPermSize=128m</argLine>
 					<excludedGroups>${excludedTestGroups}</excludedGroups>
 				</configuration>
 			</plugin>

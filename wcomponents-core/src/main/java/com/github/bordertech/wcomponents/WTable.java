@@ -42,6 +42,7 @@ import org.apache.commons.logging.LogFactory;
  * </p>
  *
  * @author Jonathan Austin
+ * @author Mark Reeves
  * @since 1.0.0
  */
 public class WTable extends WBeanComponent implements Container, AjaxInternalTrigger, AjaxTarget, SubordinateTarget,
@@ -600,6 +601,7 @@ public class WTable extends WBeanComponent implements Container, AjaxInternalTri
 	 * @deprecated the summary field has been removed from the client side. API preserved temporarily for backwards
 	 * compatibility.
 	 */
+	@Deprecated
 	public String getSummary() {
 		return I18nUtilities.format(null, getComponentModel().summary);
 	}
@@ -611,6 +613,7 @@ public class WTable extends WBeanComponent implements Container, AjaxInternalTri
 	 * @deprecated the summary field has been removed from the client side. API preserved temporarily for backwards
 	 * compatibility.
 	 */
+	@Deprecated
 	public void setSummary(final String summary) {
 		getOrCreateComponentModel().summary = summary;
 	}
@@ -1361,7 +1364,7 @@ public class WTable extends WBeanComponent implements Container, AjaxInternalTri
 			newSelections = new HashSet<>(1);
 		} else {
 			// For multi-select, we need the entries for the current page only
-			newSelections = new HashSet<>(oldSelections);
+			newSelections = (Set<Object>) new HashSet<>(oldSelections);
 			newSelections.removeAll(pageRowKeys.values());
 		}
 
@@ -1415,7 +1418,7 @@ public class WTable extends WBeanComponent implements Container, AjaxInternalTri
 			newExpansions = new HashSet<>(expandedRows.length);
 		} else {
 			// row expansions only apply to the current page
-			newExpansions = new HashSet<>(oldExpansions);
+			newExpansions = (Set<Object>) new HashSet<>(oldExpansions);
 			newExpansions.removeAll(pageRowKeys.values());
 		}
 
@@ -2130,7 +2133,7 @@ public class WTable extends WBeanComponent implements Container, AjaxInternalTri
 	 * {@inheritDoc}
 	 */
 	@Override
-	// to make public
+// to make public
 	public WComponent getChildAt(final int index) {
 		return super.getChildAt(index);
 	}

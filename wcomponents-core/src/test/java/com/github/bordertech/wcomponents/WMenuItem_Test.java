@@ -1,5 +1,6 @@
 package com.github.bordertech.wcomponents;
 
+import com.github.bordertech.wcomponents.MenuSelectContainer.SelectionMode;
 import com.github.bordertech.wcomponents.util.mock.MockRequest;
 import java.io.Serializable;
 import junit.framework.Assert;
@@ -67,13 +68,36 @@ public class WMenuItem_Test extends AbstractWComponentTestCase {
 	public void testConstructor7() {
 		String text = "A";
 		char key = 'K';
+		WMenu menu = new WMenu();
 		WMenuItem item = new WMenuItem(text, key);
+		menu.add(item);
 		Assert.assertEquals("Incorrect text set by constructor", text, item.getText());
 		Assert.assertEquals("Incorrect accesskey set by constructor", key, item.getAccessKey());
 	}
 
 	@Test
+	public void testConstructor7NotAtTopLevel() {
+		String text = "A";
+		char key = 'K';
+		WMenuItem item = new WMenuItem(text, key);
+		Assert.assertEquals("Incorrect accesskey set by constructor", key, item.getAccessKey());
+	}
+
+	@Test
 	public void testConstructor8() {
+		String text = "A";
+		char key = 'K';
+		Action action = new TestAction();
+		WMenuItem item = new WMenuItem(text, key, action);
+		WMenu menu = new WMenu();
+		menu.add(item);
+		Assert.assertEquals("Incorrect text set by constructor", text, item.getText());
+		Assert.assertEquals("Incorrect accesskey set by constructor", key, item.getAccessKey());
+		Assert.assertEquals("Incorrect action set by constructor", action, item.getAction());
+	}
+
+	@Test
+	public void testConstructor8NotAtTopLevel() {
 		String text = "A";
 		char key = 'K';
 		Action action = new TestAction();
@@ -142,6 +166,7 @@ public class WMenuItem_Test extends AbstractWComponentTestCase {
 	@Test
 	public void testIsSelected() {
 		WMenu menu = new WMenu();
+		menu.setSelectionMode(SelectionMode.MULTIPLE);
 		WMenuItem item = new WMenuItem("");
 		menu.add(item);
 
@@ -164,13 +189,30 @@ public class WMenuItem_Test extends AbstractWComponentTestCase {
 	}
 
 	@Test
-	public void testAccessKeyAccessors() {
-		assertAccessorsCorrect(new WMenuItem(""), "accessKey", '\0', 'A', 'B');
+	public void testAccessKeyAccessorsTopLevel() {
+		WMenu menu = new WMenu();
+		WMenuItem item = new WMenuItem("");
+		menu.add(item);
+		assertAccessorsCorrect(item, "accessKey", '\0', 'A', 'B');
+	}
+
+	@Test
+	public void testAccessKeySubLevel() {
+		WMenu menu = new WMenu();
+		WMenuItem item = new WMenuItem("");
+		WSubMenu subMenu = new WSubMenu("SubMenu");
+		menu.add(subMenu);
+		subMenu.add(item);
+		Assert.assertEquals('\0', item.getAccessKey());
+		item.setAccessKey('A');
+		Assert.assertEquals("Access key should have been set on an item in a sub menu.", 'A', item.getAccessKey());
 	}
 
 	@Test
 	public void testGetAccessKeyAsString() {
+		WMenu menu = new WMenu();
 		WMenuItem item = new WMenuItem("");
+		menu.add(item);
 		Assert.assertNull("Incorrect acesskey as string", item.getAccessKeyAsString());
 
 		item.setAccessKey('C');
@@ -178,6 +220,17 @@ public class WMenuItem_Test extends AbstractWComponentTestCase {
 
 		item.setAccessKey('\0');
 		Assert.assertNull("Incorrect acesskey as string", item.getAccessKeyAsString());
+	}
+	@Test
+	public void testAccessKeyAsStringSubLevel() {
+		WMenu menu = new WMenu();
+		WMenuItem item = new WMenuItem("");
+		WSubMenu subMenu = new WSubMenu("SubMenu");
+		menu.add(subMenu);
+		subMenu.add(item);
+		Assert.assertNull(item.getAccessKeyAsString());
+		item.setAccessKey('A');
+		Assert.assertEquals("Access key should have been set on an item in a sub menu.", "A", item.getAccessKeyAsString());
 	}
 
 	@Test

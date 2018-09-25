@@ -3,6 +3,7 @@ package com.github.bordertech.wcomponents.examples;
 import com.github.bordertech.wcomponents.Action;
 import com.github.bordertech.wcomponents.ActionEvent;
 import com.github.bordertech.wcomponents.Margin;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WAjaxControl;
 import com.github.bordertech.wcomponents.WCheckBox;
 import com.github.bordertech.wcomponents.WContainer;
@@ -58,7 +59,7 @@ public class WCheckBoxTriggerActionExample extends WContainer {
 		final WText info = new WText();
 		add(infoPanel);
 		infoPanel.add(info);
-		infoPanel.setMargin(new Margin(12, 0, 0, 0));
+		infoPanel.setMargin(new Margin(Size.LARGE, null, null, null));
 
 		breakfastCheckbox.setActionOnChange(new Action() {
 

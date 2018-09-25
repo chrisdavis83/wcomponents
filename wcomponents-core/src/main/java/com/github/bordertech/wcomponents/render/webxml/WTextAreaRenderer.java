@@ -5,6 +5,7 @@ import com.github.bordertech.wcomponents.WTextArea;
 import com.github.bordertech.wcomponents.XmlStringBuilder;
 import com.github.bordertech.wcomponents.servlet.WebXmlRenderContext;
 import com.github.bordertech.wcomponents.util.HtmlToXMLUtil;
+import com.github.bordertech.wcomponents.util.Util;
 
 /**
  * The Renderer for WTextArea.
@@ -46,13 +47,16 @@ class WTextAreaRenderer extends AbstractWebXmlRenderer {
 			xml.appendOptionalAttribute("required", textArea.isMandatory(), "true");
 			xml.appendOptionalAttribute("minLength", minLength > 0, minLength);
 			xml.appendOptionalAttribute("maxLength", maxLength > 0, maxLength);
-			xml.appendOptionalAttribute("tabIndex", textArea.hasTabIndex(), textArea.getTabIndex());
 			xml.appendOptionalAttribute("toolTip", textArea.getToolTip());
 			xml.appendOptionalAttribute("accessibleText", textArea.getAccessibleText());
 			xml.appendOptionalAttribute("rows", rows > 0, rows);
 			xml.appendOptionalAttribute("cols", cols > 0, cols);
 			xml.appendOptionalAttribute("buttonId", submitControlId);
-			xml.appendOptionalAttribute("placeholder", textArea.getPlaceholder());
+			String placeholder = textArea.getPlaceholder();
+			xml.appendOptionalAttribute("placeholder", !Util.empty(placeholder), placeholder);
+
+			String autocomplete = textArea.getAutocomplete();
+			xml.appendOptionalAttribute("autocomplete", !Util.empty(autocomplete), autocomplete);
 		}
 		xml.appendClose();
 
@@ -75,6 +79,9 @@ class WTextAreaRenderer extends AbstractWebXmlRenderer {
 			}
 		}
 
+		if (!readOnly) {
+			DiagnosticRenderUtil.renderDiagnostics(textArea, renderContext);
+		}
 		xml.appendEndTag("ui:textarea");
 	}
 }

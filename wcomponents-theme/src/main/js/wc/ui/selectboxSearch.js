@@ -1,22 +1,3 @@
-/**
- * Select an option in a select list by typing into it.
- *
- * @module
- * @requires module:wc/string/escapeRe
- * @requires module:wc/dom/tag
- * @requires module:wc/dom/uid
- * @requires module:wc/dom/classList
- * @requires module:wc/dom/initialise
- * @requires module:wc/dom/attribute
- * @requires module:wc/dom/shed
- * @requires module:wc/dom/event
- * @requires module:wc/dom/group
- * @requires module:wc/i18n/i18n
- * @requires module:wc/timers
- * @requires module:wc/dom/textContent
- *
- * @todo Document private members, fix source order.
- */
 define(["wc/string/escapeRe",
 	"wc/dom/tag",
 	"wc/dom/uid",
@@ -28,9 +9,11 @@ define(["wc/string/escapeRe",
 	"wc/dom/group",
 	"wc/i18n/i18n",
 	"wc/timers",
+	"wc/config",
+	"wc/mixin",
+	"wc/debounce",
 	"wc/dom/textContent"],
-	/** @param escapeRe wc/string/escapeRe @param tag wc/dom/tag @param uid wc/dom/uid @param classList wc/dom/classList @param initialise wc/dom/initialise @param attribute wc/dom/attribute @param shed wc/dom/shed @param event wc/dom/event @param group wc/dom/group @param i18n wc/i18n/i18n @param timers wc/timers @param textContent wc/dom/textContent @ignore */
-	function(escapeRe, tag, uid, classList, initialise, attribute, shed, event, group, i18n, timers, textContent) {
+	function(escapeRe, tag, uid, classList, initialise, attribute, shed, event, group, i18n, timers, wcconfig, mixin, debounce, textContent) {
 		"use strict";
 
 		/**
@@ -39,22 +22,41 @@ define(["wc/string/escapeRe",
 		 * @private
 		 */
 		function SelectboxSearch() {
-			var fireOnchange = false,
-				searchTimer,
-				MIN_LEN_SUBSTRING_MATCH = 3,
-				MIN_LEN_VAL_MATCH = 1,
-				TEXT_TRUMPS_VALUE = true,
+			var config = {
+					textTrumpsValue: true,
+					minLenSubstring: 3,
+					minLenVal: 1,
+					debounceDelay: 125  // making this too long can be counter-productive
+				},
+				selectionChanged = debounce(function(element) {
+					// programatically changing the select will not fire change so we gots to do it ourselves
+					/*
+					 * Note that we used to fire the change event only when the dropdown lost focus,
+					 * in other words, as per any traditional change event.
+					 * Nowadays this is not consistent with the native behaviour of many browsers (Chrome, IE11) which
+					 * fire change as the selection changes. Only Firefox maintains the traditional behaviour.
+					 * This inconsistency can lead to unexpected behaviour since the native typeahead will be firing changes
+					 * while this typeahead will not. If there are side effects (e.g. an AJAX update is triggered) then the
+					 * dropdown may be displaying a value that is not appropriate for the current state (only resolved when the user
+					 * moves on in the form).
+					 */
+					event.fire(element, event.TYPE.change);
+				}, 0),
+				debouncedSearch,
 				NO_ENDS_WITH_STRING_RE = /[^ ]$/,
-				SEARCH_DELAY = 250,
 				/* NOTE: moved the initialisation of ALLOWED to initialise because
 				 * parts of AJAX which i18n depend upon are not yet available in IE */
 				ALLOWED,  // "abcdefghijklmnopqrstuvwxyz0123456789~`!@#$%^&*()-_=+[{]}\\|;:'\",<.>/? ",
 				CLASS_NOT_FOUND = "wc_selsch_notfound",
 				CLASS_FEEDBACK = "wc_selsch",
 				searchElementId,
-				regexCache = {starts: {}, contains: {}};
+				regexCache = { starts: {}, contains: {} };
 
-
+			/**
+			 * Determine if this element needs the typeahead, i.e. it is a dropdown.
+			 * @param {Element} element An element that may potentially require typeahead.
+			 * @returns {Element} The element that requires typeahead, or null.
+			 */
 			function needsSelectSearch(element) {
 				var result = null;
 				if (element.tagName === tag.SELECT && !element.multiple) {
@@ -66,13 +68,10 @@ define(["wc/string/escapeRe",
 			function focusEvent(evt) {
 				var element = evt.target;
 				if (needsSelectSearch(element)) {
+					initConfig();
 					initSelect(element);
-					closeSearch(element);
+					closeSearch();
 				}
-			}
-
-			function blurEvent(evt) {
-				closeSearch(evt.currentTarget);
 			}
 
 			function keydownEvent(evt) {
@@ -97,8 +96,7 @@ define(["wc/string/escapeRe",
 					// we still queue a search so that we can return to a null/no value option if we backspace/delete to nothing
 					queueSearch(element, val);
 					evt.preventDefault();
-				}
-				else if (keyCode === KeyEvent.DOM_VK_SPACE) {
+				} else if (keyCode === KeyEvent.DOM_VK_SPACE) {
 					search = getSearchElement();
 					val = textContent.get(search);
 					if (NO_ENDS_WITH_STRING_RE.test(val)) {
@@ -111,8 +109,7 @@ define(["wc/string/escapeRe",
 						textContent.set(search, val + " ");
 						queueSearch(element, textContent.get(search));
 					}
-				}
-				else if (keyCode === KeyEvent.DOM_VK_RETURN) {
+				} else if (keyCode === KeyEvent.DOM_VK_RETURN) {
 					closeSearch(element);
 				}
 			}
@@ -164,7 +161,7 @@ define(["wc/string/escapeRe",
 				if (!inited) {
 					attribute.set(element, ns, true);
 					event.add(element, event.TYPE.click, focusEvent);
-					event.add(element, event.TYPE.blur, blurEvent);
+					event.add(element, event.TYPE.blur, closeSearch);
 					event.add(element, event.TYPE.keydown, keydownEvent);
 					event.add(element, event.TYPE.keypress, keypressEvent);
 				}
@@ -195,10 +192,10 @@ define(["wc/string/escapeRe",
 			 * @param search The string to search for
 			 */
 			function queueSearch(element, search) {
-				if (searchTimer) {
-					timers.clearTimeout(searchTimer);
+				if (!debouncedSearch) {
+					debouncedSearch = debounce(highlightSearch, config.debounceDelay);
 				}
-				searchTimer = timers.setTimeout(highlightSearch, SEARCH_DELAY, element, search);
+				debouncedSearch(element, search);
 			}
 
 			/*
@@ -208,25 +205,20 @@ define(["wc/string/escapeRe",
 			 */
 			function highlightSearch(element, search) {
 				var match;
-				// fireOnchange = true;
 				if (search) {
-					if (TEXT_TRUMPS_VALUE) {
+					if (config.textTrumpsValue) {
 						match = getMatchByText(element, search) || getMatchByValue(element, search);
-					}
-					else {
+					} else {
 						match = getMatchByValue(element, search) || getMatchByText(element, search);
 					}
 
 					if (match) {
 						classList.remove(getSearchElement(), CLASS_NOT_FOUND);
 						selectMatch(element, match);
-					}
-					else {
+					} else {
 						classList.add(getSearchElement(), CLASS_NOT_FOUND);
 					}
-				}
-
-				else if (search === "") {
+				} else if (search === "") {
 					// we have previously searched and have backspaced to an empty string
 					if ((match = getMatchByValue(element, search)) && !shed.isSelected(match)) {
 						selectMatch(element, match);
@@ -242,13 +234,11 @@ define(["wc/string/escapeRe",
 			function selectMatch(element, match) {
 				timers.setTimeout(function() {
 					if (match) {
-						fireOnchange = true;
 						element.selectedIndex = match.index;
-					}
-					else {
-						fireOnchange = true;
+					} else {
 						element.selectedIndex = 0;
 					}
+					selectionChanged(element);
 					element = null;
 					match = null;
 				}, 0);
@@ -264,7 +254,7 @@ define(["wc/string/escapeRe",
 			}
 			/*
 			 * Search for first option with a matching 'text' property text match can be a partial
-			 * match (case insensitive) if it is at least MIN_LEN_SUBSTRING_MATCH characters long
+			 * match (case insensitive) if it is at least config.minLenSubstring characters long
 			 *
 			 * @param element The select element to search
 			 * @param search The string to search for
@@ -285,17 +275,15 @@ define(["wc/string/escapeRe",
 				if (regexCache.starts.hasOwnProperty(search)) {
 					startsWithRe = regexCache.starts[search];
 					console.log("Got regex from cache: ", startsWithRe.source);
-				}
-				else {
+				} else {
 					startsWithRe = regexCache.starts[search] = new RegExp("^" + escapeRe(search), flags);
 				}
 
 				if (regexCache.contains.hasOwnProperty(search)) {
 					containsRe = regexCache.contains[search];
 					console.log("Got regex from cache: ", containsRe.source);
-				}
-				else {
-					containsRe = regexCache.contains[search] = new RegExp(startsWithRe.source, flags);
+				} else {
+					containsRe = regexCache.contains[search] = new RegExp(".+" + escapeRe(search), flags);
 				}
 
 				if ((options = getOptions(element)) && options.length) {
@@ -308,8 +296,7 @@ define(["wc/string/escapeRe",
 					if (nextTxt && startsWithRe.test(nextTxt)) {
 						result = next;
 						break;
-					}
-					else if (!partialMatch && search.length >= MIN_LEN_SUBSTRING_MATCH && containsRe.test(nextTxt)) {
+					} else if (!partialMatch && search.length >= config.minLenSubstring && containsRe.test(nextTxt)) {
 						partialMatch = next;
 					}
 				}
@@ -318,7 +305,7 @@ define(["wc/string/escapeRe",
 
 			/*
 			 * Search for first option with a matching 'value' property value match must be an exact
-			 * match (case insensitive) and must be at least MIN_LEN_VAL_MATCH characters long
+			 * match (case insensitive) and must be at least config.minLenVal characters long
 			 *
 			 * @param element The select element to search
 			 * @param search The string to search for
@@ -332,7 +319,7 @@ define(["wc/string/escapeRe",
 					i = 0,
 					result;
 				// allow for reset to null option if search is ""
-				if (search === "" || search.length >= MIN_LEN_VAL_MATCH) {
+				if (search === "" || search.length >= config.minLenVal) {
 					if (search !== "") {
 						search = search.toLocaleLowerCase();
 					}
@@ -355,24 +342,41 @@ define(["wc/string/escapeRe",
 
 			/**
 			 * "Close" the little box thingy that shows what you have typed so far
-			 * @param {Element} element The SELECT element the search box is attached to.
 			 */
-			function closeSearch(element) {
+			function closeSearch() {
 				var search = getSearchElement();
 				textContent.set(search, "");
 				if (!shed.isHidden(search, true)) {
 					hideSearch(search);
-					if (fireOnchange && element) {
-						// programatically changing the select will not fire change so we gots to do it ourselves
-						timers.setTimeout(event.fire, 0, element, event.TYPE.change);
-					}
 				}
-				fireOnchange = false;
 			}
 
 			function hideSearch(search) {
 				classList.remove(search, CLASS_NOT_FOUND);
 				shed.hide(search);
+			}
+
+			/**
+			 * Initialises the module configuration options.
+			 * This should be called as late as possible to give the application developer time to register any configuration overrides.
+			 * Call it comme ça
+				require(["wc/config"], function(wcconfig){
+					wcconfig.set({
+						textTrumpsValue: true,  // if true text matches are given priority over value matches (i.e. the hidden value of the option instead of the visible text)
+						minLenSubstring: 3,  // minimum length of input string to search on for partial matches (i.e. not "starts with" matches)
+						minLenVal: 1,  // minimum length of input string to search on for value matches
+						debounceDelay: 250  //  typing debounce delay in milliseconds
+				}, "wc/ui/selectboxSearch")});
+			 */
+			function initConfig() {
+				if (config.inited) {
+					return;
+				}
+				try {
+					config = wcconfig.get("wc/ui/selectboxSearch", config);
+				} finally {
+					config.inited = true;
+				}
 			}
 
 			/**
@@ -417,14 +421,35 @@ define(["wc/string/escapeRe",
 				ALLOWED = i18n.get("select_typeahead");
 				if (event.canCapture) {
 					event.add(element, event.TYPE.focus, focusEvent, null, null, true);
-				}
-				else {
+				} else {
 					event.add(element, event.TYPE.focusin, focusEvent);
 				}
 			};
 		}
 		var ns = uid(),
-			/** @alias module:wc/ui/selectboxSearch */ instance = new SelectboxSearch();
+			/**
+			 * Select an option in a select list by typing into it.
+			 *
+			 * @module
+			 * @requires module:wc/string/escapeRe
+			 * @requires module:wc/dom/tag
+			 * @requires module:wc/dom/uid
+			 * @requires module:wc/dom/classList
+			 * @requires module:wc/dom/initialise
+			 * @requires module:wc/dom/attribute
+			 * @requires module:wc/dom/shed
+			 * @requires module:wc/dom/event
+			 * @requires module:wc/dom/group
+			 * @requires module:wc/i18n/i18n
+			 * @requires module:wc/timers
+			 * @requires module:wc/config
+			 * @requires module:wc/mixin
+			 * @requires module:wc/debounce
+			 * @requires module:wc/dom/textContent
+			 *
+			 * @todo Document private members, fix source order.
+			 */
+			instance = new SelectboxSearch();
 
 		initialise.register(instance);
 		return instance;

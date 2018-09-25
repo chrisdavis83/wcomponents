@@ -1,0 +1,6 @@
+// Got rid of most of these as part of the simplification process.
+@mixin respond-phonelike {
+  @media only screen and (max-width: 773px) {
+    @content;
+  }
+}

@@ -1,17 +1,17 @@
 define(["wc/dom/attribute",
-		"wc/dom/event",
-		"wc/dom/initialise",
-		"wc/dom/focus",
-		"wc/dom/formUpdateManager",
-		"wc/dom/getBox",
-		"wc/dom/shed",
-		"wc/dom/tag",
-		"wc/dom/Widget",
-		"wc/ui/ajaxRegion",
-		"wc/ui/ajax/processResponse",
-		"wc/ui/selectboxSearch",
-		"wc/ui/modalShim"],
-	function(attribute, event, initialise, focus, formUpdateManager, getBox, shed, tag, Widget, ajaxRegion, processResponse, selectboxSearch, modal) {
+	"wc/dom/event",
+	"wc/dom/initialise",
+	"wc/dom/focus",
+	"wc/dom/formUpdateManager",
+	"wc/dom/getBox",
+	"wc/dom/shed",
+	"wc/dom/tag",
+	"wc/dom/Widget",
+	"wc/ui/ajaxRegion",
+	"wc/ui/ajax/processResponse",
+	"wc/ui/selectboxSearch",
+	"wc/ui/fieldset"],
+	function(attribute, event, initialise, focus, formUpdateManager, getBox, shed, tag, Widget, ajaxRegion, processResponse, selectboxSearch, fieldset) {
 		"use strict";
 
 		/**
@@ -20,7 +20,7 @@ define(["wc/dom/attribute",
 		 * @private
 		 */
 		function MultiSelectPair() {
-			var CONTAINER = new Widget("fieldset", "wc-multiselectpair"),
+			var CONTAINER = fieldset.getWidget().clone().extend("wc-multiselectpair"),
 				SELECT = new Widget("select"),
 				CONTAINER_INITIALISED_KEY = "multiSelectPair.inited",
 				LIST_TYPE_AVAILABLE = 0,
@@ -30,9 +30,9 @@ define(["wc/dom/attribute",
 				BUTTON = new Widget("button"),
 				OPTGROUP = new Widget("optgroup"),
 				ACTION_MAP = {"aall": addAll,
-							"add": addSelected,
-							"rall": removeAll,
-							"rem": removeSelected};
+					"add": addSelected,
+					"rall": removeAll,
+					"rem": removeSelected};
 
 			LISTS[LIST_TYPE_AVAILABLE] = SELECT.extend("wc_msp_av");
 			LISTS[LIST_TYPE_CHOSEN] = SELECT.extend("wc_msp_chos");
@@ -55,8 +55,7 @@ define(["wc/dom/attribute",
 					components, PX = "px";
 				if (CONTAINER.isOneOfMe(el)) {
 					components = [container];
-				}
-				else {
+				} else {
 					components = CONTAINER.findDescendants(el);
 				}
 				Array.prototype.forEach.call(components, function(next) {
@@ -95,7 +94,7 @@ define(["wc/dom/attribute",
 			 * @function
 			 * @private
 			 * @param {Element} list A select list from a MultiSelectPair component.
-			 * @returns {?int} The opposite "LIST_TYPE_" of the list. Returns null if we cannot determine.
+			 * @returns {int} The opposite "LIST_TYPE_" of the list. Returns null if we cannot determine.
 			 */
 			function getOppositeListType(list) {
 				var type = instance.getListType(list);
@@ -111,7 +110,7 @@ define(["wc/dom/attribute",
 			 * @function
 			 * @private
 			 * @param {Element} element A button element.
-			 * @returns {?Function} The action to perform for a button of this type.
+			 * @returns {Function} The action to perform for a button of this type.
 			 */
 			function getAction(element) {
 				var result;
@@ -166,13 +165,11 @@ define(["wc/dom/attribute",
 								toIndex = calcToIndex(originalIndex, fromGroupIndex);
 								if (toIndex >= optgroup.children.length) {
 									optgroup.appendChild(next);
-								}
-								else {
+								} else {
 									optgroup.insertBefore(next, optgroup.children[toIndex]);
 								}
 								result = true;
-							}
-							else {
+							} else {
 								// we need to make an optgroup in toList, but where?
 								optgroup = document.createElement(tag.OPTGROUP);
 								optgroup.label = parent.label;
@@ -180,14 +177,12 @@ define(["wc/dom/attribute",
 								toIndex = calcToIndex(originalIndex, fromIndex);
 								if (toIndex >= toList.options.length) {
 									toList.appendChild(optgroup);
-								}
-								else {
+								} else {
 									// does the option we are creating the optgroup before have an optgroup parent?
 									toOptgroup = toList.options[toIndex].parentNode;
 									if (OPTGROUP.isOneOfMe(toOptgroup)) {
 										toList.insertBefore(optgroup, toOptgroup);
-									}
-									else {
+									} else {
 										toList.insertBefore(optgroup, toList.options[toIndex]);
 									}
 								}
@@ -198,20 +193,17 @@ define(["wc/dom/attribute",
 							if (parent.children.length === 0) {
 								fromList.removeChild(parent);
 							}
-						}
-						else {
+						} else {
 							originalIndex = selectboxSearch.indexOf(next, orderList);
 							toIndex = calcToIndex(originalIndex, fromIndex);
 							if (toIndex >= toList.options.length) {
 								toList.appendChild(next);
 								result = true;
-							}
-							else {
+							} else {
 								toOptgroup = toList.options[toIndex].parentNode;
 								if (OPTGROUP.isOneOfMe(toOptgroup)) {
 									toList.insertBefore(next, toOptgroup);
-								}
-								else {
+								} else {
 									toList.insertBefore(next, toList.options[toIndex]);
 								}
 								result = true;
@@ -246,8 +238,7 @@ define(["wc/dom/attribute",
 			function publishSelection(fromList, toList) {
 				if (instance.getListType(fromList) === LIST_TYPE_CHOSEN) {
 					shed.select(toList);  // the list won't actually be selected but the selection will be published
-				}
-				else {
+				} else {
 					shed.deselect(toList);  // moving from chose to available publishes a deselection
 				}
 			}
@@ -366,8 +357,7 @@ define(["wc/dom/attribute",
 				if (keyCode === KeyEvent.DOM_VK_RETURN) {
 					$event.preventDefault();  // chrome submits form for "enter" in select multiple="multiple"
 					addRemoveSelected(selectList);
-				}
-				else {
+				} else {
 					selectType = instance.getListType(selectList);
 					focusOpposite = false;
 					if ((keyCode === KeyEvent.DOM_VK_RIGHT && selectType === LIST_TYPE_AVAILABLE) || (keyCode === KeyEvent.DOM_VK_LEFT && selectType === LIST_TYPE_CHOSEN)) {
@@ -382,8 +372,7 @@ define(["wc/dom/attribute",
 						selectList.selectedIndex = -1;
 						try {
 							focus.setFocusRequest(opposite);
-						}
-						catch (ignore) {
+						} catch (ignore) {
 							// Do nothing
 						}
 					}
@@ -414,7 +403,7 @@ define(["wc/dom/attribute",
 			 */
 			function clickEvent($event) {
 				var element = $event.target, action;
-				if (!$event.defaultPrevented && !shed.isDisabled(element) && (action = getAction(element))) {
+				if (!$event.defaultPrevented && (element = BUTTON.findAncestor(element)) && !shed.isDisabled(element) && (action = getAction(element))) {
 					action(element);
 				}
 			}
@@ -428,7 +417,8 @@ define(["wc/dom/attribute",
 			 */
 			function dblClickEvent($event) {
 				var selectList,
-					element;
+					element,
+					container;
 				if ($event.defaultPrevented) {
 					return;
 				}
@@ -436,7 +426,7 @@ define(["wc/dom/attribute",
 
 				if ((element.tagName === tag.OPTION || element.tagName === tag.SELECT) && (selectList = SELECT.findAncestor(element)) && !shed.isDisabled(selectList)) {
 					addRemoveSelected(selectList);
-					if (ajaxRegion.getTrigger(selectList)) {
+					if ((container = CONTAINER.findAncestor(selectList)) && ajaxRegion.getTrigger(container, true)) {
 						ajaxRegion.requestLoad(selectList);
 					}
 				}
@@ -448,7 +438,7 @@ define(["wc/dom/attribute",
 			 * @function module:wc/ui/multiSelectPair.getListType
 			 * @public
 			 * @param {Element} element Any select element component of a WMultiSelectPair.
-			 * @returns {?int} The type of the element as defined in LISTS or null.
+			 * @returns {int} The type of the element as defined in LISTS or null.
 			 */
 			this.getListType = function(element) {
 				var list;
@@ -498,7 +488,7 @@ define(["wc/dom/attribute",
 			 * @public
 			 * @param {Element} element Any component element of a multiSelectPair (ie any of the lists or buttons).
 			 * @param {String} type One of the types defined in LISTS.
-			 * @returns {?Element} The list of the type represented by the type argument.
+			 * @returns {Element} The list of the type represented by the type argument.
 			 */
 			this.getListByType = function(element, type) {
 				var result = null,
@@ -545,23 +535,6 @@ define(["wc/dom/attribute",
 			};
 
 			/**
-			 * Wait for page load modal shim to remove before trying to calculate initial select width and height.
-			 * See https://github.com/BorderTech/wcomponents/issues/1066. This function unsubscribes itself as the only time we are interested in
-			 * the removal of a modal shim is the page load shim, not the shim associated with a WDialog or image editor.
-			 *
-			 * @function
-			 * @private
-			 */
-			function modalSubscriber() {
-				try {
-					fixWidthHeight();
-				}
-				finally {
-					modal.unsubscribe(modalSubscriber);
-				}
-			}
-
-			/**
 			 * Set up initial event handlers.
 			 *
 			 * @function module:wc/ui/multiSelectPair.initialise
@@ -569,11 +542,10 @@ define(["wc/dom/attribute",
 			 * @param {Element} element The element being initialised: usually document.body
 			 */
 			this.initialise = function(element) {
-				modal.subscribe(modalSubscriber);
+				fixWidthHeight();
 				if (event.canCapture) {
 					event.add(element, event.TYPE.focus, focusEvent, null, null, true);
-				}
-				else {
+				} else {
 					event.add(element, event.TYPE.focusin, focusEvent);
 				}
 
@@ -613,6 +585,7 @@ define(["wc/dom/attribute",
 		 * @requires module:wc/ui/ajaxRegion
 		 * @requires module:wc/ui/ajax/processResponse
 		 * @requires module:wc/ui/selectboxSearch
+		 * @requires module:wc/ui/fieldset
 		 */
 		var instance = new MultiSelectPair();
 		initialise.register(instance);

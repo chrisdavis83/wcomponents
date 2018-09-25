@@ -1,0 +1,51 @@
+// styles for WLabel
+// #############################################################################
+
+// WLabel outputs an artefact with class `wc-label`. It is **not** necessarily
+// a label element.
+.wc-label {
+  // mandatory indicator
+  > .fa-asterisk {
+    @include mandatory-indicator;
+  }
+
+  &.wc_req {
+    > .fa-asterisk {
+      display: inline-block;
+    }
+  }
+
+  // ###########################################################################
+  // When the WLabel is for a component which renders a fieldset and legend the
+  // WLabel will create a label emulator `span` and its content is then copied
+  // to the legend.
+  // The label emulator is hidden by default. In some flat WFieldLayouts they
+  // are made visible and the legend is moved out of view. I
+  &[data-wc-for] {
+    display: none;
+  }
+}
+
+// hint is additional text for labels that describe other information for the
+// related form element
+.wc-label-hint {
+  display: block;
+}
+
+// When WCheckBoxSelect/WRadioButtonSelect these labels do not have the wc-label
+// class as they are generated from options. TODO: We should fix that.
+.wc-input-wrapper + label, // WRadioButton
+.wc-ro-input + .wc-label, // WRadioButton, WCheckBox
+input + label, // WCheckBoxSelect, WRadioButtonSelect, WCheckBox
+label + .wc-input-wrapper {
+  margin-left: $wc-gap-small;
+}
+
+[hidden],
+.wc-off {
+  + label,
+  + input,
+  + .wc-input-wrapper {
+    margin-left: 0;
+  }
+}

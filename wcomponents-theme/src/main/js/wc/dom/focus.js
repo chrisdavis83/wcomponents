@@ -19,14 +19,14 @@
  * @todo re-order code, comment private members.
  */
 define(["wc/array/toArray",
-		"wc/dom/tag",
-		"wc/Observer",
-		"wc/dom/getStyle",
-		"wc/dom/shed",
-		"wc/dom/uid",
-		"wc/dom/Widget",
-		"wc/dom/getFilteredGroup",
-		"wc/timers"],
+	"wc/dom/tag",
+	"wc/Observer",
+	"wc/dom/getStyle",
+	"wc/dom/shed",
+	"wc/dom/uid",
+	"wc/dom/Widget",
+	"wc/dom/getFilteredGroup",
+	"wc/timers"],
 	/** @param toArray wc/array/toArray @param tag wc/dom/tag @param Observer wc/Observer @param getStyle wc/dom/getStyle @param shed wc/dom/shed @param uid wc/dom/uid @param Widget wc/dom/Widget @param getFilteredGroup wc/dom/getFilteredGroup @param timers wc/timers @ignore */
 	function(toArray, tag, Observer, getStyle, shed, uid, Widget, getFilteredGroup, timers) {
 		"use strict";
@@ -58,11 +58,11 @@ define(["wc/array/toArray",
 			 * @returns {Boolean} true if the element is a viable tab stop.
 			 */
 			this.isTabstop = function(element) {
+				if (!(element && element.nodeType)) {
+					return false;
+				}
 				initialise();
-				var result = null,
-					observer = getTabstopObserver();
-				result = filterHelper(element, observer, this);
-				return result;
+				return filterHelper(element, getTabstopObserver(), this);
 			};
 
 
@@ -132,18 +132,16 @@ define(["wc/array/toArray",
 									setFocusCallback();
 								}
 							}
-						}
-						catch (err) {
+						} catch (err) {
 							console.log("cannot focus element with id " + focusElementId + " " + err.message);
 						}
 					}, 0);
-				}
-				else {
+				} else {
 					throw new TypeError("Cannot focus something that ain't an element!");
 				}
 			};
 
-			 /**
+			/**
 			 * Focus the first (or last) visible non-disabled field.
 			 * If the list of input types are omitted then by default DEFAULT_TABSTOPS are used.
 			 * In the case of radio buttons the field must also be checked, otherwise we would be changing the state of the
@@ -157,7 +155,7 @@ define(["wc/array/toArray",
 			 *    focus on a particular element.
 			 * @param {Boolean} [reverse] If true then elements will be tried in reverse order. In other words this
 			 *    function becomes "focusLastTabstop".
-			 * @returns {?Element} The element that received focus.
+			 * @returns {Element} The element that received focus.
 			 */
 			this.focusFirstTabstop = function (container, callback, reverse) {
 				var next,
@@ -172,8 +170,7 @@ define(["wc/array/toArray",
 						setFocusCallback();
 						result = next;
 						break;
-					}
-					catch (e) {
+					} catch (e) {
 						result = null;
 					}
 				}
@@ -216,29 +213,29 @@ define(["wc/array/toArray",
 			 * @param {Element} element The element from which to start the focusable hunt.
 			 * @param {Boolean} [ignoreSelf] set true if we want to explicitly ignore the current element otherwise will
 			 *    return element if it is itself focusable.
-			 * @returns {?Element} the first ancestor element which can receive focus (if any).
+			 * @returns {Element} the first ancestor element which can receive focus (if any).
 			 */
 			this.getFocusableAncestor = function(element, ignoreSelf) {
-				var result, tw, filter;
+				var tw, filter;
+				if (!element) {
+					return null;
+				}
 
 				if (!ignoreSelf && this.canFocus(element)) {
-					result = element;
+					return element;
 				}
-				else {
-					filter = function (node) {
-						var result = SKIP;
-						if (instance.isTabstop(node) && instance.canFocus(node)) {
-							result = ACCEPT;
-						}
-						return result;
-					};
+				filter = function (node) {
+					var result = SKIP;
+					if (instance.isTabstop(node) && instance.canFocus(node)) {
+						result = ACCEPT;
+					}
+					return result;
+				};
 
-					tw = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT, filter, false);
-					initialise();
-					tw.currentNode = element;
-					result = tw.parentNode();
-				}
-				return result;
+				tw = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT, filter, false);
+				initialise();
+				tw.currentNode = element;
+				return tw.parentNode();
 			};
 
 			/**
@@ -307,16 +304,13 @@ define(["wc/array/toArray",
 					 */
 					if (shed.isDisabled(element) || shed.isHidden(element)) {
 						result = REJECT;
-					}
-					else if (tagName === tag.INPUT && element.type === "radio" && !shed.isSelected(element)) {
+					} else if (tagName === tag.INPUT && element.type === "radio" && !shed.isSelected(element)) {
 						if (getFilteredGroup(element).length) {
 							result = REJECT;
-						}
-						else {
+						} else {
 							result = ACCEPT;
 						}
-					}
-					else {
+					} else {
 						result = focusTabHelper(element, instance);
 					}
 				}
@@ -370,8 +364,7 @@ define(["wc/array/toArray",
 						(getStyle(element, "visibility", false, true) === "hidden") ||
 						(getStyle(element, "display", false, true) === "none")) {
 						result = REJECT;
-					}
-					else {
+					} else {
 						result = focusTabHelper(element, instance);
 					}
 				}
@@ -414,8 +407,7 @@ define(["wc/array/toArray",
 				if (instance.isTabstop(node) && instance.canFocus(node)) {
 					if (node !== document.activeElement) {
 						result = ACCEPT;
-					}
-					else {
+					} else {
 						result = REJECT;
 					}
 				}
@@ -437,15 +429,13 @@ define(["wc/array/toArray",
 				 */
 				if (tabIndex || tabIndex === "0") {
 					tabIndex = parseInt(tabIndex, 10);
-				}
-				else if (instance.isNativelyFocusable(tagName)) {
+				} else if (instance.isNativelyFocusable(tagName)) {
 					tabIndex = 0;
 				}
 				if (tabIndex || tabIndex === 0) {
 					if (tabIndex >= 0) {
 						result = ACCEPT;
-					}
-					else {
+					} else {
 						result = REJECT;
 					}
 				}

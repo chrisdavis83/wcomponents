@@ -6,7 +6,7 @@ import com.github.bordertech.wcomponents.Container;
 import com.github.bordertech.wcomponents.HeadingLevel;
 import com.github.bordertech.wcomponents.Margin;
 import com.github.bordertech.wcomponents.Request;
-import com.github.bordertech.wcomponents.UIContextHolder;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WComponent;
 import com.github.bordertech.wcomponents.WHeading;
 import com.github.bordertech.wcomponents.WMenu;
@@ -82,7 +82,7 @@ final class MenuPanel extends WPanel {
 		add(recentMenuHeading);
 		add(menu);
 		menu.setSelectionMode(WMenu.SelectionMode.SINGLE);
-		menu.setMargin(new Margin(0, 0, 16, 0));
+		menu.setMargin(new Margin(null, null, Size.LARGE, null));
 
 		tree.setActionOnChange(new Action() {
 			@Override
@@ -118,6 +118,7 @@ final class MenuPanel extends WPanel {
 	 */
 	private void addRecentExample(final String text, final ExampleData data, final boolean select) {
 		WMenuItem item = new WMenuItem(text, new SelectExampleAction());
+		item.setCancel(true);
 		menu.add(item);
 		item.setActionObject(data);
 		if (select) {
@@ -128,7 +129,7 @@ final class MenuPanel extends WPanel {
 	/**
 	 * Retrieves the closest known match to a WComponent (or example) which this MenuPanel knows about. A fully
 	 * qualified class name or partial name may be provided. A fully qualified match is returned in preference to a
-	 * partial one. Partial name matching is case-insensitivie, for example "prog" will match "WProgressBarExample".
+	 * partial one. Partial name matching is case-insensitive, for example "prog" will match "WProgressBarExample".
 	 *
 	 * @param className the component class name to search for.
 	 * @return the class for the given name, or null if not found.
@@ -301,12 +302,6 @@ final class MenuPanel extends WPanel {
 		boolean hasRecentMenu = menu.getMenuItems().size() > 0;
 		menu.setVisible(hasRecentMenu);
 		recentMenuHeading.setVisible(hasRecentMenu);
-		if (hasRecentMenu) {
-			WComponent selectedItem = menu.getSelectedMenuItem();
-			if (selectedItem != null && UIContextHolder.getCurrent().getFocussed() == null) {
-				selectedItem.setFocussed();
-			}
-		}
 	}
 
 	/**

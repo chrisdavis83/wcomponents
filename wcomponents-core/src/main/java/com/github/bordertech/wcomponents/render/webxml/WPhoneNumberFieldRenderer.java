@@ -41,6 +41,7 @@ class WPhoneNumberFieldRenderer extends AbstractWebXmlRenderer {
 			int minLength = field.getMinLength();
 			int maxLength = field.getMaxLength();
 			String pattern = field.getPattern();
+			String autocomplete = field.getAutocomplete();
 
 			WSuggestions suggestions = field.getSuggestions();
 			String suggestionsId = suggestions == null ? null : suggestions.getId();
@@ -52,19 +53,22 @@ class WPhoneNumberFieldRenderer extends AbstractWebXmlRenderer {
 			xml.appendOptionalAttribute("required", field.isMandatory(), "true");
 			xml.appendOptionalAttribute("minLength", minLength > 0, minLength);
 			xml.appendOptionalAttribute("maxLength", maxLength > 0, maxLength);
-			xml.appendOptionalAttribute("tabIndex", field.hasTabIndex(), field.getTabIndex());
 			xml.appendOptionalAttribute("toolTip", field.getToolTip());
 			xml.appendOptionalAttribute("accessibleText", field.getAccessibleText());
 			xml.appendOptionalAttribute("size", cols > 0, cols);
 			xml.appendOptionalAttribute("buttonId", submitControlId);
 			xml.appendOptionalAttribute("pattern", !Util.empty(pattern), pattern);
+			xml.appendOptionalAttribute("autocomplete", !Util.empty(autocomplete), autocomplete);
 			xml.appendOptionalAttribute("list", suggestionsId);
-			xml.appendOptionalAttribute("placeholder", field.getPlaceholder());
+			String placeholder = field.getPlaceholder();
+			xml.appendOptionalAttribute("placeholder", !Util.empty(placeholder), placeholder);
 		}
 		xml.appendClose();
 
 		xml.appendEscaped(field.getText());
-
+		if (!readOnly) {
+			DiagnosticRenderUtil.renderDiagnostics(field, renderContext);
+		}
 		xml.appendEndTag("ui:phonenumberfield");
 	}
 }

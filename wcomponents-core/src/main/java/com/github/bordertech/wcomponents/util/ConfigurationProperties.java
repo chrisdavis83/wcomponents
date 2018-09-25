@@ -178,6 +178,11 @@ public final class ConfigurationProperties {
 	public static final String LOGOUT_URL = "bordertech.wcomponents.logout.url";
 
 	/**
+	 * Memory utility will consider sizes above this level a possible memory leak.
+	 */
+	public static final String MEMUTIL_WARN_THRESHOLD = "bordertech.wcomponents.memutil.threshold.warn";
+
+	/**
 	 * The flag indicating whether plaintext should cache.
 	 */
 	public static final String PLAINTEXT_CACHE = "bordertech.wcomponents.plaintext.cache.enabled";
@@ -249,7 +254,10 @@ public final class ConfigurationProperties {
 
 	/**
 	 * The render mode for template rendering, can be "on", "off" or "sniff".
+	 *
+	 * @deprecated no longer used.
 	 */
+	@Deprecated
 	public static final String TEMPLATE_RENDERING_MODE = "bordertech.wcomponents.template.render.mode";
 
 	/**
@@ -323,6 +331,7 @@ public final class ConfigurationProperties {
 
 	/**
 	 * Whether to perform server-side XSLT.
+	 *
 	 * @deprecated 1.3.1 No longer used: no replacement, will be removed in v2.0.0.
 	 */
 	public static final String XSLT_SERVER_SIDE = "bordertech.wcomponents.xslt.enabled";
@@ -336,13 +345,16 @@ public final class ConfigurationProperties {
 	* DEVELOPER PROPERTIES - used for local debugging.
 	* *****************************/
 	/**
-	 * The flag indicating whether to debug the client side.
-	 */
-	public static final String DEVELOPER_DEBUG_CLIENT_SIDE = "bordertech.wcomponents.debug.clientSide.enabled";
-	/**
 	 * The flag indicating whether debug is enabled.
 	 */
 	public static final String DEVELOPER_DEBUG_ENABLED = "bordertech.wcomponents.debug.enabled";
+	/**
+	 * The flag indicating whether to debug the client side.
+	 *
+	 * @deprecated 1.4.0 replaced with {@link #DEVELOPER_DEBUG_ENABLED}
+	 */
+	@Deprecated
+	public static final String DEVELOPER_DEBUG_CLIENT_SIDE = DEVELOPER_DEBUG_ENABLED;
 
 	/**
 	 * The flag indicating whether to dump the UIContext.
@@ -456,6 +468,11 @@ public final class ConfigurationProperties {
 	 * The flag indicating whether to run the MultiBrowserRunner in parallel.
 	 */
 	public static final String TEST_SELENIUM_MULTI_BROWSER_PARALLEL = "bordertech.wcomponents.test.selenium.runParallel";
+
+	/**
+	 * The flag indicating whether the selenium tests are running in parallel methods.
+	 */
+	public static final String TEST_SELENIUM_PARALLEL_METHODS = "bordertech.wcomponents.test.selenium.parallel.methods";
 
 	/**
 	 * The duration in seconds to wait for the page to be ready.
@@ -800,6 +817,15 @@ public final class ConfigurationProperties {
 	}
 
 	/**
+	 * The default warning threshold for MemoryUtil possible memory leaks.
+	 *
+	 * @return the parameter value if set, otherwise the default.
+	 */
+	public static int getMemoryUtilWarnThreshold() {
+		return get().getInt(MEMUTIL_WARN_THRESHOLD, 1000);
+	}
+
+	/**
 	 * The flag indicating whether plaintext should cache.
 	 *
 	 * @return the parameter value if set, or true if not set.
@@ -910,9 +936,11 @@ public final class ConfigurationProperties {
 	/**
 	 * @return The render mode, can be either "on", "off" or "sniff". "on" means the render will occur. "off" means the
 	 * render will not occur. "sniff" means the render will occur based on user agent.
+	 * @deprecated no longer used
 	 */
+	@Deprecated
 	public static String getTemplateRenderingMode() {
-		return get().getString(TEMPLATE_RENDERING_MODE, "off");
+		return "on";
 	}
 
 	/**
@@ -1076,9 +1104,11 @@ public final class ConfigurationProperties {
 	 * The flag indicating whether to debug the client side.
 	 *
 	 * @return the parameter value if set, else false if not set
+	 * @deprecated 1.4.0 use {@link #getDeveloperDebugEnabled()}
 	 */
+	@Deprecated
 	public static boolean getDeveloperDebugClientSide() {
-		return get().getBoolean(DEVELOPER_DEBUG_CLIENT_SIDE, false);
+		return getDeveloperDebugEnabled();
 	}
 
 	/**
@@ -1304,6 +1334,15 @@ public final class ConfigurationProperties {
 	}
 
 	/**
+	 * The flag indicating whether the Selenium Tests are running in parallel methods.
+	 *
+	 * @return the parameter value, or false if not set.
+	 */
+	public static boolean getTestSeleniumParallelMethods() {
+		return get().getBoolean(TEST_SELENIUM_PARALLEL_METHODS, false);
+	}
+
+	/**
 	 * The interval in milliseconds between page ready poll attempts.
 	 *
 	 * @return the parameter value, or 50 if not set.
@@ -1394,7 +1433,7 @@ public final class ConfigurationProperties {
 	 * @return the parameter value, or null if not set.
 	 */
 	public static String getTestSeleniumServerUrl() {
-		return get().getString(TEST_SELENIUM_SERVER_START);
+		return get().getString(TEST_SELENIUM_SERVER_URL);
 	}
 
 	/**

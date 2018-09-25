@@ -5,17 +5,26 @@
 define({
 	suites: [ ${unit.tests} ],
 
+	capabilities: {
+		${intern.capabilities}
+	},
+
 	// The port on which the instrumenting proxy will listen
 	proxyPort: 9000,
 
 	// A fully qualified URL to the Intern proxy
 	proxyUrl: 'http://localhost:9000/',
 
-	tunnel: 'SauceLabsTunnel',
+	tunnel: '${intern.tunnel}',
 	tunnelOptions: {
-		verbose: 'true'
+		${intern.tunnel.options}
 	},
 	environments: [ ${test.environments} ],
+	runnerClientReporter: {
+		writeHtml: false
+	},
+
+	${intern.reporters}
 
 	// Configuration options for the module loader; any AMD configuration options supported by the specified AMD loader
 	// can be used here
@@ -34,5 +43,5 @@ define({
 		}
 	},
 	// A regular expression matching URLs to files that should not be included in code coverage analysis
-	excludeInstrumentation: /^(?:.*\${file.separator}test\-classes|.*\${file.separator}node_modules|.*\${file.separator}lib)\${file.separator}/
+	excludeInstrumentation: /^(?:.*\${file.separator}?test\-classes|.*\${file.separator}?node_modules|.*\${file.separator}lib)\${file.separator}/
 });

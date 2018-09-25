@@ -1,30 +1,15 @@
-/**
- * Provides functionality to undertake client validation of WTextArea.
- *
- * @module wc/ui/validation/textArea
- * @requires module:wc/dom/attribute
- * @requires module:wc/dom/event
- * @requires module:wc/dom/initialise
- * @requires module:wc/dom/Widget
- * @requires module:wc/i18n/i18n
- * @requires external:lib/sprintf
- * @requires module:wc/ui/validation/required
- * @requires module:wc/ui/validation/validationManager
- * @requires module:wc/ui/getFirstLabelForElement
- * @requires module:wc/ui/textArea
- */
 define(["wc/dom/attribute",
-		"wc/dom/event",
-		"wc/dom/initialise",
-		"wc/dom/Widget",
-		"wc/i18n/i18n",
-		"lib/sprintf",
-		"wc/ui/validation/required",
-		"wc/ui/validation/validationManager",
-		"wc/ui/getFirstLabelForElement",
-		"wc/ui/textArea"],
-	/** @param attribute wc/dom/attribute @param event wc/dom/event @param initialise wc/dom/initialise @param Widget wc/dom/Widget @param i18n wc/i18n/i18n @param sprintf lib/sprintf @param required wc/ui/validation/required @param validationManager wc/ui/validation/validationManager @param getFirstLabelForElement wc/ui/getFirstLabelForElement @param textArea wc/ui/textArea @ignore */
-	function(attribute, event, initialise, Widget, i18n, sprintf, required, validationManager, getFirstLabelForElement, textArea) {
+	"wc/dom/event",
+	"wc/dom/initialise",
+	"wc/dom/shed",
+	"wc/dom/Widget",
+	"wc/i18n/i18n",
+	"lib/sprintf",
+	"wc/ui/validation/required",
+	"wc/ui/validation/validationManager",
+	"wc/ui/feedback",
+	"wc/ui/textArea"],
+	function(attribute, event, initialise, shed, Widget, i18n, sprintf, required, validationManager, feedback, textArea) {
 		"use strict";
 		/**
 		 * @constructor
@@ -44,13 +29,8 @@ define(["wc/dom/attribute",
 			* @returns {Boolean} true if all required WTextAreas in container are complete.
 			*/
 			function _validateRequired(container) {
-				function _getAttachmentPoint(element) {
-					return textArea.getCounter(element) || element;
-				}
-
 				var obj = {container: container,
-							widget: textArea.getWidget(),
-							attachTo: _getAttachmentPoint};
+					widget: textArea.getWidget()};
 				return required.complexValidationHelper(obj);
 			}
 
@@ -68,23 +48,22 @@ define(["wc/dom/attribute",
 				var result = false,
 					mask,
 					value = element.value,
-					label,
+					size,
 					flag,
 					message;
 				if (value && !validationManager.isExempt(element)) {
-					if ((mask = textArea.getMaxlength(element)) && value.length > mask) {
+					size = textArea.getLength(element);
+					if ((mask = textArea.getMaxlength(element)) && size > mask) {
 						result = true;
-						flag = i18n.get("validation_textarea_overmax", "%s", mask, value.length);
-					}
-					else if ((mask = element.getAttribute("data-wc-min")) && value.length < mask) {
+						flag = i18n.get("validation_textarea_overmax", "%s", mask, size);
+					} else if ((mask = element.getAttribute("data-wc-min")) && size < mask) {
 						result = true;
 						flag = i18n.get("validation_text_belowmin", "%s", mask);
 					}
 
 					if (result) {
-						label = getFirstLabelForElement(element, true) || element.title || i18n.get("validation_common_unlabelledfield");
-						message = sprintf.sprintf(flag, label);
-						validationManager.flagError({element: element, message: message, attachTo: (textArea.getCounter(element) || element)});
+						message = sprintf.sprintf(flag, validationManager.getLabelText(element));
+						feedback.flagError({element: element, message: message});
 					}
 				}
 				return result;
@@ -112,7 +91,6 @@ define(["wc/dom/attribute",
 				return result && _required;
 			}
 
-
 			/**
 			 * Regular (non-constrained) text areas get a change event listener to revalidate mandatory and ancestor
 			 * fieldsets.
@@ -123,13 +101,26 @@ define(["wc/dom/attribute",
 			 */
 			function changeEvent($event) {
 				var element = $event.target;
-				if (TEXTAREA.isOneOfMe(element)) {
-					validationManager.revalidationHelper(element, validate);
+				if (validationManager.isValidateOnChange()) {
+					if (validationManager.isInvalid(element)) {
+						validationManager.revalidationHelper(element, validate);
+						return;
+					}
+					validate(element);
+					return;
+				}
+				validationManager.revalidationHelper(element, validate);
+			}
+
+			function blurEvent($event) {
+				var element = $event.target;
+				if (!element.value && shed.isMandatory(element)) {
+					validate(element);
 				}
 			}
 
 			/**
-			 * Use first focus to attach a change listener in browsers which cannot capture.
+			 * Use first focus to attach other event listeners.
 			 *
 			 * @function
 			 * @private
@@ -140,6 +131,13 @@ define(["wc/dom/attribute",
 				if (TEXTAREA.isOneOfMe(element) && !attribute.get(element, INITED_KEY)) {
 					attribute.set(element, INITED_KEY, true);
 					event.add(element, event.TYPE.change, changeEvent, 1);
+					if (validationManager.isValidateOnBlur()) {
+						if (event.canCapture) {
+							event.add(element, event.TYPE.blur, blurEvent, 1, null, true);
+						} else {
+							event.add(element, event.TYPE.focusout, blurEvent);
+						}
+					}
 				}
 			}
 
@@ -150,9 +148,8 @@ define(["wc/dom/attribute",
 			 */
 			this.initialise = function(element) {
 				if (event.canCapture) {
-					event.add(element, event.TYPE.change, changeEvent, 1, null, true);
-				}
-				else {
+					event.add(element, event.TYPE.focus, focusEvent, 1, null, true);
+				} else {
 					event.add(element, event.TYPE.focusin, focusEvent);
 				}
 			};
@@ -167,7 +164,22 @@ define(["wc/dom/attribute",
 			};
 		}
 
-		var /** @alias module:wc/ui/validation/textArea */ instance = new ValidationTextArea();
+		/**
+		 * Provides functionality to undertake client validation of WTextArea.
+		 *
+		 * @module
+		 * @requires wc/dom/attribute
+		 * @requires wc/dom/event
+		 * @requires wc/dom/initialise
+		 * @requires wc/dom/Widget
+		 * @requires wc/i18n/i18n
+		 * @requires external:lib/sprintf
+		 * @requires wc/ui/validation/required
+		 * @requires wc/ui/validation/validationManager
+		 * @requires wc/ui/feedback
+		 * @requires wc/ui/textArea
+		 */
+		var instance = new ValidationTextArea();
 		instance.constructor = ValidationTextArea;
 		initialise.register(instance);
 		return instance;

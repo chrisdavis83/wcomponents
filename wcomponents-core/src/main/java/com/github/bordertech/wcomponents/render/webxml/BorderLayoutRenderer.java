@@ -1,6 +1,7 @@
 package com.github.bordertech.wcomponents.render.webxml;
 
 import com.github.bordertech.wcomponents.Renderer;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WComponent;
 import com.github.bordertech.wcomponents.WPanel;
 import com.github.bordertech.wcomponents.XmlStringBuilder;
@@ -15,6 +16,7 @@ import java.util.List;
  * This {@link Renderer} renders the children of a {@link WPanel} which have been arranged using a {@link BorderLayout}.
  *
  * @author Yiannis Paschalidis
+ * @author Mark Reeves
  * @since 1.0.0
  */
 final class BorderLayoutRenderer extends AbstractWebXmlRenderer {
@@ -30,13 +32,15 @@ final class BorderLayoutRenderer extends AbstractWebXmlRenderer {
 		WPanel panel = (WPanel) component;
 		XmlStringBuilder xml = renderContext.getWriter();
 		BorderLayout layout = (BorderLayout) panel.getLayout();
-		int hgap = layout.getHgap();
-		int vgap = layout.getVgap();
+		Size hgap = layout.getHorizontalGap();
+		String hgapString = hgap == null ? null : hgap.toString();
+		Size vgap = layout.getVerticalGap();
+		String vgapString = vgap == null ? null : vgap.toString();
 
 		xml.appendTagOpen("ui:borderlayout");
 
-		xml.appendOptionalAttribute("hgap", hgap > 0, hgap);
-		xml.appendOptionalAttribute("vgap", vgap > 0, vgap);
+		xml.appendOptionalAttribute("hgap", hgapString);
+		xml.appendOptionalAttribute("vgap", vgapString);
 
 		xml.appendClose();
 

@@ -60,8 +60,7 @@ define(["wc/i18n/i18n"], /** @param i18n wc/i18n/i18n @ignore */function(i18n) {
 				}
 				result += ascii || next;  // zero should not happen, the map should not contain numbers, it should contain strings
 			}
-		}
-		else {
+		} else {
 			result = s;
 		}
 		return result;
@@ -103,12 +102,10 @@ define(["wc/i18n/i18n"], /** @param i18n wc/i18n/i18n @ignore */function(i18n) {
 				if (Object.freeze) {
 					Object.freeze(result);
 				}
-			}
-			else {
+			} else {
 				console.warn("Could not find ascii map ", lookupProp);
 			}
-		}
-		catch (ex) {
+		} catch (ex) {
 			// asciifying stuff is not likely to be mission critical so we'll consume errors here and warn
 			console.warn(ex);
 		}
@@ -120,7 +117,7 @@ define(["wc/i18n/i18n"], /** @param i18n wc/i18n/i18n @ignore */function(i18n) {
 	 * @funtion uniToAscii
 	 * @private
 	 * @param {String} character A non-ascii character.
-	 * @returns {?String} The asciified version or null if not found.
+	 * @returns {String} The asciified version or null if not found.
 	 */
 	function uniToAscii(character) {
 		var next, i, len, result = null,

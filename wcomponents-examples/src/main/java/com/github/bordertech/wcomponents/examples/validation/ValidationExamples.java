@@ -2,6 +2,7 @@ package com.github.bordertech.wcomponents.examples.validation;
 
 import com.github.bordertech.wcomponents.ActionEvent;
 import com.github.bordertech.wcomponents.Margin;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WButton;
 import com.github.bordertech.wcomponents.WCheckBox;
 import com.github.bordertech.wcomponents.WContainer;
@@ -51,7 +52,7 @@ public class ValidationExamples extends WContainer {
 		add(layout);
 		layout.addField("Use client side validation? ", useClientValidation);
 		layout.addField((WLabel) null, btnApplySettings);
-		layout.setMargin(new Margin(0, 0, 12, 0));
+		layout.setMargin(new Margin(null, null, Size.LARGE, null));
 
 		WTabSet tabs = new WTabSet();
 		tabs.addTab(new BasicFieldsValidationExample(), "Basic", WTabSet.TAB_MODE_CLIENT);

@@ -1,6 +1,7 @@
 package com.github.bordertech.wcomponents.examples.subordinate;
 
 import com.github.bordertech.wcomponents.Margin;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WContainer;
 import com.github.bordertech.wcomponents.WField;
 import com.github.bordertech.wcomponents.WFieldLayout;
@@ -34,7 +35,7 @@ public class SubordinateControlSimpleWMultiSelectExample extends WContainer {
 
 		WFieldLayout layout = new WFieldLayout();
 		layout.setLabelWidth(25);
-		layout.setMargin(new Margin(0, 0, 12, 0));
+		layout.setMargin(new Margin(null, null, Size.LARGE, null));
 		add(layout);
 		layout.addField("Select one or more options", groupSelect).getLabel().setHint(
 				"Option c requires further information");

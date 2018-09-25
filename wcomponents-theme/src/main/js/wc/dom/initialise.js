@@ -5,12 +5,12 @@
  * @module
  * @requires module:wc/Observer
  * @requires module:wc/timers
- * @requires external:lib/dojo/domReady
+ * @requires module:wc/global
+ * @requires external:lib/requirejs/domReady
  * @todo re-order code, document private members.
  */
-define(["wc/Observer", "wc/timers", "lib/dojo/domReady"],
-	/** @param Observer wc/Observer @param timers wc/timers @param domReady lib/dojo/domReady @ignore */
-	function(Observer, timers, domReady) {
+define(["wc/Observer", "wc/timers", "wc/global", "lib/requirejs/domReady"],
+	function(Observer, timers, global, domReady) {
 		"use strict";
 
 		/**
@@ -65,20 +65,19 @@ define(["wc/Observer", "wc/timers", "lib/dojo/domReady"],
 			 *    callbacks.
 			 * @param {String} [method] The name of the method to call if listener is an object rather than a function.
 			 * @param {(Function|Object)} listener A function or an object which implements the "initialise" interface.
-			 * @returns {?Function} Returns listener if it was able to be subscribed to an instance of {@link module:wc/Observer}.
+			 * @returns {Function} Returns listener if it was able to be subscribed to an instance of {@link module:wc/Observer}.
 			 */
 			function add(priority, method, listener) {
 				var result,
 					config = {priority: priority, method: method};
-				if (observer || (observer = new Observer())) {
+				if (observer || (observer = new Observer(true))) {
 					if (listener && (typeof listener === "function" || method)) {
 						if (instance.domLoaded) {
 							// if the page has already loaded
 							queueGo();
 						}
 						result = observer.subscribe(listener, config);
-					}
-					else {
+					} else {
 						console.error("Could not add ", listener);
 						result = null;
 					}
@@ -97,7 +96,7 @@ define(["wc/Observer", "wc/timers", "lib/dojo/domReady"],
 				if (queue) {
 					timers.clearTimeout(queue);
 				}
-				queue = timers.setTimeout(instance.go, 100, document.body);
+				queue = timers.setTimeout(instance.go, 100, global.document.body);
 			}
 
 			/**
@@ -108,24 +107,25 @@ define(["wc/Observer", "wc/timers", "lib/dojo/domReady"],
 			*
 			* @function  module:wc/dom/initialise.go
 			* @param {Element} element document.body
-			* @param {Finction} [callback] Function which will be called after all the routines are executed.
+			* @param {Function} [callback] Function which will be called after all the routines are executed.
 			*/
 			this.go = function(element, callback) {
-				var goingObserver = observer;
-				try {
-					if (goingObserver) {
-						observer = null;  // any calls to add while executing will be placed into a new observer
-						goingObserver.notify(element);
-						if (callback && typeof callback === "function") {
-							callback();
+				var goingObserver = observer,
+					gone = function() {
+						try {
+							if (callback && typeof callback === "function") {
+								callback();
+							}
+						} finally {
+							if (observer === null) {  // if no new subscribers were added while were were executing the existing subscribers
+								goingObserver.reset();  // clear all the subscribers we have just finished calling
+								observer = goingObserver;  // put the empty observer instance back ready for new subscribers
+							}
 						}
-					}
-				}
-				finally {
-					if (observer === null) {  // if no new subscribers were added while were were executing the existing subscribers
-						goingObserver.reset();  // clear all the subscribers we have just finished calling
-						observer = goingObserver;  // put the empty observer instance back ready for new subscribers
-					}
+					};
+				if (goingObserver) {
+					observer = null;  // any calls to add while executing will be placed into a new observer
+					goingObserver.notify(element).then(gone, gone);
 				}
 			};
 
@@ -140,8 +140,7 @@ define(["wc/Observer", "wc/timers", "lib/dojo/domReady"],
 				var result;
 				if (observer) {
 					result = observer.toString();
-				}
-				else {
+				} else {
 					result = "no subscribers";
 				}
 				return result;
@@ -175,14 +174,15 @@ define(["wc/Observer", "wc/timers", "lib/dojo/domReady"],
 		var /** @alias module:wc/dom/initialise */ instance = new Initialise();
 
 		domReady(function() {
-			timers.setTimeout(function() {
-				try {
-					instance.go(document.body);
-				}
-				finally {
-					instance.domLoaded = true;
-				}
-			}, 0);
+			if (global.document) {
+				timers.setTimeout(function() {
+					try {
+						instance.go(global.document.body);
+					} finally {
+						instance.domLoaded = true;
+					}
+				}, 0);
+			}
 		});
 
 		return instance;

@@ -18,15 +18,15 @@
  * @module
  * @private
  * @requires module:wc/has
+ * @requires module:wc/global
  */
-define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
+define(["wc/has", "wc/global"], function(has, global) {
 	"use strict";
 		/**
 		 * @var {String[]} methods The function names of console methods we have to add.
 		 * @private
 		 */
-	var global = window,
-		methods = ["log", "debug", "info", "warn", "error"],
+	var methods = ["log", "debug", "info", "warn", "error", "group", "groupCollapsed", "groupEnd"],
 		$console,
 		timers,
 		UNDEFINED = "undefined",
@@ -120,6 +120,14 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 	}
 
 	/**
+	 * Provides a basic table function to the fake console.
+	 * @function
+	 */
+	FakeConsole.prototype.table = function() {
+		global[c].log.apply(c, arguments);
+	};
+
+	/**
 	 * Provides the time function to the fake console.
 	 * @function
 	 * @see {@link module:wc/compat/console~time}
@@ -144,12 +152,10 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 					return $console || ($console = new FakeConsole());
 				}
 			});
-		}
-		else {
+		} else {
 			global[c] = new FakeConsole();
 		}
-	}
-	else {  // IE console, FF4 console, FF25 console
+	}	else {  // IE console, FF4 console, FF25 console
 		wrapPretendFunctions();  // if we are in IE8 or IE9 we need to wrap the existing fake functions before we do anything
 		if (!has("native-console-debug")) {
 			global[c].debug = global[c].log;

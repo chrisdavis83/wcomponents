@@ -2,11 +2,9 @@ define(["wc/dom/event",
 	"wc/dom/focus",
 	"wc/dom/initialise",
 	"wc/dom/shed",
-	"wc/dom/tag",
 	"wc/dom/uid",
 	"wc/dom/Widget",
 	"wc/i18n/i18n",
-	"wc/loader/resource",
 	"wc/ui/ajax/processResponse",
 	"wc/ui/modalShim",
 	"wc/timers",
@@ -15,10 +13,12 @@ define(["wc/dom/event",
 	"wc/ui/positionable",
 	"wc/ui/draggable",
 	"wc/dom/role",
-	"lib/handlebars/handlebars",
+	"wc/template",
 	"wc/ui/viewportUtils",
+	"wc/ui/getForm",
 	"wc/config"],
-	function (event, focus, initialise, shed, tag, uid, Widget, i18n, loader, processResponse, modalShim, timers, has, resizeable, positionable, draggable, $role, handlebars, viewportUtils, wcconfig) {
+	function (event, focus, initialise, shed, uid, Widget, i18n, processResponse, modalShim, timers, has, resizeable, positionable, draggable, $role,
+		template, viewportUtils, getForm, wcconfig) {
 		"use strict";
 
 		/**
@@ -27,10 +27,11 @@ define(["wc/dom/event",
 		 * @private
 		 */
 		function DialogFrame() {
-			var TEMPLATE_NAME = "dialog.xml",
-				DIALOG_ID = "wc_dlgid",
+			var DIALOG_ID = "wc_dlgid",
 				CONTENT_BASE_CLASS = "content",
-				INITIAL_TOP_PROPORTION = 0.33, // when setting the initial position offset the dialog so that the gap at the top is this proportion of the difference between the dialog size and viewport size
+				// when setting the initial position offset the dialog so that the gap at the top is this proportion of the difference between
+				// the dialog size and viewport size
+				INITIAL_TOP_PROPORTION = 0.33,
 				openerId,
 				subscriber = {
 					close: null
@@ -44,7 +45,6 @@ define(["wc/dom/event",
 				MAX_BUTTON,
 				HEADER_WD = new Widget("header"),
 				TITLE_WD = new Widget("h1"),
-				FORM = new Widget("form"),
 				BUSY,
 				UNIT = "px",
 				repositionTimer,
@@ -81,10 +81,12 @@ define(["wc/dom/event",
 			 * @returns {Boolean} true is move/resize are supportable.
 			 */
 			function canMoveResize() {
-				var conf,
+				var conf = wcconfig.get("wc/ui/dialogFrame", {
+						vpUtil: null
+					}),
 					func = "isPhoneLike";
 
-				if ((conf = wcconfig.get("wc/ui/dialogFrame")) && conf.vpUtil && viewportUtils[conf.vpUtil]) {
+				if (conf.vpUtil && viewportUtils[conf.vpUtil]) {
 					func = conf.vpUtil;
 				}
 				return !viewportUtils[func]();
@@ -96,7 +98,7 @@ define(["wc/dom/event",
 			 * @returns {Boolean} true if the dialog has any content in an aria-busy state.
 			 */
 			function hasBusyContent() {
-				var content = getContent();
+				var content = instance.getContent();
 				if (content) {
 					BUSY = BUSY || new Widget("","",{"aria-busy": "true"});
 					return !!BUSY.findDescendant(content);
@@ -110,27 +112,16 @@ define(["wc/dom/event",
 			 * @function
 			 * @private
 			 * @param {wc/ui/dialogFrame~dto} [dto] The config options for the dialog (if any).
-			 * @returns {?Element} The form element.
+			 * @returns {Element} The form element.
 			 */
-			function getForm(dto) {
+			function getDlgForm(dto) {
 				var formId = (dto ? (dto.formId || dto.openerId) : null),
-					candidate, forms;
+					el;
 
-				if (formId && (candidate = document.getElementById(formId))) {
-					if (candidate.tagName === tag.FORM) {
-						return candidate;
-					}
-					else if ((formId = candidate.form)) {
-						return document.getElementById(formId);
-					}
-					return FORM.findAncestor(candidate);
+				if (formId) {
+					el = document.getElementById(formId);
 				}
-				// no clue to the form get the last form in the view
-				forms = document.getElementsByTagName("form");
-				if (forms && forms.length) {
-					return forms[forms.length - 1];
-				}
-				return null;
+				return getForm(el);
 			}
 
 			/**
@@ -147,16 +138,15 @@ define(["wc/dom/event",
 
 				if (dialog) {
 					if (!this.isOpen(dialog)) {
-						return Promise.resolve(openDlgHelper(dto));
+						return openDlgHelper(dto);
 					}
 					return Promise.reject(REJECT.ALREADY_OPEN);
-				}
-				else if ((form = getForm(dto))) {
+				} else if ((form = getDlgForm(dto))) {
 					formId = form.id || (form.id = uid());
 
 					if (formId) {
 						return buildDialog(formId).then(function () {
-							openDlgHelper(dto);
+							return openDlgHelper(dto);
 						});
 					}
 					return Promise.reject(REJECT.NO_FORM);
@@ -183,22 +173,27 @@ define(["wc/dom/event",
 			 * @function
 			 */
 			function openDlgHelper(dto) {
-				var dialog = instance.getDialog();
+				return i18n.translate("dialog_noTitle").then(function(defaultTitle) {
+					var effectiveDto = dto || {},
+						dialog = instance.getDialog();
 
-				if (dialog && !instance.isOpen(dialog)) {
-					if (dto && dto.openerId) {
-						openerId = dto.openerId;
+					if (dialog && !instance.isOpen(dialog)) {
+						if (effectiveDto.openerId) {
+							openerId = effectiveDto.openerId;
+						} else {
+							openerId = document.activeElement ? document.activeElement.id : null;
+						}
+						if (!effectiveDto.title) {
+							effectiveDto.title = defaultTitle;
+						}
+						reinitializeDialog(dialog, effectiveDto);
+						// show the dialog
+						shed.show(dialog);
+						initDialogPosition(dialog, dto);  // deliberately didn't use effectiveDto here to preserve behavior
+						return true;
 					}
-					else {
-						openerId = document.activeElement ? document.activeElement.id : null;
-					}
-					reinitializeDialog(dialog, dto);
-					// show the dialog
-					shed.show(dialog);
-					initDialogPosition(dialog, dto);
-					return true;
-				}
-				return false;
+					return false;
+				});
 			}
 
 			/**
@@ -214,8 +209,7 @@ define(["wc/dom/event",
 				if (isModal) {
 					dialog.setAttribute("role", "alertdialog");
 					modalShim.setModal(dialog);
-				}
-				else {
+				} else {
 					dialog.removeAttribute("role");
 				}
 			}
@@ -234,17 +228,17 @@ define(["wc/dom/event",
 				var title, isModal;
 
 				instance.unsetAllDimensions(dialog);
-				dialog.className = (obj && obj.className) ? obj.className : "";
-				instance.resetContent(false, (obj ? obj.id : ""));
+				dialog.className = (obj.className || "");
+				instance.resetContent(false, (obj.id  || ""));
 				// set the dialog title
 				if ((title = TITLE_WD.findDescendant(dialog))) {
 					title.innerHTML = ""; // ??? This _cannot_ really still be needed?
-					title.innerHTML = (obj && obj.title) ? obj.title : i18n.get("dialog_noTitle");
+					title.innerHTML = obj.title;
 				}
 				subscriber.close = obj.onclose;
 				initDialogControls(dialog, obj);
 				initDialogDimensions(dialog, obj);
-				isModal = (obj && typeof obj.modal !== "undefined") ? obj.modal : true;
+				isModal = (typeof obj.modal !== "undefined") ? obj.modal : true;
 				setModality(dialog, isModal);
 			}
 
@@ -264,8 +258,7 @@ define(["wc/dom/event",
 						draggable.makeDraggable(control, DIALOG_ID);
 						resizeable.setMaxBar(control);
 						resizeable.makeAnimatable(dialog);
-					}
-					else {
+					} else {
 						resizeable.clearAnimatable(dialog);
 						draggable.clearDraggable(control);
 						resizeable.clearMaxBar(control);
@@ -287,14 +280,12 @@ define(["wc/dom/event",
 				try {
 					if (canMoveResize()) {
 						resizeable.resetSize(dialog);
-					}
-					else {
+					} else {
 						resizeable.disableAnimation(dialog);
 						animationsDisabled = true;
 						resizeable.clearSize(dialog, true);
 					}
-				}
-				finally {
+				} finally {
 					if (animationsDisabled) {
 						resizeable.restoreAnimation(dialog);
 					}
@@ -363,24 +354,21 @@ define(["wc/dom/event",
 			}
 
 			function getResizeConfig(width, height) {
-				var globalConf = wcconfig.get("wc/ui/dialogFrame"),
+				var globalConf = wcconfig.get("wc/ui/dialogFrame", {}),
 					offset = INITIAL_TOP_PROPORTION;
 
-				if (globalConf && globalConf.offset) {
+				if (globalConf.offset) {
 					if (isNaN(globalConf.offset)) {
 						console.log("Offset must be a number, what are you playing at?");
-					}
-					else if (globalConf.offset <= 0) {
+					} else if (globalConf.offset <= 0) {
 						console.log("Offset must be greater than zero otherwise dialogs will be above the top of the screen.");
-					}
-					else if (globalConf.offset >= 1) {
+					} else if (globalConf.offset >= 1) {
 						console.log("Offset must be less than one otherwise dialogs will be below the bottom of the screen.");
-					}
-					else {
+					} else {
 						offset = globalConf.offset;
 					}
 				}
-				return {width: width, height: height, topOffsetPC: offset};
+				return { width: width, height: height, topOffsetPC: offset };
 			}
 
 			/**
@@ -403,15 +391,13 @@ define(["wc/dom/event",
 								resizeable.disableAnimation(dialog);
 								disabledAnimations = true;
 								positionable.setBySize(dialog, configObj);
-							}
-							else {
+							} else {
 								positionable.storePosBySize(dialog, configObj);
 								positionable.clear(dialog);
 							}
 						}
 					}
-				}
-				finally {
+				} finally {
 					if (disabledAnimations) {
 						resizeable.restoreAnimation(dialog);
 					}
@@ -426,53 +412,58 @@ define(["wc/dom/event",
 			 * @returns {Promise} resolved with {Element} dialog The dialog element.
 			 */
 			function buildDialog(formId) {
-				return loader.load(TEMPLATE_NAME, true, true).then(function (template) {
-					/*
-					 * sprintf replacements
-					 * 1: maximise button title dialog_maxRestore
-					 * 2: close button title dialog_close
-					 * 3: content loading message loading
-					 */
-					var compiledTemplate = handlebars.compile(template),
-						form,
-						dialog,
-						dialogHeader,
-						resizeHandle,
-						headerTitle,
-						resizeHandleTitle,
-						dialogProps = {
-							heading: {
-								maxRestore: i18n.get("dialog_maxRestore"),
-								close: i18n.get("dialog_close")
+				return new Promise(function(win, lose) {
+					i18n.translate(["dialog_maxRestore", "dialog_close", "loading", "dialog_move", "dialog_resize"]).then(function(translations) {
+						var done = function () {
+								var dialog,
+									dialogHeader,
+									resizeHandle,
+									headerTitle,
+									resizeHandleTitle;
+								if ((dialog = instance.getDialog())) {
+									event.add(dialog, event.TYPE.keydown, keydownEvent);
+									if ((dialogHeader = HEADER_WD.findDescendant(dialog, true)) && (headerTitle = translations[3])) {
+										dialogHeader.title = headerTitle;
+									}
+
+									if (RESIZE_WD && (resizeHandle = RESIZE_WD.findDescendant(dialog)) && (resizeHandleTitle = translations[4])) {
+										resizeHandle.title = resizeHandleTitle;
+									}
+									win(dialog);
+								} else {
+									lose(null);
+								}
 							},
-							message: {
-								loading: i18n.get("loading")
-							}
-						},
-						dialogHTML = compiledTemplate(dialogProps);
+							form, dialogProps = {
+								heading: {
+									maxRestore: translations[0],
+									close: translations[1]
+								},
+								message: {
+									loading: translations[2]
+								}
+							};
 
-					if (formId && (form = document.getElementById(formId)) && !FORM.isOneOfMe(form)) {
-						form = FORM.findAncestor(form);
-					}
-
-					// fallback: will only work if there is only one form in a screen
-					if (!form) {
-						form = FORM.findDescendant(document.body);
-					}
-
-					form.insertAdjacentHTML("beforeEnd", dialogHTML);
-
-					if ((dialog = instance.getDialog())) {
-						event.add(dialog, event.TYPE.keydown, keydownEvent);
-						if ((dialogHeader = HEADER_WD.findDescendant(dialog, true)) && (headerTitle = i18n.get("dialog_move"))) {
-							dialogHeader.title = headerTitle;
+						if (formId) {
+							form = document.getElementById(formId);
+						}
+						form = getForm(form);
+						if (!form) {
+							console.error("Cannot find form for dialog frame");
+							lose(null);
+							return null;
 						}
 
-						if (RESIZE_WD && (resizeHandle = RESIZE_WD.findDescendant(dialog)) && (resizeHandleTitle = i18n.get("dialog_resize"))) {
-							resizeHandle.title = resizeHandleTitle;
-						}
-					}
-					return dialog;
+						template.process({
+							source: "dialog.xml",
+							loadSource: true,
+							target: form,
+							context: dialogProps,
+							position: "beforeEnd",
+							callback: done,
+							errback: lose
+						});
+					});
 				});
 			}
 
@@ -493,8 +484,7 @@ define(["wc/dom/event",
 					if (docFragment.querySelector("#" + DIALOG_ID)) {
 						removeShim = true;
 					}
-				}
-				else if (docFragment.getElementById && docFragment.getElementById(DIALOG_ID)) {
+				} else if (docFragment.getElementById && docFragment.getElementById(DIALOG_ID)) {
 					removeShim = true;
 				}
 				if (removeShim && (dialog = instance.getDialog()) && instance.isOpen(dialog)) {
@@ -548,8 +538,7 @@ define(["wc/dom/event",
 					if (repainter) {
 						repainter.checkRepaint(element);
 					}
-				}
-				finally {
+				} finally {
 					if (!animate) {
 						resizeable.restoreAnimation(element);
 					}
@@ -583,7 +572,7 @@ define(["wc/dom/event",
 			 * Close a dialog frame.
 			 * @function module:wc/ui/dialogFrame.close
 			 * @public
-			 * @return {boolean} true if there is a dialog to hide.
+			 * @returns {boolean} true if there is a dialog to hide.
 			 */
 			this.close = function () {
 				var dialog = this.getDialog();
@@ -607,7 +596,7 @@ define(["wc/dom/event",
 				try {
 					if (element && element.id === DIALOG_ID) {
 						clearOpener = true;
-						modalShim.clearModal(element);
+						modalShim.clearModal();
 						// remove maximise from dialog so that the next dialog does not open maximised
 						/*
 						 * NOTE: this could be moved to wc/ui/resizeable.js which owns the max button. However, the
@@ -628,14 +617,12 @@ define(["wc/dom/event",
 								callback = subscriber.close;
 								subscriber.close = null;
 								callback();
-							}
-							catch (ex) {
+							} catch (ex) {
 								console.warn(ex);
 							}
 						}
 					}
-				}
-				finally {
+				} finally {
 					if (clearOpener) {
 						openerId = null;
 					}
@@ -798,7 +785,6 @@ define(["wc/dom/event",
 				processResponse.subscribe(ajaxSubscriber, true);
 				shed.subscribe(shed.actions.SHOW, shedShowSubscriber);
 				shed.subscribe(shed.actions.HIDE, shedHideSubscriber);
-				loader.preload(TEMPLATE_NAME);
 			};
 
 			/**
@@ -815,7 +801,7 @@ define(["wc/dom/event",
 			 * Get a dialog if one exists.
 			 * @function  module:wc/ui/dialogFrame.getDialog
 			 * @public
-			 * @returns {?Element} The dialog.
+			 * @returns {Element} The dialog.
 			 */
 			this.getDialog = function () {
 				return document.getElementById(DIALOG_ID);
@@ -826,7 +812,7 @@ define(["wc/dom/event",
 			 *
 			 * @function module:wc/ui/dialogFrame.getContent
 			 * @public
-			 * @returns {?Element} The content wrapper if present.
+			 * @returns {Element} The content wrapper if present.
 			 */
 			this.getContent = function () {
 				var dialog = this.getDialog();
@@ -854,7 +840,9 @@ define(["wc/dom/event",
 
 					if (!keepContent) {
 						content.innerHTML = ""; // Do we really still need this IE 6 fix?
-						content.innerHTML = i18n.get("loading");
+						i18n.translate("loading").then(function(loadingText) {
+							content.innerHTML = loadingText;
+						});
 					}
 				}
 			};
@@ -890,11 +878,9 @@ define(["wc/dom/event",
 		 * @requires module:wc/dom/event
 		 * @requires module:wc/dom/focus
 		 * @requires module:wc/dom/initialise
-		 * @requires module:wc/dom/tag
 		 * @requires module:wc/dom/uid
 		 * @requires module:wc/dom/Widget
 		 * @requires module:wc/i18n/i18n
-		 * @requires module:wc/loader/resource
 		 * @requires module:wc/ui/ajax/processResponse
 		 * @requires module:wc/ui/modalShim
 		 * @requires module:wc/timers
@@ -903,8 +889,9 @@ define(["wc/dom/event",
 		 * @requires module:wc/ui/positionable
 		 * @requires module:wc/ui/draggable
 		 * @requires module:wc/dom/role
-		 * @requires external:handlebars
+		 * @requires module:wc/template
 		 * @requires module:wc/ui/viewportUtils
+		 * @requires module:wc/ui/getForm
 		 */
 		var instance = new DialogFrame(),
 			repainter;
@@ -927,15 +914,12 @@ define(["wc/dom/event",
 		 * @property {String} openerId The ID of the control which is opening the dialog.
 		 * @property {int} [width] The dialog width in px.
 		 * @property {int} [height] The dialog height in px.
-		 * @property {int} [initWidth] The dialog width in px as set by the Java. This is used if the theme allows resizing but prevents a dialog
-		 *   being made smaller than its intial size. This property is not in the registration object passed in to the module.
-		 * @property {int} [initHeight] The dialog height in px as set by the Java. This is used if the theme allows resizing but prevents a dialog
-		 *   being made smaller than its intial size. This property is not in the registration object passed in to the module.
 		 * @property {Boolean} [resizeable] Is the dialog resizeable?
 		 * @property {Boolean} [modal] Is the dialog modal?
 		 * @property {String} [title] The WDialog title. If not set a default title is used.
 		 * @property {Boolean} [open] If true then the dialog is to be open on page load. This is passed in as part ofthe registration object but is
 		 *   not stored in the registry.
+		 * @property {Function} onclose Called when the dialog is closed.
 		 *
 		 * @typedef {Object} module:wc/ui/dialogFrame~config An object which allows override of aspects of the dialogFrame
 		 * @property {String} [vpUtil="isPhonelike"] A name of a public member of {@link module:wc/ui/viewportUtils. This should only be set if a Sass

@@ -81,29 +81,17 @@ public class WDialogExample_Test extends WComponentExamplesTestCase {
 		// Display the modal dialog
 		driver.findElement(byWComponent(testButton)).click();
 
-// TODO Wait for client side validation to be worked out
-//        // Click search without entering mandatory fields - should give a validation error
-//        driver.findElement(byWComponentPath("WDialogExample$SelectPersonPanel$SearchPanel/WButton")).click();
-//
-//        Assert.assertTrue("Should have a validation error", driver.getPageSource().contains("Please enter First name"));
-		// Enter search info & submit
 		driver.findWTextField(byWComponentPath("WDialogExample$SelectPersonPanel/WTextField[0]")).
 				sendKeys("First");
 		driver.findWTextField(byWComponentPath("WDialogExample$SelectPersonPanel/WTextField[1]")).
 				sendKeys("Last");
-		driver.findElement(byWComponentPath("WDialogExample$SelectPersonPanel/WButton[2]")).click();
+		driver.findElement(byWComponentPath("WDialogExample$SelectPersonPanel/WButton[1]")).click();
 
-// TODO Wait for client side validation to be worked out
-//        // Try to select nothing
-//        driver.findElement(byWComponentPath("WDialogExample$SelectPersonPanel/WButton[1]")).click();
-//
-//        Assert.assertTrue("Should have a validation error", driver.getPageSource().contains("Please select a name from the list"));
-		// Select first result
 		driver.findElement(byWComponentPath("WDialogExample$SelectPersonPanel/WRadioButtonSelect",
 				"Last, First")).click();
 		driver.findElement(byWComponentPath("WDialogExample$SelectPersonPanel/WButton[1]")).click();
 
-		String message = driver.findElement(byWComponentPath("WMessageBox")).getText();
+		String message = driver.findElementImmediate(byWComponentPath("WMessageBox")).getText();
 		Assert.assertTrue("Incorrect message text", message.contains("Selected: Last, First"));
 	}
 

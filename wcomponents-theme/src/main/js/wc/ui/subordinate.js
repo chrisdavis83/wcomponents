@@ -22,16 +22,16 @@
  * @todo Check source order.
  */
 define(["wc/dom/tag",
-		"wc/dom/attribute",
-		"wc/date/interchange",
-		"wc/dom/getFilteredGroup",
-		"wc/dom/initialise",
-		"wc/ui/SubordinateAction",
-		"wc/array/unique",
-		"wc/dom/getAncestorOrSelf",
-		"wc/dom/shed",
-		"wc/timers",
-		"wc/array/toArray"],
+	"wc/dom/attribute",
+	"wc/date/interchange",
+	"wc/dom/getFilteredGroup",
+	"wc/dom/initialise",
+	"wc/ui/SubordinateAction",
+	"wc/array/unique",
+	"wc/dom/getAncestorOrSelf",
+	"wc/dom/shed",
+	"wc/timers",
+	"wc/array/toArray"],
 	/** @param tag wc/dom/tag @param attribute wc/dom/attribute @param interchange wc/date/interchange @param getFilteredGroup wc/dom/getFilteredGroup @param initialise wc/dom/initialise @param Action wc/ui/SubordinateAction @param unique wc/array/unique @param getAncestorOrSelf wc/dom/getAncestorOrSelf @param shed wc/dom/shed @param timers wc/timers @param toArray wc/array/toArray @ignore */
 	function(tag, attribute, interchange, getFilteredGroup, initialise, Action, unique, getAncestorOrSelf, shed, timers, toArray) {
 		"use strict";
@@ -60,7 +60,7 @@ define(["wc/dom/tag",
 			 * @function
 			 * @private
 			 * @param {module:wc/ui/SubordinateAction~ActionDTO[]} actions The actions for this subordinate control.
-			 * @returns {?"wc/ui/SubordinateAction"[]} The initialised actions as an array. Null if no actions. An
+			 * @returns {"wc/ui/SubordinateAction"[]} The initialised actions as an array. Null if no actions. An
 			 *    empty array if actions is an empty array or consists only on unparseable action objects.
 			 */
 			function initializeActions(actions) {
@@ -74,12 +74,10 @@ define(["wc/dom/tag",
 						try {
 							if ((action = new Action(actions[i]))) {
 								result[result.length] = action;
-							}
-							else {
+							} else {
 								console.warn("Could not parse", actions[i]);
 							}
-						}
-						catch (ex) {
+						} catch (ex) {
 							console.warn(ex, actions[i]);
 						}
 					}
@@ -103,8 +101,7 @@ define(["wc/dom/tag",
 					result = ruleIds.map(function(ruleId) {
 						return ruleStore[ruleId];
 					});
-				}
-				else if (checkAncestors && (element = element.parentNode)) {
+				} else if (checkAncestors && (element = element.parentNode)) {
 					result = getControlledRules(element, checkAncestors);
 				}
 				return result;
@@ -131,8 +128,7 @@ define(["wc/dom/tag",
 							for (j = 0, jLen = actions.length; j < jLen; j++) {
 								try {
 									actions[j].execute();
-								}
-								catch (ex) {
+								} catch (ex) {
 									console.error(ex + " executing subordinate action for rule " + rule.id);
 								}
 							}
@@ -149,17 +145,16 @@ define(["wc/dom/tag",
 			 * @function
 			 * @private
 			 * @param {String} identifier The element id or name. Note that only input fields can legally have a name.
-			 * @returns {?Element} The first element with the name identifier or the element with the id identifier.
+			 * @returns {Element} The first element with the name identifier or the element with the id identifier.
 			 *   Tests name first since a grouped component (such as a WRadioButtonSelect) will have the name on each
 			 *   option (radio button) AND the id on the wrapper (fieldset) and in this class we are interested in the
 			 *   controls not the wrappers.
 			 */
 			function getElement(identifier) {
 				var result = document.getElementsByName(identifier);
-				if (result.length && result[0].tagName === tag.INPUT) {// gebn always returns a nodelist even if nothing found
+				if (result.length && (result[0].tagName === tag.INPUT || result[0].tagName === tag.SELECT || result[0].tagName === tag.TEXTAREA || result[0].tagName === tag.BUTTON)) {// gebn always returns a nodelist even if nothing found
 					result = result[0];
-				}
-				else {
+				} else {
 					result = document.getElementById(identifier);
 				}
 				return result;
@@ -233,13 +228,11 @@ define(["wc/dom/tag",
 								doEqualityTest(element, testValue, testType.negate, selectedItems);
 							}
 						}
-					}
-					else {
+					} else {
 						// we are not dealing with a selectable group , just test element
 						result = testElementValue(element, testValue, operator);
 					}
-				}
-				else if (!element) {
+				} else if (!element) {
 					console.warn("Could not find element ", id);
 				}
 				return result;
@@ -271,8 +264,7 @@ define(["wc/dom/tag",
 					if (isEmpty(testValue) || testValue === "false") {  // we know element is not selected
 						result = !negate;
 					}
-				}
-				else if (testValue === "true" || testValue === "false") {
+				} else if (testValue === "true" || testValue === "false") {
 					if ((shed.isSelected(element) + "") === testValue) {
 						result = !negate;
 					}
@@ -313,7 +305,7 @@ define(["wc/dom/tag",
 			 * @function
 			 * @private
 			 * @param {Element} element An element which might belong to or define a selectable group.
-			 * @returns {?Element[]} An array (not a NodeList) of selected options in this group OR null if this element
+			 * @returns {Element[]} An array (not a NodeList) of selected options in this group OR null if this element
 			 * is not any part of any kind of selection mechanism (for example a text input would return null, while an
 			 * unchecked checkbox would return an empty array).
 			 */
@@ -331,17 +323,14 @@ define(["wc/dom/tag",
 					if (multiSelectPair && multiSelectPair.isOneOfMe(element)) {
 						result = multiSelectPair.getValue(element);
 						result = toArray(result);
-					}
-					else if ((group = gfg(element, gfgConf)) && (group.filtered.length || group.unfiltered.length)) {
+					} else if ((group = gfg(element, gfgConf)) && (group.filtered.length || group.unfiltered.length)) {
 						result = group.filtered;
-					}
-					else if (shed.isSelectable(element)) {
+					} else if (shed.isSelectable(element)) {
 						// we are dealing with a something that is not an intrinsic part of a selectable group
 						// but it might still be a standalone selection mechanism and for subordinate that is
 						// good enough
 						result = shed.isSelected(element) ? [element] : group.filtered;
-					}
-					else {
+					} else {
 						result = null;  // flag that this element simply has nothing to do with selection of any type
 					}
 				}
@@ -440,7 +429,7 @@ define(["wc/dom/tag",
 			 * @private
 			 * @param {String} val The value to convert.
 			 * @param {String} type The required type.
-			 * @returns {?*} The correct value of the correct type (based on the "type" arg). If the value is SOMETHING
+			 * @returns {*} The correct value of the correct type (based on the "type" arg). If the value is SOMETHING
 			 * (not an empty-ish string) but that something is not correctly formatted for the "type" then we return
 			 * null which essentially means "invalid" and no comparisons can be done.
 			 */
@@ -448,14 +437,11 @@ define(["wc/dom/tag",
 				var result;
 				if (type === "rx") {
 					result = parseRegex(val);
-				}
-				else if (type === "date") {
+				} else if (type === "date") {
 					result = getDateCompareValue(val);
-				}
-				else if (type === "number") {
+				} else if (type === "number") {
 					result = getNumberCompareValue(val);
-				}
-				else {
+				} else {
 					result = val;
 				}
 				return result;
@@ -470,8 +456,7 @@ define(["wc/dom/tag",
 				var result;
 				if (val === "" || interchange.isComplete(val)) {
 					result = val;
-				}
-				else {
+				} else {
 					console.warn("Date is not complete", val);
 					result = null;
 				}
@@ -491,8 +476,7 @@ define(["wc/dom/tag",
 						console.warn("Can not parse to a number", val);
 						result = null;
 					}
-				}
-				else {
+				} else {
 					result = val;
 				}
 				return result;
@@ -505,7 +489,7 @@ define(["wc/dom/tag",
 			 * @param {Element} element An element which has some logical value which we want to get.
 			 * @param {String} [type] The type for the element we are dealing with, i.e. "number" or "date". If not
 			 *    provided we will try a few things then give up.
-			 * @returns {?*} The correct value of the correct type (based on the "type" arg). If the value is SOMETHING
+			 * @returns {*} The correct value of the correct type (based on the "type" arg). If the value is SOMETHING
 			 *   (not an empty-ish string) but that something is not correctly formatted for the "type" then we return
 			 *   null which essentially means "invalid" and no comparisons can be done.
 			 */
@@ -545,11 +529,9 @@ define(["wc/dom/tag",
 				var result;
 				if ((dateField && dateField.isOneOfMe(element))) {
 					result = "date";
-				}
-				else if (numberField && numberField.isOneOfMe(element)) {
+				} else if (numberField && numberField.isOneOfMe(element)) {
 					result = "number";
-				}
-				else {
+				} else {
 					result = "string";
 				}
 				return result;
@@ -560,7 +542,7 @@ define(["wc/dom/tag",
 			 * @function
 			 * @private
 			 * @param {String} re The regular expression sent from the server
-			 * @returns {?RegExp} An instance of RegExp ready for your pattern matching pleasure. Will return null if the
+			 * @returns {RegExp} An instance of RegExp ready for your pattern matching pleasure. Will return null if the
 			 *    regex was empty (valid but stupid) or could not be parsed (invalid or really stupid).
 			 */
 			function parseRegex(re) {
@@ -571,13 +553,11 @@ define(["wc/dom/tag",
 						try {
 							if (re.indexOf("(?i)") === 0) {
 								result = new RegExp(re.substring(4), "i");
-							}
-							else {
+							} else {
 								result = new RegExp(re);
 							}
 							regexCache[re] = result;
-						}
-						catch (ex) {
+						} catch (ex) {
 							console.error("Error parsing regexp", re, ex);
 						}
 					}
@@ -605,8 +585,7 @@ define(["wc/dom/tag",
 							changeInited = true;
 							if (event.canCapture) {
 								event.add(element, event.TYPE.change, changeEvent, null, null, true);
-							}
-							else {
+							} else {
 								event.add(element, event.TYPE.focusin, focusEvent);
 							}
 						}
@@ -704,8 +683,7 @@ define(["wc/dom/tag",
 					getRule = function(id) {
 						if (elementToRuleMap[id]) {
 							elementToRuleMap[id][elementToRuleMap[id].length] = ruleId;
-						}
-						else {
+						} else {
 							elementToRuleMap[id] = [ruleId];
 						}
 					};

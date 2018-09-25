@@ -48,6 +48,8 @@ public class TextAreaExample_Test extends WComponentExamplesTestCase {
 		Assert.assertFalse("Fifth TextArea should be disabled",
 				driver.findWTextArea(byWComponentPath("WTextArea[4]")).isEnabled());
 
+		driver.findWTextArea(byWComponentPath("WTextArea[5]")).clearContent();
+		driver.findWTextArea(byWComponentPath("WTextArea[8]")).sendKeys("ABC");
 		driver.findElement(byWComponentPath("WButton[1]")).click();
 
 		Assert.assertTrue("Fifth TextArea should be enabled",

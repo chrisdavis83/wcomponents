@@ -1,24 +1,9 @@
-/**
- * <p>Provides functionality to undertake client validation of check boxes.</p>
- * <p><strong>NOTE:</strong> this is for individual WCheckBoxes marked 'required'; check boxes in a WCheckBoxSelect are
- * never individually marked required.</p>
- *
- * @module wc/ui/validation/checkBox
- * @requires module:wc/wc/dom/initialise
- * @requires module:wc/wc/dom/Widget
- * @requires module:wc/wc/dom/shed
- * @requires module:wc/ui/validation/required
- * @requires module:wc/ui/validation/validationManager
- * @requires module:wc/wc/ui/getFirstLabelForElement
- */
 define(["wc/dom/initialise",
-		"wc/dom/Widget",
-		"wc/dom/shed",
-		"wc/ui/validation/required",
-		"wc/ui/validation/validationManager",
-		"wc/ui/getFirstLabelForElement"],
-	/** @param initialise wc/dom/initialise @param Widget wc/dom/Widget @param shed wc/dom/shed @param required wc/ui/validation/required @param validationManager wc/ui/validation/validationManager @param getFirstLabelForElement wc/ui/getFirstLabelForElement @ignore */
-	function(initialise, Widget, shed, required, validationManager, getFirstLabelForElement) {
+	"wc/dom/Widget",
+	"wc/dom/shed",
+	"wc/ui/validation/required",
+	"wc/ui/validation/validationManager"],
+	function(initialise, Widget, shed, required, validationManager) {
 		"use strict";
 		/**
 		 * @constructor
@@ -27,19 +12,6 @@ define(["wc/dom/initialise",
 		 */
 		function ValidationCheckBox() {
 			var REQUIRED = new Widget("input", "", {"type": "checkbox", "required": null});
-
-			/**
-			 * Subscriber to {@link module:wc/wc/dom/shed} select so that when a mandatory check box is selected we can set
-			 * it to valid if it was previously marked invalid.
-			 * @function
-			 * @private
-			 * @param {Element} element The DOM element being selected.
-			 */
-			function shedSubscriber(element) {
-				if (element && Widget.isOneOfMe(element, REQUIRED) && validationManager.isInvalid(element)) {
-					validationManager.setOK(element);
-				}
-			}
 
 			/**
 			 * Validate mandatory check boxes using the {@link ./required} module. This is a subscriber
@@ -51,11 +23,30 @@ define(["wc/dom/initialise",
 			 */
 			function validate(container) {
 				var obj = {container: container,
-							widget: REQUIRED,
-							attachTo: getFirstLabelForElement
-						};
+					widget: REQUIRED
+				};
 				return required.complexValidationHelper(obj);
 			}
+
+			/**
+			 * Subscriber to {@link module:wc/wc/dom/shed} select/deselect to manage validity and feedback.
+			 * @function
+			 * @private
+			 * @param {Element} element The DOM element being selected.
+			 * @param {String} action The shed action.
+			 */
+			function shedSubscriber(element, action) {
+				if (element && REQUIRED.isOneOfMe(element)) {
+					if (action === shed.actions.SELECT) {
+						if (validationManager.isInvalid(element)) {
+							validationManager.setOK(element);
+						}
+					} else if (validationManager.isValidateOnChange()) {
+						validate(element);
+					}
+				}
+			}
+
 
 			/**
 			 * Initialise function to set up check boxes for validation.
@@ -64,11 +55,24 @@ define(["wc/dom/initialise",
 			 */
 			this.initialise = function() {
 				shed.subscribe(shed.actions.SELECT, shedSubscriber);
+				shed.subscribe(shed.actions.DESELECT, shedSubscriber);
 				validationManager.subscribe(validate);
 			};
 		}
 
-		var /** @alias module:wc/ui/validation/checkBox */ instance = new ValidationCheckBox();
+		/**
+		 * Provides functionality to undertake client validation of check boxes.
+		 *
+		 * **NOTE:** this is for individual WCheckBoxes marked 'required'; check boxes in a WCheckBoxSelect are never individually marked required.
+		 *
+		 * @module
+		 * @requires wc/wc/dom/initialise
+		 * @requires wc/wc/dom/Widget
+		 * @requires wc/wc/dom/shed
+		 * @requires wc/ui/validation/required
+		 * @requires wc/ui/validation/validationManager
+		 */
+		var instance = new ValidationCheckBox();
 		initialise.register(instance);
 		return instance;
 	});

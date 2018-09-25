@@ -72,8 +72,7 @@ define(["wc/dom/attribute", "wc/dom/uid", "wc/dom/classList", "wc/dom/event", "w
 				shed.hide(result, true);
 				if (b.firstChild) {
 					b.insertBefore(result, b.firstChild);
-				}
-				else {
+				} else {
 					b.appendChild(result);
 				}
 				return result;
@@ -89,8 +88,7 @@ define(["wc/dom/attribute", "wc/dom/uid", "wc/dom/classList", "wc/dom/event", "w
 				if (!(add && attribute.get(element, HAS_EVENTS))) {
 					if (add) {
 						attribute.set(element, HAS_EVENTS, true);
-					}
-					else {
+					} else {
 						attribute.remove(element, HAS_EVENTS);
 					}
 					event[action](element, event.TYPE.keydown, keyEvent, false);
@@ -99,13 +97,11 @@ define(["wc/dom/attribute", "wc/dom/uid", "wc/dom/classList", "wc/dom/event", "w
 						if (add) {
 							event[action](element, event.TYPE.focus, focusEvent, null, null, true);
 							event[action](document.body, event.TYPE.touchstart, touchstartEvent, null, null, true);
-						}
-						else {
+						} else {
 							event[action](element, event.TYPE.focus, focusEvent, true);
 							event[action](document.body, event.TYPE.touchstart, touchstartEvent, true);
 						}
-					}
-					else {
+					} else {
 						event[action](element, event.TYPE.focusin, focusEvent);
 					}
 				}
@@ -160,10 +156,9 @@ define(["wc/dom/attribute", "wc/dom/uid", "wc/dom/classList", "wc/dom/event", "w
 							}
 						}
 						shed.hide(shimElement, true);
-						notify = true;
 					}
-				}
-				finally {
+					notify = true;
+				} finally {
 					activeElement = null;
 					accessKeyMap = {};
 					if (notify && observer) {
@@ -184,7 +179,7 @@ define(["wc/dom/attribute", "wc/dom/uid", "wc/dom/classList", "wc/dom/event", "w
 			 * @public
 			 * @param {Function} subscriber the function to subscribe
 			 * @param {boolean} onshow if true notify when the modalShim is shown, otherwise notify when the shim is removed
-			 * @returns {?Function} the subscribed function
+			 * @returns {Function} the subscribed function
 			 */
 			this.subscribe = function(subscriber, onshow) {
 				var group = null;
@@ -204,7 +199,7 @@ define(["wc/dom/attribute", "wc/dom/uid", "wc/dom/classList", "wc/dom/event", "w
 			 * @param {Function} subscriber the function to unsubscribe
 			 * @param {boolean} onshow if true unsubscribe from the group notified when the modalShim is shown. The unsubscribe will only succeed if
 			 * the group is the same as when the subscriber was subscribed.
-			 * @returns {?Function} the unsubscribed function
+			 * @returns {Function} the unsubscribed function
 			 */
 			this.unsubscribe = function(subscriber, onshow) {
 				var group;

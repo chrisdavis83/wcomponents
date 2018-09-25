@@ -1,0 +1,43 @@
+// #############################################################################
+// BORDER
+// #############################################################################
+
+// Set simple border styles. Using $width = 0 will unset a border.
+// @param {String} $pos [all] The border to set. one of 'all' or a border
+//     fragment 'top', 'right', 'bottom' or 'left'.
+//     When set to 'all' a complete border is set, otherwise only the element
+//     edge specified by this param.
+// @param {border-style} $style [$wc-border-style] The style of the border.
+//     Ignored if $width is .
+// @param {dimension} $width [$wc-border-width] The width of the border. If 0
+//     then the border will be unset and its style set to none.
+
+@mixin border($pos: all, $style: $wc-border-style, $width: $wc-border-width, $color: $wc-border-color) {
+  @if $pos == all {
+    @if $width == 0 {
+      border: 0;
+    } @else {
+      @if $style != -1 {
+        border-style: $style;
+      }
+      @if $width != -1 {
+        border-width: $width;
+      }
+      @if $color != -1 {
+        border-color: $color;
+      }
+    }
+  } @else if $width == 0 {
+    border-#{$pos}: 0;
+  } @else {
+    @if $style != -1 {
+      border-#{$pos}-style: $style;
+    }
+    @if $width != -1 {
+      border-#{$pos}-width: $width;
+    }
+    @if $color != -1 {
+      border-#{$pos}-color: $color;
+    }
+  }
+}

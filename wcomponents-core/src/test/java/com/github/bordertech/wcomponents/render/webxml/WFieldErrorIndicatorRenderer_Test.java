@@ -1,6 +1,7 @@
 package com.github.bordertech.wcomponents.render.webxml;
 
 import com.github.bordertech.wcomponents.WContainer;
+import com.github.bordertech.wcomponents.WPanel;
 import com.github.bordertech.wcomponents.WTextField;
 import com.github.bordertech.wcomponents.validation.Diagnostic;
 import com.github.bordertech.wcomponents.validation.DiagnosticImpl;
@@ -8,8 +9,8 @@ import com.github.bordertech.wcomponents.validation.WFieldErrorIndicator;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import junit.framework.Assert;
 import org.custommonkey.xmlunit.exceptions.XpathException;
+import org.junit.Assert;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
@@ -27,23 +28,21 @@ public class WFieldErrorIndicatorRenderer_Test extends AbstractWebXmlRendererTes
 	@Test
 	public void testRendererCorrectlyConfigured() {
 		WFieldErrorIndicator indicator = new WFieldErrorIndicator(new WTextField());
-		Assert.assertTrue("Incorrect renderer supplied",
-				getWebXmlRenderer(indicator) instanceof WFieldErrorIndicatorRenderer);
+		Assert.assertTrue("Incorrect renderer supplied", getWebXmlRenderer(indicator) instanceof WFieldErrorIndicatorRenderer);
 	}
 
 	@Test
 	public void testDoPaint() throws IOException, SAXException, XpathException {
 		WContainer root = new WContainer();
-		WTextField text = new WTextField();
-		WFieldErrorIndicator indicator = new WFieldErrorIndicator(text);
-
+		WPanel target = new WPanel();
+		WFieldErrorIndicator indicator = new WFieldErrorIndicator(target);
+		root.add(target);
 		root.add(indicator);
-		root.add(text);
 
 		// Simulate Error Message
 		setActiveContext(createUIContext());
 		List<Diagnostic> diags = new ArrayList<>();
-		diags.add(new DiagnosticImpl(Diagnostic.ERROR, text, "Test Error"));
+		diags.add(new DiagnosticImpl(Diagnostic.ERROR, target, "Test Error"));
 		root.showErrorIndicators(diags);
 
 		// Validate Schema
@@ -51,7 +50,7 @@ public class WFieldErrorIndicatorRenderer_Test extends AbstractWebXmlRendererTes
 		// Check Attributes
 		assertXpathEvaluatesTo(indicator.getId(), "//ui:fieldindicator/@id", root);
 		assertXpathEvaluatesTo("error", "//ui:fieldindicator/@type", root);
-		assertXpathEvaluatesTo(text.getId(), "//ui:fieldindicator/@for", root);
+		assertXpathEvaluatesTo(target.getId(), "//ui:fieldindicator/@for", root);
 		// Check Message
 		assertXpathEvaluatesTo("Test Error", "//ui:fieldindicator/ui:message", root);
 	}
@@ -59,16 +58,13 @@ public class WFieldErrorIndicatorRenderer_Test extends AbstractWebXmlRendererTes
 	@Test
 	public void testXssEscaping() throws IOException, SAXException, XpathException {
 		WContainer root = new WContainer();
-		WTextField text = new WTextField();
-		WFieldErrorIndicator indicator = new WFieldErrorIndicator(text);
-
+		WPanel target = new WPanel();
+		WFieldErrorIndicator indicator = new WFieldErrorIndicator(target);
 		root.add(indicator);
-		root.add(text);
-
+		root.add(target);
 		List<Diagnostic> diags = new ArrayList<>();
-		diags.add(new DiagnosticImpl(Diagnostic.ERROR, text, getMaliciousContent()));
+		diags.add(new DiagnosticImpl(Diagnostic.ERROR, target, getMaliciousContent()));
 		root.showErrorIndicators(diags);
-
 		assertSafeContent(root);
 	}
 }

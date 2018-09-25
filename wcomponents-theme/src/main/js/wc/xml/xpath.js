@@ -31,7 +31,7 @@ define(["wc/array/toArray"], /** @param toArray wc/array/toArray @ignore */ func
 		*    var doc = xhr.responseXML;
 		* // 'doc' now contains an MSXML document in IE10's Standards and Quirks document modes
 		 </code></pre>
-		 * @see {@link http://blogs.msdn.com/b/ie/archive/2012/07/19/xmlhttprequest-responsexml-in-ie10-release-preview.aspx}
+		 * @see http://blogs.msdn.com/b/ie/archive/2012/07/19/xmlhttprequest-responsexml-in-ie10-release-preview.aspx
 		 *
 		 * @function
 		 * @private
@@ -54,8 +54,7 @@ define(["wc/array/toArray"], /** @param toArray wc/array/toArray @ignore */ func
 						doc.setProperty("SelectionNamespaces", ns);
 					}
 				}
-			}
-			else {  // exceptions will probably be thrown by the caller because of this
+			} else {  // exceptions will probably be thrown by the caller because of this
 				console.error("Not an MSXML document, can't do xpath");  // should we throw an exception?
 			}
 		}
@@ -78,8 +77,7 @@ define(["wc/array/toArray"], /** @param toArray wc/array/toArray @ignore */ func
 				if (element.ownerDocument) {
 					doc = element.ownerDocument;
 					context = relative ? element : doc;
-				}
-				else if (element.nodeType === window.Node.DOCUMENT_NODE) {
+				} else if (element.nodeType === window.Node.DOCUMENT_NODE) {
 					doc = context = element;
 				}
 				if (doc.evaluate) {
@@ -87,8 +85,7 @@ define(["wc/array/toArray"], /** @param toArray wc/array/toArray @ignore */ func
 					if (singleNode) {
 						match = doc.evaluate(xpath, context, nsResolver, window.XPathResult.FIRST_ORDERED_NODE_TYPE, null);
 						result = match.singleNodeValue;
-					}
-					else {
+					} else {
 						match = doc.evaluate(xpath, context, nsResolver, window.XPathResult.ANY_TYPE, null);
 						arr = [];
 						result = match.iterateNext();
@@ -98,21 +95,18 @@ define(["wc/array/toArray"], /** @param toArray wc/array/toArray @ignore */ func
 						}
 						result = arr;
 					}
-				}
-				else {  // internet explorer
+				} else {  // internet explorer
 					try {
 						ieNamespaceResolver(doc);
 						if (singleNode) {
 							result = context.selectSingleNode(xpath);
-						}
-						else {
+						} else {
 							result = context.selectNodes(xpath);
 							if (result) {
 								result = toArray(result);
 							}
 						}
-					}
-					catch (e) {
+					} catch (e) {
 						console.log(e.message);
 						result = null;
 					}

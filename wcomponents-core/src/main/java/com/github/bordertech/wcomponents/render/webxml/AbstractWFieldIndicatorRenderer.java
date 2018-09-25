@@ -1,5 +1,7 @@
 package com.github.bordertech.wcomponents.render.webxml;
 
+import com.github.bordertech.wcomponents.Diagnosable;
+import com.github.bordertech.wcomponents.Input;
 import com.github.bordertech.wcomponents.Renderer;
 import com.github.bordertech.wcomponents.WComponent;
 import com.github.bordertech.wcomponents.XmlStringBuilder;
@@ -28,6 +30,18 @@ abstract class AbstractWFieldIndicatorRenderer extends AbstractWebXmlRenderer {
 		AbstractWFieldIndicator fieldIndicator = (AbstractWFieldIndicator) component;
 		XmlStringBuilder xml = renderContext.getWriter();
 
+		WComponent validationTarget = fieldIndicator.getTargetComponent();
+
+		// no need to render an indicator for nothing.
+		// Diagnosables takes care of thieir own  messaging.
+		if (validationTarget == null || (validationTarget instanceof Diagnosable && !(validationTarget instanceof Input))) {
+			return;
+		}
+
+		if (validationTarget instanceof Input && !((Input) validationTarget).isReadOnly()) {
+			return;
+		}
+
 		List<Diagnostic> diags = fieldIndicator.getDiagnostics();
 
 		if (diags != null && !diags.isEmpty()) {
@@ -49,9 +63,8 @@ abstract class AbstractWFieldIndicatorRenderer extends AbstractWebXmlRenderer {
 					break;
 
 				default:
-					throw new SystemException(
-							"Cannot paint field indicator due to an invalid field indicator type: " + fieldIndicator.
-							getFieldIndicatorType());
+					throw new SystemException("Cannot paint field indicator due to an invalid field indicator type: "
+							+ fieldIndicator.getFieldIndicatorType());
 			}
 
 			xml.appendAttribute("for", fieldIndicator.getRelatedFieldId());

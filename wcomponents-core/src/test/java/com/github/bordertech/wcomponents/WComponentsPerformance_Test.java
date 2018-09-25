@@ -26,7 +26,6 @@ import org.junit.experimental.categories.Category;
  * @since 1.0.0
  */
 @Category(PerformanceTests.class)
-// TODO: Parameterise the test so that we can test for "n" components.
 public class WComponentsPerformance_Test extends AbstractWComponentTestCase {
 
 	/**
@@ -56,7 +55,7 @@ public class WComponentsPerformance_Test extends AbstractWComponentTestCase {
 	/**
 	 * Basic sanity-test to ensure that the basic implementation is performing all the processing that it should.
 	 *
-	 * @throws java.lang.Exception
+	 * @throws java.lang.Exception an exception
 	 */
 	@Test
 	public void testOtherImplementationCorrectness() throws Exception {

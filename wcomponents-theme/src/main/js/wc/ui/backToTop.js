@@ -1,25 +1,4 @@
-/**
- * Provides functionality to provide a back to top link which is scroll and viewport size aware. Not functional in IE
- * below 10.
- *
- * @typedef {Object} module:wc/ui/backToTop.config() Optional module configuration.
- * @property {?int} scroll The number of pixels of scroll required before the back to top link is displayed. Undefined
- * or zero results in the link displaying after 1 viewport of scroll.
- * @default 0
- *
- * @module
- * @requires module:wc/i18n/i18n
- * @requires module:wc/dom/event
- * @requires module:wc/dom/focus
- * @requires module:wc/dom/initialise
- * @requires module:wc/dom/getViewportSize
- * @requires module:wc/dom/shed
- * @requires module:wc/dom/Widget
- * @requires module:wc/has
- * @requires module:wc/config
- */
 define(["wc/i18n/i18n", "wc/dom/event", "wc/dom/focus", "wc/dom/initialise", "wc/dom/getViewportSize", "wc/dom/shed", "wc/dom/Widget", "wc/has", "wc/config"],
-	/** @param i18n wc/i18n/i18n @param event wc/dom/event @param focus wc/dom/focus @param initialise wc/dom/initialise @param getViewportSize wc/dom/getViewportSize @param shed wc/dom/shed @param Widget wc/dom/Widget @param has wc/has @param wcconfig wc/config @ignore */
 	function(i18n, event, focus, initialise, getViewportSize, shed, Widget, has, wcconfig) {
 		"use strict";
 
@@ -60,16 +39,12 @@ define(["wc/i18n/i18n", "wc/dom/event", "wc/dom/focus", "wc/dom/initialise", "wc
 				 * @type Boolean
 				 * @private
 				 */
-				isEnabled = true;
-
-			initialise();
-
-			function initialise() {
-				var config = wcconfig.get("wc/ui/backToTop");
-				if (config) {
-					MIN_SCROLL_BEFORE_SHOW = config.scroll || MIN_SCROLL_BEFORE_SHOW;
-				}
-			}
+				isEnabled = true,
+				/**
+				 * Custon configuration
+				 * @type Object
+				 */
+				config;
 
 			/**
 			 * Click event handler to scroll the page when the back to top link is clicked.
@@ -88,8 +63,7 @@ define(["wc/i18n/i18n", "wc/dom/event", "wc/dom/focus", "wc/dom/initialise", "wc
 					$event.preventDefault();
 					if (docEl.scrollIntoView) {
 						docEl.scrollIntoView();
-					}
-					else {
+					} else {
 						docEl.scrollTop = 0;
 					}
 					focus.focusFirstTabstop(docEl);  // this would actually be sufficient if we could guarantee a focusable element.
@@ -108,14 +82,13 @@ define(["wc/i18n/i18n", "wc/dom/event", "wc/dom/focus", "wc/dom/initialise", "wc
 				if (show) {
 					if (!link) {
 						link = document.createElement("a");
-						link.className = "wc_btt wc-icon";
+						link.className = "wc_btt";
 						link.href = "#";
-						link.innerHTML = "<span>" + i18n.get("back_to_top") + "</span>";
+						link.innerHTML = "<i class='fa fa-chevron-circle-up fa-5x'></i><span class='wc-off'>" + i18n.get("back_to_top") + "</span>";
 						document.body.appendChild(link);
 					}
 					shed.show(link, true);  // nothing needs to be notified that the back to top link is showing
-				}
-				else if (link) {
+				} else if (link) {
 					shed.hide(link, true);  // nothing needs to be notified that the back to top link is hidden
 				}
 			}
@@ -145,8 +118,7 @@ define(["wc/i18n/i18n", "wc/dom/event", "wc/dom/focus", "wc/dom/initialise", "wc
 
 				if (MIN_SCROLL_BEFORE_SHOW > 0) {
 					min = MIN_SCROLL_BEFORE_SHOW;
-				}
-				else {
+				} else {
 					min = getViewportSize().height;
 				}
 				toggle((scroll > min));
@@ -172,9 +144,7 @@ define(["wc/i18n/i18n", "wc/dom/event", "wc/dom/focus", "wc/dom/initialise", "wc
 			 * @public
 			 */
 			this.initialise = function(/* element */) {
-				if (isEnabled) {
-					addRemoveEventHandlers(true);
-				}
+				this.setEnabled(true);
 			};
 
 			/**
@@ -184,13 +154,40 @@ define(["wc/i18n/i18n", "wc/dom/event", "wc/dom/focus", "wc/dom/initialise", "wc
 			 */
 			this.setEnabled = function(enable) {
 				isEnabled = !!enable;
-				if (!enable) {
-					toggle(false);  // just in case the link is showing at the time it is turned off.
-					addRemoveEventHandlers(enable);
+				if (enable) {
+					config = config || wcconfig.get("wc/ui/backToTop", {
+						scroll: MIN_SCROLL_BEFORE_SHOW
+					});
+					MIN_SCROLL_BEFORE_SHOW = config.scroll;
+				} else {
+					toggle(false); // just in case the link is showing at the time it is turned off.
 				}
+				addRemoveEventHandlers(enable);
 			};
 		}
-		var /** @alias module:wc/ui/backToTop */ instance = new BackToTop();
+
+		/**
+		 * Provides functionality to provide a back to top link which is scroll and viewport size aware.
+		 *
+		 * @module
+		 * @requires module:wc/i18n/i18n
+		 * @requires module:wc/dom/event
+		 * @requires module:wc/dom/focus
+		 * @requires module:wc/dom/initialise
+		 * @requires module:wc/dom/getViewportSize
+		 * @requires module:wc/dom/shed
+		 * @requires module:wc/dom/Widget
+		 * @requires module:wc/has
+		 * @requires module:wc/config
+		 */
+
+		var instance = new BackToTop();
 		initialise.register(instance);
 		return instance;
+
+		/**
+		 * @typedef {Object} module:wc/ui/backToTop~config Configuration for the back to top link.
+		 * @property {int} scroll The number of pixels to scroll before showing the back to top link. If 0 then the scroll to top link will appear
+		 *  when more than one viewport height of scroll has occurred.
+		 */
 	});

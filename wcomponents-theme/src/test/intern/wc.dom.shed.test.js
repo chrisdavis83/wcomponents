@@ -17,8 +17,7 @@ define(["intern!object", "intern/chai!assert", "./resources/test.utils!"],
 				controller[action](element);
 				assert.strictEqual(elementIGot, element);
 				assert.strictEqual(actionIGot, action);
-			}
-			finally {
+			} finally {
 				controller._unsubscribe(action, subscriber);
 			}
 		}
@@ -354,8 +353,7 @@ define(["intern!object", "intern/chai!assert", "./resources/test.utils!"],
 						i++;
 					}
 					assert.strictEqual(called, repeat);
-				}
-				finally {  // clean up subscribers
+				} finally {  // clean up subscribers
 					controller._unsubscribe(controller.actions.HIDE, subscriberHideRval);
 					controller._unsubscribe(controller.actions.SHOW, subscriberShowRval);
 				}
@@ -455,6 +453,9 @@ define(["intern!object", "intern/chai!assert", "./resources/test.utils!"],
 			testIsMandatoryTrue: function() {
 				assert.isTrue(controller.isMandatory(document.getElementById("inp8")));
 			},
+			testIsMandatoryTrueNotXML: function() {
+				assert.isTrue(controller.isMandatory(document.getElementById("inp9")));
+			},
 			testMandatory: function() {
 				var element = document.getElementById("inp7");
 				assert.isFalse(controller.isMandatory(element));
@@ -539,8 +540,7 @@ define(["intern!object", "intern/chai!assert", "./resources/test.utils!"],
 				try {
 					parent.style.display = "none";
 					assert.isTrue(controller.isHidden(test));
-				}
-				finally {
+				} finally {
 					parent.style.display = "";
 				}
 			},
@@ -550,8 +550,7 @@ define(["intern!object", "intern/chai!assert", "./resources/test.utils!"],
 				try {
 					parent.style.visibility = "hidden";
 					assert.isTrue(controller.isHidden(test));
-				}
-				finally {
+				} finally {
 					parent.style.visibility = "";
 				}
 			},
@@ -561,8 +560,7 @@ define(["intern!object", "intern/chai!assert", "./resources/test.utils!"],
 				try {
 					parent.setAttribute("hidden", "hidden");
 					assert.isTrue(controller.isHidden(test));
-				}
-				finally {
+				} finally {
 					parent.removeAttribute("hidden");
 				}
 			},
@@ -572,8 +570,7 @@ define(["intern!object", "intern/chai!assert", "./resources/test.utils!"],
 				try {
 					controller.hide(parent);
 					assert.isTrue(controller.isHidden(test));
-				}
-				finally {
+				} finally {
 					controller.show(parent);
 				}
 			},

@@ -1,6 +1,7 @@
 package com.github.bordertech.wcomponents.examples.subordinate;
 
 import com.github.bordertech.wcomponents.Margin;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WCheckBox;
 import com.github.bordertech.wcomponents.WContainer;
 import com.github.bordertech.wcomponents.WField;
@@ -31,7 +32,7 @@ public class SubordinateControlSimpleExample extends WContainer {
 		WFieldSet fieldset = new WFieldSet("select any that apply");
 		add(fieldset);
 		fieldset.add(layout);
-		fieldset.setMargin(new Margin(0, 0, 12, 0));
+		fieldset.setMargin(new Margin(null, null, Size.LARGE, null));
 
 		WCheckBox extraInfoRequired = new WCheckBox();
 		layout.addField("Extra information required", extraInfoRequired);

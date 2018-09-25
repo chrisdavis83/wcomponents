@@ -4,7 +4,7 @@ import com.github.bordertech.wcomponents.AjaxHelper;
 import com.github.bordertech.wcomponents.UIContext;
 import com.github.bordertech.wcomponents.WApplication;
 import com.github.bordertech.wcomponents.WButton;
-import com.github.bordertech.wcomponents.WLabel;
+import com.github.bordertech.wcomponents.WTextField;
 import com.github.bordertech.wcomponents.render.webxml.AbstractWebXmlRendererTestCase;
 import com.github.bordertech.wcomponents.servlet.WServlet;
 import com.github.bordertech.wcomponents.servlet.WebXmlRenderContext;
@@ -41,7 +41,6 @@ public class AjaxDebugStructureInterceptor_Test extends AbstractWebXmlRendererTe
 	@Test
 	public void testInterceptor() throws XpathException, SAXException, IOException {
 		Config.getInstance().setProperty(ConfigurationProperties.DEVELOPER_DEBUG_ENABLED, "true");
-		Config.getInstance().setProperty(ConfigurationProperties.DEVELOPER_DEBUG_CLIENT_SIDE, "true");
 		Config.notifyListeners();
 
 		MyApp app = new MyApp();
@@ -54,8 +53,7 @@ public class AjaxDebugStructureInterceptor_Test extends AbstractWebXmlRendererTe
 		assertXpathEvaluatesTo(app.target.getClass().getName(), "//ui:debug/ui:debugInfo/@class",
 				xml);
 		assertXpathEvaluatesTo(app.target.getClass().getName(), "//ui:debug/ui:debugInfo/@type", xml);
-		assertXpathEvaluatesTo("true",
-				"//ui:debug/ui:debugInfo/ui:debugDetail[@key='defaultState']/@value", xml);
+		assertXpathEvaluatesTo("true", "//ui:debug/ui:debugInfo/ui:debugDetail[@key='defaultState']/@value", xml);
 	}
 
 	/**
@@ -83,7 +81,7 @@ public class AjaxDebugStructureInterceptor_Test extends AbstractWebXmlRendererTe
 
 		// Action phase
 		MockRequest request = new MockRequest();
-		AjaxHelper.registerComponent(app.target.getId(), request, app.trigger.getId());
+		AjaxHelper.registerComponent(app.target.getId(), app.trigger.getId());
 		request.setParameter(WServlet.AJAX_TRIGGER_PARAM_NAME, app.trigger.getId());
 
 		ajaxSetupInterceptor.serviceRequest(request);
@@ -110,12 +108,14 @@ public class AjaxDebugStructureInterceptor_Test extends AbstractWebXmlRendererTe
 		/**
 		 * An AJAX target.
 		 */
-		private final WLabel target = new WLabel("target");
+		private final WTextField target = new WTextField();
 
 		/**
 		 * Creates the test app.
 		 */
 		private MyApp() {
+			target.setText("target");
+			target.setReadOnly(true);
 			trigger.setAjaxTarget(target);
 			add(trigger);
 			add(target);

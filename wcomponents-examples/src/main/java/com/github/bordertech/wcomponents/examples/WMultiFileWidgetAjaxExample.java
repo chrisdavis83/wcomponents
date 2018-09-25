@@ -7,6 +7,7 @@ import com.github.bordertech.wcomponents.ImageResource;
 import com.github.bordertech.wcomponents.InternalResource;
 import com.github.bordertech.wcomponents.Margin;
 import com.github.bordertech.wcomponents.Request;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WAjaxControl;
 import com.github.bordertech.wcomponents.WButton;
 import com.github.bordertech.wcomponents.WCheckBox;
@@ -45,6 +46,7 @@ public class WMultiFileWidgetAjaxExample extends WContainer {
 	private final WNumberField maxfiles = new WNumberField();
 	private final WNumberField previewHeight = new WNumberField();
 	private final WCheckBox showThumnails = new WCheckBox();
+	private final WCheckBox renderInline = new WCheckBox();
 	private final WCheckBox mandatory = new WCheckBox();
 	private final WCheckBox readonly = new WCheckBox();
 	private final WCheckBox imageEditorShowOverlay = new WCheckBox();
@@ -62,7 +64,7 @@ public class WMultiFileWidgetAjaxExample extends WContainer {
 
 		WFieldLayout paramsLayout = new WFieldLayout();
 		paramsLayout.setLabelWidth(25);
-		paramsLayout.setMargin(new Margin(0, 0, 12, 0));
+		paramsLayout.setMargin(new Margin(null, null, Size.LARGE, null));
 		add(paramsLayout);
 		cols.setMinValue(0);
 		cols.setMaxValue(8);
@@ -88,10 +90,12 @@ public class WMultiFileWidgetAjaxExample extends WContainer {
 		imageEditorParmsLayout.addField("Height", editorHeight);
 		imageEditorFieldSet.add(imageEditorParmsLayout);
 		add(imageEditorFieldSet);
-		imageEditorFieldSet.setMargin(new Margin(0, 0, 30, 0));
+		imageEditorFieldSet.setMargin(new Margin(null, null, Size.XL, null));
 
 		showThumnails.setSelected(true);
-		paramsLayout.addField("show thumbnails", showThumnails);
+		paramsLayout.addField("Show thumbnails", showThumnails);
+
+		paramsLayout.addField("Render inline", renderInline);
 
 		paramsLayout.addField("Mandatory", mandatory);
 
@@ -129,6 +133,8 @@ public class WMultiFileWidgetAjaxExample extends WContainer {
 				} else {
 					setThumbnailSize(null);
 				}
+
+				// setMaxFileSize(1000000);
 			}
 		};
 		// widget.setColumns(2);
@@ -175,7 +181,6 @@ public class WMultiFileWidgetAjaxExample extends WContainer {
 		previewHeight.setActionOnChange(new Action() {
 			@Override
 			public void execute(final ActionEvent event) {
-				// TODO Auto-generated method stub
 				widget.clearThumbnails();
 			}
 		});
@@ -183,8 +188,14 @@ public class WMultiFileWidgetAjaxExample extends WContainer {
 		showThumnails.setActionOnChange(new Action() {
 			@Override
 			public void execute(final ActionEvent event) {
-				// TODO Auto-generated method stub
 				widget.setUseThumbnails(showThumnails.isSelected());
+			}
+		});
+
+		renderInline.setActionOnChange(new Action() {
+			@Override
+			public void execute(final ActionEvent event) {
+				editor.setRenderInline(renderInline.isSelected());
 			}
 		});
 
@@ -225,43 +236,43 @@ public class WMultiFileWidgetAjaxExample extends WContainer {
 
 		final WText hackFaceTracker = new WText();
 		hackFaceTracker.setEncodeText(false);
-		hackFaceTracker.setText("<script defer=\"defer\">(function() {\n" +
-"		require([\"wc/ui/facetracking\"], function(facetracking) {\n" +
-"			window.setTimeout(function() {			\n" +
-"			var container = document.getElementById(\"image_edit_parameters\"),\n" +
-"				interval = createRange(\"_interval\", \"Interval\"),\n" +
-"				minNeighbors = createRange(\"_minNeighbours\", \"Min Neighbours\"),\n" +
-"				confidence = createRange(\"_confidenceThreshold\", \"Confidence Threshold\", -10, 10, 0.1);\n" +
-"			if (container) {\n" +
-"				container.appendChild(interval);\n" +
-"				container.appendChild(minNeighbors);\n" +
-"				container.appendChild(confidence);\n" +
-"			}}, 1000);\n" +
-"			function createRange(prop, lbl, min, max, step) {\n" +
-"				var onChange = function(element) {\n" +
-"						if (element) {\n" +
-"							var val = element.value;\n" +
-"							facetracking[prop] = (val * 1);\n" +
-"							element.title = val;\n" +
-"						}\n" +
-"						label.textContent = lbl + \" (\" + facetracking[prop] + \")\";\n" +
-"					},\n" +
-"					result = document.createElement(\"div\"),\n" +
-"					label = result.appendChild(document.createElement(\"label\")),\n" +
-"					range = result.appendChild(document.createElement(\"input\"));\n" +
-"				range.setAttribute(\"type\", \"range\");\n" +
-"				range.setAttribute(\"min\", min || \"0\");\n" +
-"				range.setAttribute(\"max\", max || \"10\");\n" +
-"				range.setAttribute(\"step\", step || \"1\");\n" +
-"				range.setAttribute(\"value\", facetracking[prop]);\n" +
-"				range.addEventListener(\"change\", function($event) {\n" +
-"					onChange($event.target);\n" +
-"				}, false);\n" +
-"				onChange();\n" +
-"				return result;\n" +
-"			}\n" +
-"		});\n" +
-"	})();</script>");
+		hackFaceTracker.setText("<script defer=\"defer\">(function() {\n"
+				+ "		require([\"wc/ui/facetracking\"], function(facetracking) {\n"
+				+ "			window.setTimeout(function() {			\n"
+				+ "			var container = document.getElementById(\"image_edit_parameters\"),\n"
+				+ "				interval = createRange(\"_interval\", \"Interval\"),\n"
+				+ "				minNeighbors = createRange(\"_minNeighbours\", \"Min Neighbours\"),\n"
+				+ "				confidence = createRange(\"_confidenceThreshold\", \"Confidence Threshold\", -10, 10, 0.1);\n"
+				+ "			if (container) {\n"
+				+ "				container.appendChild(interval);\n"
+				+ "				container.appendChild(minNeighbors);\n"
+				+ "				container.appendChild(confidence);\n"
+				+ "			}}, 1000);\n"
+				+ "			function createRange(prop, lbl, min, max, step) {\n"
+				+ "				var onChange = function(element) {\n"
+				+ "						if (element) {\n"
+				+ "							var val = element.value;\n"
+				+ "							facetracking[prop] = (val * 1);\n"
+				+ "							element.title = val;\n"
+				+ "						}\n"
+				+ "						label.textContent = lbl + \" (\" + facetracking[prop] + \")\";\n"
+				+ "					},\n"
+				+ "					result = document.createElement(\"div\"),\n"
+				+ "					label = result.appendChild(document.createElement(\"label\")),\n"
+				+ "					range = result.appendChild(document.createElement(\"input\"));\n"
+				+ "				range.setAttribute(\"type\", \"range\");\n"
+				+ "				range.setAttribute(\"min\", min || \"0\");\n"
+				+ "				range.setAttribute(\"max\", max || \"10\");\n"
+				+ "				range.setAttribute(\"step\", step || \"1\");\n"
+				+ "				range.setAttribute(\"value\", facetracking[prop]);\n"
+				+ "				range.addEventListener(\"change\", function($event) {\n"
+				+ "					onChange($event.target);\n"
+				+ "				}, false);\n"
+				+ "				onChange();\n"
+				+ "				return result;\n"
+				+ "			}\n"
+				+ "		});\n"
+				+ "	})();</script>");
 
 		imageEditorIsFace.setActionOnChange(new Action() {
 			@Override
@@ -349,6 +360,7 @@ public class WMultiFileWidgetAjaxExample extends WContainer {
 		add(new WAjaxControl(cols, layout));
 		add(new WAjaxControl(previewHeight, widget));
 		add(new WAjaxControl(showThumnails, widget));
+		add(new WAjaxControl(renderInline, widget));
 		add(new WAjaxControl(mandatory, layout));
 		add(new WAjaxControl(readonly, layout));
 		add(new WAjaxControl(maxfiles, layout));

@@ -1,29 +1,9 @@
-/**
- * Provides ARIA based functionality for items in a tree (role='treeitem")
- *
- * **NOTE:**
- *
- * According to the WAI-ARIA implementation guide, tree items should select on navigate. Tree items in WComponents are a
- * type of WMenuItem and menu items are supposed to do stuff. For this reason we have decided to not try to make them
- * select on navigate. This will need to change.</p>
- *
- * @see {@link http://www.w3.org/TR/wai-aria-practices/#treeitem}
- * @module
- * @extends module:wc/dom/ariaAnalog
- *
- * @requires module:wc/dom/ariaAnalog
- * @requires module:wc/dom/initialise
- * @requires module:wc/dom/Widget
- * @requires module:wc/dom/isAcceptableTarget
- * @requires module:wc/dom/shed
- * @requires module:wc/dom/getFilteredGroup
- */
 define(["wc/dom/ariaAnalog",
-		"wc/dom/initialise",
-		"wc/dom/Widget",
-		"wc/dom/isAcceptableTarget",
-		"wc/dom/shed",
-		"wc/dom/getFilteredGroup"],
+	"wc/dom/initialise",
+	"wc/dom/Widget",
+	"wc/dom/isAcceptableTarget",
+	"wc/dom/shed",
+	"wc/dom/getFilteredGroup"],
 	/** @param ariaAnalog @param initialise @param Widget @param isAcceptableTarget @param shed @param getFilteredGroup @ignore */
 	function(ariaAnalog, initialise, Widget, isAcceptableTarget, shed, getFilteredGroup) {
 		"use strict";
@@ -174,8 +154,7 @@ define(["wc/dom/ariaAnalog",
 					try {
 						if (!(SHIFT || CTRL)) {
 							forceSingle = true;
-						}
-						else if (multiSelect === "true" && tree.isHTree(container)) {
+						} else if (multiSelect === "true" && tree.isHTree(container)) {
 							forceSingle = isFirstAtLevel(element);
 						}
 						if (forceSingle) {
@@ -183,8 +162,7 @@ define(["wc/dom/ariaAnalog",
 							this.exclusiveSelect = this.SELECT_MODE.SINGLE;
 						}
 						this.constructor.prototype.activate.call(this, element, SHIFT, CTRL);
-					}
-					finally {
+					} finally {
 						if (selectMode) {
 							this.exclusiveSelect = selectMode;
 							selectMode = null;
@@ -211,7 +189,28 @@ define(["wc/dom/ariaAnalog",
 			};
 		}
 
-		var /** @alias module:wc/ui/menu/treeItem */instance;
+		/**
+		 * Provides ARIA based functionality for items in a tree (role='treeitem")
+		 *
+		 * **NOTE:**
+		 *
+		 * According to the WAI-ARIA implementation guide, tree items should select on navigate. Tree items in WComponents are a
+		 * type of WMenuItem and menu items are supposed to do stuff. For this reason we have decided to not try to make them
+		 * select on navigate. This will need to change.
+		 *
+		 * @see http://www.w3.org/TR/wai-aria-practices/#treeitem
+		 *
+		 * @module
+		 * @extends module:wc/dom/ariaAnalog
+		 *
+		 * @requires module:wc/dom/ariaAnalog
+		 * @requires module:wc/dom/initialise
+		 * @requires module:wc/dom/Widget
+		 * @requires module:wc/dom/isAcceptableTarget
+		 * @requires module:wc/dom/shed
+		 * @requires module:wc/dom/getFilteredGroup
+		 */
+		var instance;
 
 		TreeItem.prototype = ariaAnalog;
 		instance = new TreeItem();

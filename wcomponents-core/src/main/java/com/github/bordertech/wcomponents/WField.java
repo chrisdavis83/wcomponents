@@ -25,13 +25,13 @@ public class WField extends AbstractContainer implements AjaxTarget, Subordinate
 	 */
 	private final WComponent field;
 	/**
-	 * The error indicator for the field.
-	 */
-	private final WFieldErrorIndicator errorIndicator;
-	/**
 	 * The warning indicator for the field.
 	 */
 	private final WFieldWarningIndicator warningIndicator;
+	/**
+	 * The error indicator for the field.
+	 */
+	private final WFieldErrorIndicator errorIndicator;
 
 	/**
 	 * Creates a WField with the specified label text and field.
@@ -78,14 +78,14 @@ public class WField extends AbstractContainer implements AjaxTarget, Subordinate
 
 		// If there is a label field, and it is not nested in another WField, then set the error indicators
 		if (labelField != null && WebUtilities.getAncestorOfClass(WField.class, labelField) == this) {
-			errorIndicator = new WFieldErrorIndicator(labelField);
-			add(errorIndicator, "errorIndicator");
 			warningIndicator = new WFieldWarningIndicator(labelField);
 			add(warningIndicator, "warningIndicator");
+			errorIndicator = new WFieldErrorIndicator(labelField);
+			add(errorIndicator, "errorIndicator");
 		} else {
-			errorIndicator = null;
 			warningIndicator = null;
-		}
+			errorIndicator = null;
+	}
 	}
 
 	/**
@@ -321,5 +321,6 @@ public class WField extends AbstractContainer implements AjaxTarget, Subordinate
 		 * Indicates the desired width of the input field, as a percentage of the available space.
 		 */
 		private int inputWidth;
+
 	}
 }

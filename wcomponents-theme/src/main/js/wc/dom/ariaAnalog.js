@@ -1,16 +1,17 @@
 define(["wc/has",
-		"wc/dom/clearSelection",
-		"wc/dom/event",
-		"wc/dom/group",
-		"wc/dom/shed",
-		"wc/dom/uid",
-		"wc/dom/Widget",
-		"wc/array/toArray",
-		"wc/dom/formUpdateManager",
-		"wc/dom/keyWalker",
-		"wc/dom/isEventInLabel",
-		"wc/dom/isAcceptableTarget"],
-	function(has, clearSelection, event, group, shed, uid, Widget, toArray, formUpdateManager, keyWalker, isEventInLabel, isAcceptableEventTarget) {
+	"wc/dom/attribute",
+	"wc/dom/clearSelection",
+	"wc/dom/event",
+	"wc/dom/group",
+	"wc/dom/shed",
+	"wc/dom/uid",
+	"wc/dom/Widget",
+	"wc/array/toArray",
+	"wc/dom/formUpdateManager",
+	"wc/dom/keyWalker",
+	"wc/dom/isEventInLabel",
+	"wc/dom/isAcceptableTarget"],
+	function(has, attribute, clearSelection, event, group, shed, uid, Widget, toArray, formUpdateManager, keyWalker, isEventInLabel, isAcceptableEventTarget) {
 		"use strict";
 
 		var ariaAnalog,
@@ -27,6 +28,48 @@ define(["wc/has",
 			getFilteredGroup = $getFilteredGroup;
 			focus = $focus;
 		});
+
+		/**
+		 * Helper for keydownEvent. Determine if the user has pressed an arrow key or similar.
+		 * @function
+		 * @private
+		 * @param {Number} keyCode The key pressed.
+		 * @returns {boolean} true if it's a direction key
+		 */
+		function isDirectionKey(keyCode) {
+			return (keyCode === KeyEvent.DOM_VK_HOME || keyCode === KeyEvent.DOM_VK_END ||
+					keyCode >= KeyEvent.DOM_VK_LEFT && keyCode <= KeyEvent.DOM_VK_DOWN);
+		}
+
+		/**
+		 * Helper for keydownEvent.
+		 * Calculates where to move based on the key pressed by the user.
+		 * @function
+		 * @private
+		 * @param {AriaAnalog} instance The AriaAnalog controller.
+		 * @param {Number} keyCode The key pressed.
+		 * @returns {instance.KEY_DIRECTION.NEXT|instance.KEY_DIRECTION.LAST|instance.KEY_DIRECTION.FIRST|instance.KEY_DIRECTION.PREVIOUS}
+		 */
+		function calcMoveTo(instance, keyCode) {
+			var moveTo;
+			switch (keyCode) {
+				case KeyEvent.DOM_VK_HOME:
+					moveTo = instance.KEY_DIRECTION.FIRST;
+					break;
+				case KeyEvent.DOM_VK_END:
+					moveTo = instance.KEY_DIRECTION.LAST;
+					break;
+				case KeyEvent.DOM_VK_LEFT:
+				case KeyEvent.DOM_VK_UP:
+					moveTo = instance.KEY_DIRECTION.PREVIOUS;
+					break;
+				case KeyEvent.DOM_VK_RIGHT:
+				case KeyEvent.DOM_VK_DOWN:
+					moveTo = instance.KEY_DIRECTION.NEXT;
+					break;
+			}
+			return moveTo;
+		}
 
 		/**
 		 * Deselect all elements in a group except any defined by the arg except.
@@ -55,12 +98,10 @@ define(["wc/has",
 						if (_container === group.getContainer(next, inst.CONTAINER)) {
 							shed.deselect(next, silent);
 						}
-					}
-					else {
+					} else {
 						shed.deselect(next, silent);
 					}
-				}
-				else {
+				} else {
 					doneException = true;
 				}
 			}
@@ -94,8 +135,7 @@ define(["wc/has",
 				handler;
 			if (methodName === "focusout") {
 				methodName = "blur";
-			}
-			else if (methodName === "focusin") {
+			} else if (methodName === "focusin") {
 				methodName = "focus";
 			}
 			handler = this[methodName + "Event"];
@@ -114,14 +154,13 @@ define(["wc/has",
 		 * @private
 		 * @param {Element} element The element in a group
 		 * @param {Object} analog An instance of a subclass of AriaAnalog.
-		 * @returns {?Element[]} The group of items in the element's ARIA analog group.
+		 * @returns {Element[]} The group of items in the element's ARIA analog group.
 		 */
 		function getGroup(element, analog) {
 			var result;
 			if (analog.CONTAINER) {
 				result = group.getGroup(element, analog.ITEM, analog.CONTAINER);
-			}
-			else {
+			} else {
 				result = group.get(element);
 			}
 			return result;
@@ -310,7 +349,7 @@ define(["wc/has",
 		 * @function
 		 * @public
 		 * @param {Element} element The group member we are using to derive the group container
-		 * @returns {?Element} The element which defines a group by containment (such as a fieldset).
+		 * @returns {Element} The element which defines a group by containment (such as a fieldset).
 		 */
 		AriaAnalog.prototype.getGroupContainer = function(element) {
 			return group.getContainer(element, this.CONTAINER);
@@ -331,8 +370,7 @@ define(["wc/has",
 			if (action === shed.actions.SELECT && this.ITEM.isOneOfMe(element)) {
 				if (this.exclusiveSelect === this.SELECT_MODE.SINGLE) {
 					deselectOthers = true;
-				}
-				else if (this.exclusiveSelect === this.SELECT_MODE.MIXED) {
+				} else if (this.exclusiveSelect === this.SELECT_MODE.MIXED) {
 					if ((container = this.getGroupContainer(element))) {
 						if (container.getAttribute("aria-multiselectable") !== TRUE) {
 							deselectOthers = true;
@@ -371,12 +409,10 @@ define(["wc/has",
 			if (event.canCapture) {
 				event.add(element, event.TYPE.focus, eventWrapper.bind(this), null, null, true);
 				event.add(element, event.TYPE.click, eventWrapper.bind(this), null, null, true);
-			}
-			else {
+			} else {
 				event.add(element, event.TYPE.focusin, eventWrapper.bind(this));
 				event.add(element, event.TYPE.click, eventWrapper.bind(this));
 			}
-			event.add(element, event.TYPE.keydown, eventWrapper.bind(this));
 			shed.subscribe(shed.actions.SELECT, this.shedObserver.bind(this));
 			shed.subscribe(shed.actions.DESELECT, this.shedObserver.bind(this));
 
@@ -409,6 +445,17 @@ define(["wc/has",
 			}
 		};
 
+
+		function bootstrap(element, instance) {
+			var container = instance.getGroupContainer(element) || element,
+				INIT_ATTRIB = "ariaAnalogKeydownInited";
+
+			if (!attribute.get(container, INIT_ATTRIB)) {
+				attribute.set(container, INIT_ATTRIB, true);
+				event.add(container, event.TYPE.keydown, eventWrapper.bind(instance));
+			}
+		}
+
 		/**
 		 * Focus event listener to manage tab index on simple linear groups. Note though that components which do their
 		 * own navigation are also responsible for maintaining their own tab indices.
@@ -418,9 +465,13 @@ define(["wc/has",
 		 */
 		AriaAnalog.prototype.focusEvent = function($event) {
 			var element = $event.target;
-			if (!$event.defaultPrevented && this.groupNavigation && this.ITEM.isOneOfMe(element) && !shed.isDisabled(element)) {
-				if (this.setFocusIndex && !(has("event-ontouchstart"))) {
-					this.setFocusIndex(element);
+
+			if (this.ITEM.isOneOfMe(element) && !shed.isDisabled(element)) {
+				bootstrap(element, this);
+				if (this.groupNavigation) {
+					if (this.setFocusIndex && !(has("event-ontouchstart"))) {
+						this.setFocusIndex(element);
+					}
 				}
 			}
 		};
@@ -447,70 +498,36 @@ define(["wc/has",
 		 * @param {Event} $event The keydown event.
 		 */
 		AriaAnalog.prototype.keydownEvent = function($event) {
-			var element, keyCode = $event.keyCode, target = $event.target, moveTo, preventDefaultAction = false;
-			if (!$event.defaultPrevented && !$event.altKey && (element = this.getActivableFromTarget(target))) {
-				if (this.groupNavigation && isDirectionKey(keyCode)) {
-					moveTo = calcMoveTo(this, keyCode);
-					if (moveTo && (target = this.navigate(element, moveTo))) {
-						if (this.selectOnNavigate(target) && !($event.ctrlKey || $event.metaKey)) {
-							this.activate(target, $event.shiftKey, ($event.ctrlKey || $event.metaKey));
-						}
-						preventDefaultAction = true;
+			var element, keyCode = $event.keyCode, target = $event.target, moveTo;
+
+			if ($event.defaultPrevented || $event.altKey) {
+				return;
+			}
+
+			element = this.getActivableFromTarget(target);
+			if (!element) {
+				return;
+			}
+
+			if (this.groupNavigation && isDirectionKey(keyCode)) {
+				moveTo = calcMoveTo(this, keyCode);
+				if (moveTo && (target = this.navigate(element, moveTo))) {
+					if (this.selectOnNavigate(target) && !($event.ctrlKey || $event.metaKey)) {
+						this.activate(target, $event.shiftKey, ($event.ctrlKey || $event.metaKey));
 					}
-				}
-				else if (keyCode === KeyEvent.DOM_VK_SPACE && !Widget.isOneOfMe(element, this.actionable)) {
-					if (isAcceptableEventTarget(element, target)) {
-						this.activate(element, $event.shiftKey, ($event.ctrlKey || $event.metaKey));
-						preventDefaultAction = true;  // preventDefault here otherwise you get a page scroll
-					}
-				}
-				if (preventDefaultAction) {
 					$event.preventDefault();
 				}
+				return;
+			}
+
+			if ((keyCode === KeyEvent.DOM_VK_SPACE || keyCode === KeyEvent.DOM_VK_RETURN) &&
+				!Widget.isOneOfMe(element, this.actionable) &&
+				isAcceptableEventTarget(element, target)) {
+
+				this.activate(element, $event.shiftKey, ($event.ctrlKey || $event.metaKey));
+				$event.preventDefault(); // preventDefault here otherwise you get a page scroll
 			}
 		};
-
-		/**
-		 * Helper for keydownEvent. Determine if the user has pressed an arrow key or similar.
-		 * @function
-		 * @private
-		 * @param {Number} keyCode The key pressed.
-		 * @returns {boolean} true if it's a direction key
-		 */
-		function isDirectionKey(keyCode) {
-			return (keyCode === KeyEvent.DOM_VK_HOME || keyCode === KeyEvent.DOM_VK_END ||
-					keyCode >= KeyEvent.DOM_VK_LEFT && keyCode <= KeyEvent.DOM_VK_DOWN);
-		}
-
-		/**
-		 * Helper for keydownEvent.
-		 * Calculates where to move based on the key pressed by the user.
-		 * @function
-		 * @private
-		 * @param {AriaAnalog} instance The AriaAnalog controller.
-		 * @param {Number} keyCode The key pressed.
-		 * @returns {instance.KEY_DIRECTION.NEXT|instance.KEY_DIRECTION.LAST|instance.KEY_DIRECTION.FIRST|instance.KEY_DIRECTION.PREVIOUS}
-		 */
-		function calcMoveTo(instance, keyCode) {
-			var moveTo;
-			switch (keyCode) {
-				case KeyEvent.DOM_VK_HOME:
-					moveTo = instance.KEY_DIRECTION.FIRST;
-					break;
-				case KeyEvent.DOM_VK_END:
-					moveTo = instance.KEY_DIRECTION.LAST;
-					break;
-				case KeyEvent.DOM_VK_LEFT:
-				case KeyEvent.DOM_VK_UP:
-					moveTo = instance.KEY_DIRECTION.PREVIOUS;
-					break;
-				case KeyEvent.DOM_VK_RIGHT:
-				case KeyEvent.DOM_VK_DOWN:
-					moveTo = instance.KEY_DIRECTION.NEXT;
-					break;
-			}
-			return moveTo;
-		}
 
 		/**
 		 * key navigation for simple linear groups.
@@ -521,7 +538,7 @@ define(["wc/has",
 		 * @param {number} direction -1 to previous in group, 1 to next in group NOTE: radio button groups allow native
 		 *    group cycling at the extremities so we allow that here too. Only useful if one of
 		 *    {@link module:wc/dom/ariaAnalog~AriaAnalog#KEY_DIRECTION}
-		 * @returns {?Element} The end point of the navigation. If start is part of a navigable group but there is
+		 * @returns {Element} The end point of the navigation. If start is part of a navigable group but there is
 		 *    nowhere to go then we may return the start element.
 		 */
 		AriaAnalog.prototype.navigate = function(start, direction) {
@@ -533,17 +550,16 @@ define(["wc/has",
 			if (_group && (_group = filterGroup(_group)) && _group.length > 1) {  // no point navigating if only 1 option
 				if (keyWalkerConfig) {
 					keyWalkerConfig["root"] = _group;
-				}
-				else {
+				} else {
 					keyWalkerConfig = {
 						root: _group,
 						filter: function(el) {
 							/* the group filter EXCLUDES elements return true*/
-							var result = NodeFilter.FILTER_ACCEPT;
+							var innerResult = NodeFilter.FILTER_ACCEPT;
 							if (shed.isDisabled(el) || shed.isHidden(el)) {
-								result = NodeFilter.FILTER_REJECT;
+								innerResult = NodeFilter.FILTER_REJECT;
 							}
-							return result;
+							return innerResult;
 						}
 					};
 				}
@@ -643,27 +659,23 @@ define(["wc/has",
 					selectMode = this.exclusiveSelect;
 					if (this.simpleSelection || SHIFT || CTRL) {
 						this.exclusiveSelect = this.SELECT_MODE.MULTIPLE;
-					}
-					else {
+					} else {
 						this.exclusiveSelect = this.SELECT_MODE.SINGLE;
 					}
 				}
 
 				if (this.exclusiveSelect === this.SELECT_MODE.SINGLE || this.exclusiveSelect === this.SELECT_MODE.MIXED) {
 					singleSelectActivateHelper(element, CTRL, this);
-				}
-				else if (SHIFT && container) {
+				} else if (SHIFT && container) {
 					setLastActivated = multiSelectWithShiftHelper(element, container, CTRL, this);
-				}
-				else {
+				} else {
 					shed.toggle(element, shed.actions.SELECT);
 				}
 
 				if (setLastActivated && this.lastActivated) {
 					this.setLastActivated(element, container);
 				}
-			}
-			finally {
+			} finally {
 				if (selectMode !== undefined) {
 					this.exclusiveSelect = selectMode;
 				}
@@ -696,8 +708,7 @@ define(["wc/has",
 			if (shed.isSelected(element)) {
 				selectedFilter = getFilteredGroup.FILTERS.selected;
 				groupAction = shed.deselect;
-			}
-			else {
+			} else {
 				selectedFilter = getFilteredGroup.FILTERS.deselected;
 				groupAction = shed.select;
 			}
@@ -714,8 +725,7 @@ define(["wc/has",
 						if (~filtered.indexOf(next)) {
 							groupAction(next);
 						}
-					}
-					else if (!CTRL && selectedFilter === getFilteredGroup.FILTERS.deselected && next !== lastActivated && shed.isSelected(next)) {
+					} else if (!CTRL && selectedFilter === getFilteredGroup.FILTERS.deselected && next !== lastActivated && shed.isSelected(next)) {
 						shed.deselect(next);
 					}
 				}
@@ -834,7 +844,7 @@ define(["wc/has",
 		 * @function
 		 * @public
 		 * @param {Element} target The element which was the target of an event.
-		 * @returns {?Element} The activable aria analog ancestor of target.
+		 * @returns {Element} The activable aria analog ancestor of target.
 		 */
 		AriaAnalog.prototype.getActivableFromTarget = function(target) {
 			var item;
@@ -851,6 +861,29 @@ define(["wc/has",
 				return item;
 			}
 			return null;
+		};
+
+		/**
+		 * Determine if an ARIA analog control is multi-selectable. This is a helper which is only really useful for those analogs which may
+		 * have a mixed mode such as list options and table rows.
+		 * @param {Element} [element] an element which is itself a WAI-ARIA analog component. That is, it will be something which for some sub-class
+		 * of this will return `true` from `this.ITEM.isOneOfMe(element)`. This arg is mandatory for mixed mode analogs, and this function is only
+		 * really useful for those analogs.
+		 * @returns {Boolean} `true` if the current analog is multi-selectable.
+		 * @throws {TypeError} if the selection mode is mixed and no element is provided as a reference.
+		 */
+		AriaAnalog.prototype.isMultiSelect = function(element) {
+			if (this.exclusiveSelect === this.SELECT_MODE.SINGLE) {
+				return false;
+			}
+			if (this.exclusiveSelect === this.SELECT_MODE.MULTIPLE) {
+				return true;
+			}
+			if (!element) {
+				throw new TypeError ("Cannot determine mixed selection nature without a sample element.");
+			}
+			var container = this.getGroupContainer(element);
+			return container ? (container.getAttribute("aria-multiselectable") === "true") : false;
 		};
 
 		ariaAnalog = new AriaAnalog();

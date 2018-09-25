@@ -1,23 +1,23 @@
 package com.github.bordertech.wcomponents.examples;
 
 import com.github.bordertech.wcomponents.test.selenium.MultiBrowserRunner;
-import com.github.bordertech.wcomponents.test.selenium.WComponentSeleniumTestCase;
+import com.github.bordertech.wcomponents.test.selenium.driver.SeleniumWComponentsWebDriver;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
 /**
  * Selenium unit tests for {@link WButtonExample}.
  *
  * @author Yiannis Paschalidis
+ * @author Mark Reeves
  * @since 1.0.0
  */
 @Category(SeleniumTests.class)
 @RunWith(MultiBrowserRunner.class)
-public class WButtonExample_Test extends WComponentExamplesTestCase{
+public class WButtonExample_Test extends WComponentExamplesTestCase {
 
 	/**
 	 * Creates a new WButtonExample_Test.
@@ -29,7 +29,7 @@ public class WButtonExample_Test extends WComponentExamplesTestCase{
 	@Test
 	public void testExample() {
 		// Launch the web browser to the LDE
-		WebDriver driver = getDriver();
+		SeleniumWComponentsWebDriver driver = getDriver();
 
 		driver.findElement(byWComponentPath("WButton[0]")).click();
 		assertHasMessage("Plain button should have been pressed", "Plain button pressed");
@@ -57,9 +57,8 @@ public class WButtonExample_Test extends WComponentExamplesTestCase{
 	 * @param message the message to search for.
 	 */
 	private void assertHasMessage(final String assertText, final String message) {
-		WebDriver driver = getDriver();
-		WebElement messageElement = driver.findElement(byWComponentPath("WMessageBox"));
-
+		SeleniumWComponentsWebDriver driver = getDriver();
+		WebElement messageElement = driver.findElementImmediate(byWComponentPath("WMessageBox"));
 		Assert.assertTrue(assertText, messageElement.getText().contains(message));
 	}
 }

@@ -4,18 +4,707 @@
 
 ### API Changes
 
+### Enhancements
+
 ### Bug Fixes
 
-* Fixed imageeditor issues:
-  * #1048 overlay confuses image validation.
-  * #1062 disallow save when no image has been captured from video stream.
-  * #1073 fix phantom vertical scroll in some browsers (QC154504).
+## Release 1.5.14
 
 ### Enhancements
 
-## Release 1.3.3
+* Implement dependency vulnerability scan.
+* Update dependencies to remove vulnerabilities.
+
+### Bug Fixes
+
+* Fixed WFileWidget and WMultiFileWidget to accept filetypes of both MIME and extension type #1584
+* Fix issue rendering custom class names in WTree #1589.
+
+## Release 1.5.13
+
+### Bug Fixes
+
+* Fixed a bug which could cause some server validation messages to be deleted in JavaScript #1580
+* Fixed a minor strutural CSS error which resulted in an unwanted indent in horizontal bar-separated lists.
+
+## Release 1.5.12
+
+### Bug Fixes
+
+* Fixed duplicate component models being created unnecessarily #1014.
+* Added workaround for IE 11 focus flaw #1575.
+
+## Release 1.5.11
+
+### Enhancements
+
+* Restored ability to override XSLT in themes.
+
+## Release 1.5.10
+
+### Bug Fixes
+
+* Fixed XSLT error which caused WPartialDateField to lose its value on submit #1565.
+* Restored AjaxTarget interface on WDecoratedLabel which was removed in error in 1.5.8 #1562.
+
+## Release 1.5.9
+
+### Bug Fixes
+
+* Fixed a JavaScript error which would cause dialogs to fail to open if they were marked as open on page load #1559.
+* Fixed XSLT flaw which caused JavaScript Error if WDataTable has row selection and pagination #1556.
+
+## Release 1.5.8
+
+### Enhancements
+
+* Remove style CSS from default theme combo, ensure combo button is same height as combo text input #1552.
+
+### Bug Fixes
+
+* Restore tab cursor #1553.
+* Fixed missing WColumn alignment in themes #1551.
+
+## Release 1.5.7
+
+### Bug Fixes
+
+* Restored theme build-time concatenation of XSLT to work around an application container flaw #1547.
+
+## Release 1.5.6
+
+### Enhancements
+
+* Ensure the xml preamble and opening `xsl:stylesheet` tag is consistent in all XSLT files - help to reduce likelihood of namespace issues in transformed HTML.
+* Enforce Sass lint at theme build time. See wcomponents-theme/.sass-lint.yml for default rules.
+* Updated all internal uses of `org.apache.commons.lang.*` to use ``org.apache.commons.lang3.*` which is the direct dependency in WComponents. #1539
+
+### Bug Fixes
+
+* Updated WMenuGroup XSLT to prevent double separators #1544.
+* Update version of npm sass module to fix build failure on Windows #1541.
+* Fixed a flaw which would cause themes to fail to build if the inherit file had a terminating empty line. Part of #1492.
+
+    Requires themes which inherit from any theme other than wcomponents-default to replace the theme in `inherit.txt` with a Maven property in POM.xml of `theme.inherit`. May be a path to a ZIP or directory tree (relative and absolute paths are both acceptable).
+
+    ``` xml
+<properties>
+  <theme.inherit>/PATH/TO/the_parent_theme</theme.inherit>
+</properties>
+    ```
+
+    The previous method of trying to guess the parent theme from a name assuming a theme path is partially supported by using the previous `inherit.txt` value along with a second Maven property `theme.inheritance.dir`. This, it is plain, is a bit of a pointless waste of time since the path could be added directly to the `theme.inherit` property.
+
+    ``` xml
+<properties>
+  <theme.inherit>the_parent_theme</theme.inherit>
+  <theme.inheritance.dir>/some/path</theme.inheritance.dir>
+</properties>
+    ```
+
+## Release 1.5.5
+
+### Bug Fixes
+
+* Fixed an error which caused WSelectToggle to fail #1529.
+* Removed superfluous layout CSS from WFigure which could result in unexpected display in IE 11.
+* Partial (cosmetic) fix of a flaw which could result in visible suggestions for a combo if it was in read-only mode #1527.
+
+## Release 1.5.4
 
 ### API Changes
+
+* Added support for autocomplete to WDropdown, WEmailField, WNumberField, WPasswordField, WPhoneNumberField, WTextArea
+  and WTextField #1007.
+* Changed message property name
+  `public static final String DEFAULT_MULTI_FORM_COMPONENT_TIP = "bordertech.wcomponents.message.multiFormComponent.tip";`
+  to `public static final String DEFAULT_MULTIDROPDOWN_TIP = "bordertech.wcomponents.message.multiDropdown.tip";`
+  as the tip is not suitable for use with WMultiTextField #1508.
+* Added message property
+  `public static final String DEFAULT_MULTITEXTFIELD_TIP = "bordertech.wcomponents.message.multiTextField.tip";` with
+  default (en) value of "Enter a value" #1508.
+
+### Enhancements
+
+* Removed some style (rather than structure) CSS for mandatory indicators. Style should be the remit of themes.
+* Added JavaScript unit tests for missing modules.
+
+### Bug Fixes
+
+* Fixed XSLT error which resulted in WToggleButton not reporting its state #1525.
+* Fixed missing custom class on WDefinitionList #1519.
+* Fixed XSLT error causing WHeading content to include text equating to the value of its margin classes #1514.
+* Fixed potential flaw caused by application-level custom CSS source order #1516.
+* Fixed a flaw which caused selenium tests to fail if no class was defined in the URL #1510.
+* Fixed missing inner labels on WMultiDropdown and WMultiTextField #1508.
+* Fixed issue causing 'required' placeholders to be left when making a field optional #1506.
+* Fixed missing name attribute on WDateField #1507
+
+## Release 1.5.3
+
+### Enhancements
+
+* Improved handling of the publication of selected state changes of native radio buttons and check boxes.
+* Update package.json to latest working node module versions and removed tildes to prevent unwanted updates.
+* Added support for success and info level diagnostics/field indicators as part of #1496.
+* removed some Sass for inputs and buttons which attempted to provide style rather than structure.
+* provided config options to allow client validation on change/blue #1495.
+* Further build simplification required for move away from ANT/Maven #1318, #1492.
+* Simplified all XSLT and XSLT build as step towards #639 and #1492.
+* Added a default shim background #1486.
+* Removed duplicate focus code #1488.
+* Removed superfluous loading screen code #1487.
+* Removed unused code from `wc/ui/feedback` and `wc/dom/messageBox` #1489.
+* Moved font-awesome out of WComponents CSS and into a link element to improve efficiency and maintainability towards #639.
+* Fixed minor ANT build inconsistencies.
+* Prevent WTable pagination buttons from working when they are disabled or read-only #1490.
+* Updated .gitignore to exclude eclipse-like artefacts built during Maven lifecycle.
+
+### Bug Fixes
+
+* Allow JavaScript module config to keep existing config properties when calling `set` #1502.
+* Fixed inconsistency of rendering field indicators #1496.
+* Fixed icon element inconsistencies #1497.
+* Fixed a number of client validation issues #1495
+* Fixed timyMCE init routine #1485.
+
+## Release 1.5.2
+
+### Enhancements
+
+* Allow override of Sass compiler from Maven POM or Settings.
+* Removed unused Sass and JavaScript.
+* Enable use of a JavaScript Sass compiler ((sass)[https://www.npmjs.com/package/sass]) instead of Vaadin Sass Compiler.
+* Server-side validation of File(s) uploaded using WFileWidget and WMultiFileWidget #1079.
+
+### Bug Fixes
+
+* Fixed a Sass bug hidden by a flaw in the Vaadin Sass Compiler.
+* Change order of load of `wc/common` and `wc/loader/style` to enable themes to override the initial style loader config.
+* Fix an error in Sass for WFieldLayout which was masked by Vaadin Sass Compiler
+* Fix a potential negative zero error in Sass of WSection (responsive)
+
+## Release 1.5.1
+
+### API Changes
+
+* Changed WProgressBar API to better implement HTML spec:
+  - Deprecated WProgressBar members as follows:
+    - UnitType - not supported - `public void setUnitType(UnitType)` is now a no-op and `public WProgressBar.UnitType getUnitType()` will now always return `null`
+    - text - not required use toolTip instead - `public void setText(String)` is now a no-op and `public String getText()` will now always return `null`
+    - Constructors which reference UnitType
+  - Added constructors `public WProgressBar(ProgressBarType)` and `public WProgressBar(ProgressBarType, int)`
+  - Put type checks around constructors and setters so that `ProgressBarType` cannot be made `null` and `max` and `value` cannot be negative.
+
+### Enhancements
+
+* Changed the way themes are built to remove a vast amount of complexity and wasted styles. Improves maintainability and moves towards separation of style and structure in themes.
+* Updated renderer of WProgressBar to output HTML as part of #639.
+* Added JUnits for WProgressBar.
+* Updated renderers of WButton and WPrintButton (which has been un-deprecated) to output HTML as part of #639.
+
+### Bug Fixes
+
+* Fixed a XSLT issue which caused inconsistent placement of label hints #1476.
+* Fixed a Sass issue which could cause unexpected wrapping of content of read-only Inputs #1469.
+
+## Release 1.5.0
+
+### Enhancements
+
+* Enforce Java 1.8 as minimum compiler version and set source and target properties to 1.8 #1307.
+
+## Release 1.4.24
+
+### Enhancements
+
+* Updated WTree Sass to remove unnecessary left padding from default implementation #1461.
+* Removed some duplicate code from tabset Sass.
+* Fixed inconsistency in detecting a disabled link.
+
+### Bug Fixes
+
+* Fixed an error which could result in incorrect CSS overrides of WCheckBoxSelect and WRadioButtonSelect #1462.
+
+## Release 1.4.23
+
+### API Changes
+
+### Enhancements
+
+* ImageEdit press buttons now also respond to clicks.
+
+### Bug Fixes
+
+* Fixed a bug which could result in incorrect determination of selected items using module wc/dom/getFilteredGroup #943.
+* Updated defaultSubmit module to bring it into line with the HTML spec and fix an issue found in compliant browsers #1122.
+* Fixed action constraints not working across pages on a paginated table #1078
+* Fixed a flaw which resulted in WSkipLinks not being transformed #1420.
+* Fix date field causes AJAX loop if it is trigger and target #1455
+
+## Release 1.4.22
+
+### API Changes
+
+### Enhancements
+
+### Bug Fixes
+
+* Image editor accepts jpeg or jpg as a valid jpg filename extension #1443
+* Fixed several keyevent and combo JavaScript bugs #1430, #1442, #1444
+* fixed a Sass error which caused disabled icon buttons to have hover effects if invite is implemented.
+* Change the way table actions are registered to rectify #1433.
+
+## Release 1.4.21
+
+### Enhancements
+
+* Updated the theme axe-core dependency to the latest version (2.6.1) and re-written the `wc/debug/a11y` module to leverage the new API. The module is not included by default, even in debug mode.
+
+### Bug Fixes
+
+* Fixed a Sass error which could result in incorrect margins in some circumstances #1437
+
+## Release 1.4.20
+
+### API Changes
+
+### Enhancements
+
+* ImageEdit enhancements:
+ - Prevent loading of "large" images in the editor because this could cause the page to become unresponsive. Instead skip the edit phase and handle as normal.
+ - If an image is scaled to render in the editor this should be considered as a user change when determining whether or not to pass through the original image unchanged.
+ - If an image size exceeds validation constraints then attempt to remedy this automatically
+* Removed unnecessary wrapping elements from the inner options of WCheckBoxSelect and WRadioButtonSelect which will improve their accessibilty and responsiveness.
+* Fixed some long-standing issues in the XSLT by refactoring the readOnly helper thereby reducing its ridiculous complexity. It was useful when XSLT was going to the client but had become mere technical debt making the cinversion from XSLT to alternate rendering more complex.
+* Added a Sass var to allow configuration of the maximum number of supported columns within WCheckBoxSelect and WRadioButtonSelect when their Layout is COLUMN.
+
+### Bug Fixes
+
+* Fixed a Sass error which resulted in an unexpected number of sub-row depths in some WTables.
+* Fixed a flaw which caused some fieldsets to not have a correct legend child.
+
+## Release 1.4.19
+
+### API Changes
+
+### Enhancements
+* Client side: wc/dom/getLabelsForElement an enhancement to load elements defined by 'aria-labelledby' attribute #1401.
+* Improve UX of image editor validation #1431.
+
+### Bug Fixes
+
+* Fixed a Sass issue which could result in messages not wrapping within some components depending on Sass build order #1422.
+
+## Release 1.4.18
+
+### Bug Fixes
+* Work around IE11 bug which causes focus to be set to the body when a scrollbar is clicked (QC171025).
+  This caused combobox lists to be closed when trying to scroll with mouse.
+  Combobox lists now close when an interactive component is focused, instead of when ANYTHING else is focused.
+
+## Release 1.4.17
+
+### Bug Fixes
+* MustacheFactory cannot switch off caching which can have adverse memory usage. As per the issue http://spullara/mustache.java#117 the recommended way to provide this functionality is to create a new MustacheFactory on every call to compile the template thus implicitly getting a clean cache every time #1290.
+
+## Release 1.4.16
+
+### Bug Fixes
+
+* Restored WFieldWarningIndicator and WFieldErrorIndicator to WField for backwards compatibility.
+
+## Release 1.4.15
+
+### Enhancements
+
+* Client side: wc/config now caters for common "fetch, test, override" pattern of module configuration.
+* Client side: imageEditor can now be configured through the "wc/config" module.
+
+### Bug Fixes
+
+* Update field indicator renderer to allow them to appear for Inputs in a read-only state. This is for backwards compatibility.
+* Client side: wc/dom/initialise could theoretically reset its observer instance before all subscribers had been called, this is now resolved.
+* Fix position of messages relative to calendar launch button in polyfill of WDateField #1405.
+* Fix white-space of error and warning messages inside combos, WMultiSelectPair, WMultiDropdown and WMultiTextField #1404.
+
+## Release 1.4.14
+
+### Bug Fixes
+
+* Removed a cause of potential NullPointerException from com.github.bordertech.wcomponents.qa.findbugs.CheckGetComponentModel and
+  com.github.bordertech.wcomponents.examples.table.FilterableTableExample #1392, #1393.
+* Fix an error in the wcomponent-theme POM #1390.
+* Fixed regressions from 1.4.12 which could result in messages not being rendered correctly #1370.
+* Fixed an issue which could result in unexpected element alignment due to an error in the whitespace filter #1381.
+* Change the way dropdown typeahead (selectboxSearch) works to better align with the way most modern browsers fire the change event QC169945.
+
+## Release 1.4.13
+
+### Bug Fixes
+
+* Fix validation messages being merged with data in several components QC170096 (broken in 1.4.12).
+* Fix schema validation (broken in 1.4.12).
+* Update default field validator to fallback to `toolTip` if the input is both unlabelled _and_ has no `accessibleText` #1372.
+
+## Release 1.4.12
+
+### Bug Fixes
+
+* Fixed a flaw in message handling which resulted in error and warning messages not being applied correctly in almost all AJAX-related scenarios #1370
+* Fixed a number of errors in messaging and validation in the client code as part of #1370, fixing these resolves #1121
+
+## Release 1.4.11
+
+### Enhancements
+
+* Updated the theme-parent POM to enforce Maven version checking as building with 3.0.x will fail in a very opaque manner.
+* Moved the Java version check from a slightly convoluted ANT check to Maven.
+
+### Bug Fixes
+
+* Added a workaround to width calculation errors in UC Browser on Android OSs #1354.
+* Fixed a flaw which could result in duplicate IDs in responsive menus #1357.
+* Fixed a flaw in placeholder manipulation during mandatory/optional toggling #1360.
+* Fixed a11y issues caused by labelling of mandatory fields #1359.
+
+## Release 1.4.10
+
+### Enhancements
+
+* Allow more granular control over features available in image editor
+* Apply config overrides when image editor opened instead of page load so that it is easier to set config "in time"
+* Implemented new features in image editor:
+  * center image
+  * reset image
+* Update WAI-ARIA analog class to treat RETURN as equivalent to SPACE for all analogs #1351, QC 169101.
+
+### Bug Fixes
+
+* Provided Sass to work around an IE feature in which buttons with element descendants show unexpected cursor behaviour QC 168545.
+
+## Release 1.4.9
+
+### Enhancements
+
+* Moved placeholder text determination to the renderers to reduce the reliance on client side i18n.
+* Improved render performance by removing a superfluous call to `hasTabIndex()` in order to set a `tabIndex` attribute. `hasTabIndex()` will always
+  return `false` so this was a waste of everyone's time and clock #373.
+
+### Bug Fixes
+
+* Fixed issue which could result in a label:input pair ending up in an invalid state after AJAX of specific inputs #1337.
+* Fix issue which could result in labels for individual mandatory WRadioButtons being decorated with a mandatory indicator #1335.
+* Fix issue where tree menu icons were not expanded after round trip #1325.
+* Updated timeout warning artefact and JavaScript to overcome an accessibility issue #1333.
+* Fixed a CSS error which caused items at the top level of a WMenu of types BAR or FLYOUT to render incorrectly if they had anything other than
+  simple text content #1330.
+* Fixed a flaw in update calculation which resulted in unsaved changes warnings not appearing in very specific circumstances #1237.
+* Fixed an error which could cause out-of-viewport labels to be rendered in viewport #1326.
+* Fixed some errors in examples which caused a race which could result in null pointer exceptions #1327.
+* Clean up XSLT, schema references and broken examples of non-resizeable dialogs as `resizable` has been mandatory for several releases #606.
+* Fixed an omission which could result in an application being able to avoid the `submitOnChange` warning text in labels #1255.
+
+## Release 1.4.8
+
+### Enhancements
+
+* Added "application/dicom" to mimemap.json #1321.
+* Removed colormap.xml as it is not being used: use colormap.json instead.
+* More Sass workarounds for UC Browser issues #1295.
+
+### Bug Fixes
+
+* Fixed an XSLT bug which caused WTable's expand-all button to fail when row expansion is LAZY or DYNAMIC #1319.
+
+## Release 1.4.7
+
+### Bug Fixes
+
+* Fix CSS bug which resulted in a calendar date picker not rendering as expected when in a dialog box #1309.
+* Fix a bug which would cause a self-opening dialog to attempt to reopen itself on click #1311.
+* Fix a bug which could cause erroneous ajax requests #1312.
+
+### Enhancements
+
+* WTabSet:
+  - Added methods to WTabSet to allow easier/less verbose creation of tabs by making the TabMode argument optional.
+  - Deprecated the unused members `setShowHeadOnly` and `isShowHeadOnly` which have never been implemented and which were a hangover from a very old and rather poor design concept. No replacement: never implemented.
+  - Deprecated `setActionOnChange` and `getActionOnChange` as changing tabs should not have a side effect _and_ these actions are inconsistent unless the (no longer supported) `TabMode.SERVER` is used for **all** tabs in the tabset. No replacement: a tabset should not have an action on tab change other than show the relevant tab.
+  - Added `protected addTab(WTab)` as a replacement for the deprecated `public add(WTab)`.
+* WImageEditor:
+  - Can now render the editor controls inline (as opposed to the default, in a popup).
+
+## Release 1.4.6
+
+### API Changes
+
+### Bug Fixes
+
+* Fixed a race condition which could result in modal dialogs not being modal #1296
+* Improved Mustache memory handling #1290
+* Fixed a JavaScript flaw which could result in error messages being misplaced in some circumstances #1288.
+
+### Enhancements
+
+* Updated Sass to produce better rendering in UC Browser #1295:
+  - added a has test to detemine if a browser does not support CSS fle;
+  - added a has test `has("uc")`;
+  - added UC pattern Sass to fix major rendering issues.
+* Enhanced the SubordinateBuilder & associated classes to remove the final declaration allowing for extendibility.
+* Added yet more enhanced AJAX error handling.
+
+## Release 1.4.5
+
+### Bug Fixes
+
+* Debounce / throttle rapidly repeated requests for the same theme resources to prevent superfluous network requests #1274
+* Fixed a flaw which caused WPartialDateField's calendar to render poorly on some mobile devices #1280.
+
+### Enhancements
+
+* Added Sass to allow re-implementation of support for WField.inputWidth from 1 - 99 in sub-themes based only on Sass variables #1278.
+* Added a close icon to the header of the timeout warnings. These warnings can be closed by clicking anywhere (or pressing ESCAPE) but that is not immediately obvious and the close icon is merely a visual queue to indicate the box may be dismissed. Note that for screenreaders etc the box is exposed as an alert which has implicit ESCAPE to dismiss.
+
+## Release 1.4.4
+
+### API Changes
+
+* JS only: deprecated the use of wc/i18n/i18n as a loader plugin (in favor of async methods).
+
+### Bug Fixes
+
+* Fix flaw which caused WButton with a message to not stop ajax submit if the button was an ajax trigger **and** the user chooses to cancel the button action # 1266.
+* Fix flaw which prevented WShuffler acting as an ajax trigger #1267.
+
+### Enhancements
+
+* Better handling of rejected promises in Subscribers to the Observer module.
+* Upgraded FabricJS 1.7.11 -> 1.7.14 to fix issues in Internet Explorer 11.
+* Allow custom AJAX error handlers so that we can handle *any* response format conceivable, e.g. XML, JSON, protobuf, binary.
+
+## Release 1.4.3
+
+### API Changes
+
+* Deprecated `AbstractInput.setSubmitOnChange` and `AbstractInput.isSubmitOnChange` and all overrides thereof. This is a source of significant a11y
+  difficulty and should be removed #1255.
+* Client side:
+  - shed.js subscribers can return a promise and shed.notify will resolve when all subscriber promises complete.
+  - i18n translation methods can now take an array of keys to translate.
+
+### Bug Fixes
+
+* Fixed an XSLT error which caused read-only WNumberField to appear to be editable #1262.
+* Removed a potential source of null pointer exceptions in WRadioButton.handleRequest which had been masked by most WRadioButtons not having
+  `submitOnChange` set #1258.
+* Updated load-time focus requests (module `wc/ui/onloadFocusControl`) so that the focus request is not honoured if the load is a full page load (not
+  ajax) and there is a message box (`WMessageBox`, `WValidationErrors`) visible on the page #1253.
+* Fixed a flaw which could result in a fieldset not having a legend under some circumstances #1257.
+* Updated components which automatically try to refocus themselves during or after handleRequest so that the focus will only be set if the component
+  is the trigger for the current ajax request. This means the old `submitOnChange` focus will not be implemented. This fixes a major a11y flaw #501.
+* Removed IE 11 specific dialog Sass which proved to be not only superfluous but actually harmful #1247.
+* Fixed an XSLT bug which caused incorrect TAB key behaviour in some menus #1249.
+
+### Enhancements
+
+* Improved JavaScript unit tests; added mechanism to do local automated testing with optional coverage; improved the intern test skeleton.
+* Added new eslint rules (eslint:recommended) and fixed a pile of stylistic issues in JavaScript.
+* Rewrote several synchronous i18n calls to use the async version (fixed at least one more definite race condition).
+* Removed a workaround for a [Firefox issue](https://bugzilla.mozilla.org/show_bug.cgi?id=984869) as that issue is now resolved #1250.
+
+## Release 1.4.2
+
+### Bug Fixes
+
+* Replaced support for `WDropdown` `optionWidth` on native dropdowns (should not be there) but in a more configurable and potentially responsive way
+  #1243.
+* Updated theme resource build to split core and implementation copy into separate steps #1222.
+* Fixed an error which caused the maximise button in dialog frames to sometimes display the wrong state #1229.
+* Fixed an XSLT error which caused incorrect render of `WPrintButton` when the button contained an image #1232.
+
+### Enhancements
+
+* Added a Selenium WebElement extension for WMultiDropdown #605.
+
+## Release 1.4.1
+
+### Bug Fixes
+
+* Prevent race condition in IE when using AJAX module very early (e.g. i18n).
+* Update fabricjs to latest version.
+* Image edit produces files with filename extension consistent with mime type.
+* Edited images maintain the original image dimensions (unless they are cropped).
+  - Image redaction objects are scaled accordingly.
+* Fixed redaction checkbox non-functional.
+* Fixed an error in the Sass vars which are used to build WFieldLayout CSS for various conditions of support.
+
+## Release 1.4.0
+
+### API Changes
+
+* Default template render mode to on (previously off). This improves UI performance for most users. #1158.
+* Selenium performance API changes #1138:-
+  - The methods in TreeUtil (i.e. findWComponent and findWComponents) that use a path to find components have been
+    changed to search only visible components. New find methods that provide a visible only boolean flag have been
+    included to toggle this. This change will effect selenium tests that use byWComponentPath with invisible
+    components in their path. Either change the path to use only visible components or use the new constructor
+    on byWComponentPath that allows the visible only flag to be toggled.
+  - SeleniumWComponentsWebDriver and SeleniumWComponentWebElement provide new findImmediate methods that can be used
+    to find an element without the wait implicit. This assumes the page is already loaded and will return immediately
+    if the element is not present. The findElement methods now default to not wait for the page. New findElement methods
+    provide a wait boolean flag to toggle this.
+  - SeleniumWComponentsWebDriver and SeleniumWComponentWebElement provide a new helper method getUserContextSession()
+    to retrieve the user context.
+  - SeleniumWComponentTestCase provides a new helper method getUserContextSession() to retrieve the user context.
+* Client side API: removed `wc/template.registerHelper`.
+
+### Bug Fixes
+
+* Change Sass linter from scss-lint to sass-lint, removed some custom rules and refactored Sass to be more "standard" #1203.
+* Reverted a change to URL handling which resulted in URLs becoming mal-formed under some circumstances.
+* Improved the Sass to CSS build to ensure implementation CSS is placed after default CSS in the output #1160.
+* Modified `HtmlSanitizerUtil` and `HtmlToXMLUtil` to handle escaping brackets'; `WTextArea` now defaults to `santizeOutput` on #1158.
+* Remove client handlebars i18n support #1158.
+* Fixed position of server-generated error messages for simple WInputs #1161.
+* Fixed partial text matches in dropdown typeahead #1164.
+* Improve AJAX error handling when the response "lies" and says it is "200 OK" when it isn't #1163.
+* Fixed issue in ByWComponentPath that was leaving the user context on the Thread. Unit tests that check a component's
+  state may have depended on this wrong behaviour. These tests will need to be changed to push and pop the User Context
+  when checking the components state #1138.
+* Fixed image editor (part 2), this should hopefully fix the regressions originally addressed in #1206.
+* AJAX Controls and Subordinate Controls are now registered on the User Context. This allows WComponent Applications to
+  be run on multiple servlets. AjaxHelper and SubordinateControlHelper methods no longer include the “request” parameter
+  as it is not required. This should have no impact to projects as these methods are only called by framework code.
+  UIContextHolder has new helper methods to retrieve the Primary User Context #1077.
+
+### Enhancements
+
+* Improved efficiency of XML escaping and sanitization as part of #1158.
+* Removed PetStore #1190.
+* Selenium performance enhancements #1138:-
+  - Upgrade JUNIT 4.8.2 to 4.12 and Surefire Plugin 2.18 to 2.20.
+  - WebDriverCache now uses a concept of a pool of drivers. Improves performance for parallel selenium tests.
+  - Provide a new ServerStartStopListener for JUNITs to start and stop the web server for selenium tests.
+  - Improved selenium utility classes and helper methods.
+  - WComponent example module demonstrates running selenium tests in parallel.
+* Improve performance of Selenium tests and helpers #1138.
+* Improve performance of TemplateRendererInterceptor by switching to Mouchstache template engine #1207.
+* Switched (back) to Mustache on the client to match the server implementation.
+
+## Release 1.4.0-beta-2
+
+### Bug Fixes
+
+* Fixed a flaw which could result in images inside links getting the incorrect URL under some conditions #1150.
+* Fixed a flaw which could result in a WSubMenu being stuck open when a not-submitting WMenuItem is clicked #1137.
+* Fixed an accessibility flaw which could result in AT attempting to read icons #1136.
+* Fixed a JavaScript flaw which could result in unhandled events on buttons in some conditions #1135.
+* Fixed a newly introduced bug which caused failure of WMenuItem selection #1134.
+* Fixed a flaw which could result in non-selectable menu items being set as selected in WMenu #1133.
+
+### Enhancements
+
+* Simplified Sass and removed unnecessary icon CSS as part of the fix for #1136. This included removing some Sass which
+  is no longer used but had not been cleaned up at the time.
+* Added a new generic class to HTMLCLassProperties. Class `wc-border` will apply the theme default border to any
+  component which does not already have a border style set by a more specific (or later equally specific) selector.
+* improved efficiency of CSS by deleting WComponents custom icon classes and using fa classes instead. This involved
+  changing the string values of elements in the HTMLClassProperties enum.
+* Simplified delayed, self-actuating Ajax triggers, removed module wc/ui/ajax/delayedTrigger.
+* Updated the new space class to fix some redundancy.
+
+## Release 1.4.0-beta
+
+### API Changes
+
+* Deprecated `com.github.bordertech.wcomponents.util.ConfigurationProperties.DEVELOPER_DEBUG_CLIENT_SIDE` in favour of
+  `com.github.bordertech.wcomponents.util.ConfigurationProperties.DEVELOPER_DEBUG_ENABLED` as part of #1012.
+  * Deprecated `com.github.bordertech.wcomponents.util.ConfigurationProperties.getDeveloperDebugClientSide()` in favour
+    of `com.github.bordertech.wcomponents.util.ConfigurationProperties.getDeveloperDebugEnabled()`
+  * Deprecated `com.github.bordertech.wcomponents.util.DebugUtil.isDebugStructureEnabled()` in favour of
+    `com.github.bordertech.wcomponents.util.DebugUtil.isDebugFeaturesEnabled()`.
+  * Removed all internal references to the deprecated members.
+* Deprecated `com.github.bordertech.wcomponents.lde.DevToolkit`; it is marked for removal due to functional and a11y
+  problems.
+* `WMenuItem` & `WSubMenu`: added public method `boolean isTopLevelItem()` required by the renderer of each.
+* `WSubMenu`: `getSelectability()`, `setSelectability(Boolean)`, `setSelectable(boolean)` and `setSelected(boolean)` are
+  all deprecated (always ignored in client UI).
+* `WMenuItemGroup`: `isDisabled()` will return true if the group is nested in a `WSubMenu` or `WMenu` which is disabled.
+  This brings it into line with `WMenuItem` and `WSubMenu` and provides for no UI change as previously this calculation
+  was in the client UI.
+* Margins and intra-component spaces (`hgap`, `vgap`) have been converted from `int` to values of an enum.
+  They were historically set as `int` but were output into the UI as an enumerated list of options based on
+  nearest-high-neighbour calculations. This was done to improve consistency and enhance responsive design. These
+  calculations have been removed from the client UI to Java. A temporary backwards compatibility layer
+  has been provided and all former `int` based constructors and getters have been deprecated. The values used for the
+  conversion points are as per the former conversion client code so there will be **no visible or functional change**.
+  * Added new utility class `SpaceUtil` used to manage consistent inter- and intra- component spaces.
+  *  `Margin`, `BorderLayout`, `ColumnLayout`, `GridLayout`,`FlowLayout`, `ListLayout`, `WList`, `WRow`
+    * All current `int`-based constructors are deprecated in favour of Space based constructors.
+  *  `Margin`
+    * `int getAll()` deprecated in favour of `SpaceUtil.Size getMargin()`
+    * `int getNorth()` deprecated in favour of `SpaceUtil.Size getTop()`
+    * `int getEast()` deprecated in favour of `SpaceUtil.Size getRight()`
+    * `int getSouth()` deprecated in favour of `SpaceUtil.Size getBottom()`
+    * `int getWest()` deprecated in favour of `SpaceUtil.Size getLeft()`
+  * `BorderLayout`, `ColumnLayout`, `GridLayout`:
+    * `int getHgap()` deprecated in favour of `SpaceUtil.Size getHorizontalGap()`
+    * `int getVgap()` deprecated in favour of `SpaceUtil.Size getVerticalGap()`
+  * `FlowLayout`, `ListLayout`, `WList`, `WRow`:
+    * `int getGap()` deprecated in favour of `SpaceUtil.Size getSpace()`
+
+### Bug Fixes
+
+* `WMessages.isHidden()` will return `true` if it has no messages #1082.
+* Fixed a bug in `com.github.bordertech.wcomponents.test.selenium.ByLabel` which resulted in WLabels for compound inputs
+  being ignored when finding elements.
+* Fixed HTML error in `wcomponents/lde` resource `DevToolkit_header.vm` found during optimisations for #1012.
+* Fixed a significant network performance problem caused by loading JavaScript modules included in the layer #1068.
+  * Fixed all imports between the `wc/dom` and `wc/ui` namespaces so that no dom-level modules require anything in the
+  `wc/ui` space;
+  * removed the circular dependency between `formUpdateManager` and `cancelUpdate`;
+  * removed most other (managed) circular dependencies; and
+  * improved reuse of Widgets.
+* Fixed a bug which could cause a (caught) exception when a WTree's item was selected if the WTree has client expansion
+  and was not an ajax trigger (found during testing for PR #1086).
+* Removed yellow fade as it caused potential a11y problems #1104.
+
+### Enhancements
+
+* Made debug modes consistent between client and server code #1012.
+* Renderer updates as part of #639:
+  * `WAbbrTextRender` changed from XML to HTML as a performance improvement, no UI or functional change.
+  * `WDataTableRenderer` no longer renders any internal disabled states with no UI change as these were ignored.
+  * `WFieldErrorIndicatorRenderer` will not render with no UI change as these were ignored.
+  * `WLabelRenderer` is aware of the nature and state of its labeled component and is able to correctly set the state of
+     a `WLabel` in the UI without cross-reference to its component. This was required to fix several possible errors
+     caused when a `WLabel` was in an AJAX response.
+  * `WMenuItemRenderer` and `WSubMenuRenderer` will only output the `accessKey` member if the component is at the top
+    level of its `WMenu` with no UI change as `accessKey` settings on other instances were ignored.
+  * `WTabGroupRenderer` will no longer paint `WTabGroup` as `ui:tabgroup` but pass through to its `WTabs` with no UI
+    change as these were ignored.
+* Selenium test elements improved and extended.
+* Converted any XSLT calculation which relied on cross-element lookups to use javascript or improved Java renderers (as
+  described above) to prevent errors when the referenced element was not available in an ajax response #639 et al.
+* Changed the require config `baseUrl` to make it shorter as this makes adding application level modules easier. The new
+  BaseUrl only uses path settings which are also available in Java.
+* Added new JavaScript module `wc/ui/getForm` as we have several areas where we need to get the form from a particular
+  element.
+* Update XSLT build to improve performance and protect component integrity #689.
+
+## Release 1.3.4
+
+### Bug Fixes
+
+* Fixed imageeditor issues:
+  * overlay confuses image validation #1048.
+  * disallow save when no image has been captured from video stream #1062.
+* fix phantom vertical scroll in some browsers (QC154504) #1073.
+* Fixed JS loading issue #1068.
+* Fixed layout of WCheckBoxSelect/WRadioButtonSelect with LAYOUT_COLUMN and COLUMN_COUNT >= options.
+
+## Release 1.3.3
 
 ### Bug Fixes
 

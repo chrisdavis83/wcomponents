@@ -2,6 +2,7 @@ package com.github.bordertech.wcomponents.examples;
 
 import com.github.bordertech.wcomponents.ImageResource;
 import com.github.bordertech.wcomponents.Margin;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WButton;
 import com.github.bordertech.wcomponents.WCheckBox;
 import com.github.bordertech.wcomponents.WContainer;
@@ -27,12 +28,12 @@ public class WFigureExample extends WContainer {
 	/**
 	 * Default box margin.
 	 */
-	private static final Margin DEFAULT_BOX_MARGIN = new Margin(0, 0, 6, 0);
+	private static final Margin DEFAULT_BOX_MARGIN = new Margin(null, null, Size.MEDIUM, null);
 
 	/**
 	 * Default example margin.
 	 */
-	private static final Margin DEFAULT_MARGIN = new Margin(24);
+	private static final Margin DEFAULT_MARGIN = new Margin(Size.XL);
 
 	/**
 	 * Image resource.

@@ -3,6 +3,7 @@ package com.github.bordertech.wcomponents.examples.menu;
 import com.github.bordertech.wcomponents.Action;
 import com.github.bordertech.wcomponents.ActionEvent;
 import com.github.bordertech.wcomponents.Margin;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WContainer;
 import com.github.bordertech.wcomponents.WFieldLayout;
 import com.github.bordertech.wcomponents.WMenu;
@@ -122,7 +123,7 @@ public class MenuItemActionMessagesExample extends WContainer {
 		item.setUrl("http://www.example.com/");
 
 		WPanel panel = new WPanel();
-		panel.setMargin(new Margin(12, 0, 0, 0));
+		panel.setMargin(new Margin(Size.LARGE, null, null, null));
 		add(panel);
 
 		WFieldLayout layout = new WFieldLayout();

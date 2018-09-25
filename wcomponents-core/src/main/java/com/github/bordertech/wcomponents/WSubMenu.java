@@ -22,7 +22,7 @@ import java.util.List;
  *
  *
  * @author Adam Millard
- * @author Yiannis Paschalidis - re-written to not extend WButton.
+ * @author Yiannis Paschalidis
  * @author Mark Reeves
  */
 public class WSubMenu extends AbstractNamingContextContainer implements Disableable, MenuSelectContainer, MenuItemSelectable {
@@ -88,14 +88,16 @@ public class WSubMenu extends AbstractNamingContextContainer implements Disablea
 	}
 
 	/**
-	 * Creates a WSubMenu with the given text and access key.
+	 * Creates a WSubMenu with the given text. The accessKey arg is now ignored for a11y reasons.
 	 *
-	 * @param text the sub menu text.
-	 * @param accessKey the access key.
+	 * @param text the sub menu text
+	 * @param accessKey the access key - not used
+	 * @deprecated access keys are not implemented in menus. See
+	 * https://www.w3.org/TR/wai-aria-practices/#keyboard-interaction-9 for information regarding key access to menus.
 	 */
+	@Deprecated
 	public WSubMenu(final String text, final char accessKey) {
 		this(text);
-		setAccessKey(accessKey);
 	}
 
 	/**
@@ -118,10 +120,13 @@ public class WSubMenu extends AbstractNamingContextContainer implements Disablea
 	/**
 	 * Indicates whether this is a top-level menu (ie. attached to a menu bar).
 	 *
-	 * @return true if this is a top-level menu.
+	 * @return {@code true} if this is a top-level menu.
 	 */
 	public boolean isTopLevelMenu() {
-		MenuContainer container = (MenuContainer) WebUtilities.getAncestorOfClass(MenuContainer.class, this);
+		MenuContainer container = WebUtilities.getAncestorOfClass(MenuContainer.class, this);
+		if (container instanceof WMenuItemGroup) {
+			container = WebUtilities.getAncestorOfClass(MenuContainer.class, container);
+		}
 		return container instanceof WMenu;
 	}
 
@@ -223,14 +228,16 @@ public class WSubMenu extends AbstractNamingContextContainer implements Disablea
 	 */
 	@Override
 	public boolean isDisabled() {
-		boolean disabled = false;
-
-		MenuContainer container = (MenuContainer) WebUtilities.getAncestorOfClass(MenuContainer.class, this);
-		if (container instanceof MenuItemGroup && container instanceof Disableable) {
-			disabled = ((Disableable) container).isDisabled();
+		if (isFlagSet(ComponentModel.DISABLED_FLAG)) {
+			return true;
 		}
 
-		return disabled || isFlagSet(ComponentModel.DISABLED_FLAG);
+		MenuContainer container = WebUtilities.getAncestorOfClass(MenuContainer.class, this);
+		if (container instanceof Disableable && ((Disableable) container).isDisabled()) {
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
@@ -297,7 +304,8 @@ public class WSubMenu extends AbstractNamingContextContainer implements Disablea
 
 	/**
 	 * @return true if this item is selectable, false if not, or null to default to the container.
-	 * @deprecated Use {@link #getSelectability()} instead.
+	 * @deprecated WSubMenu is never selectable for a11y reasons. If you need a selectable use
+	 * {@link com.github.bordertech.wcomponents.WTree}.
 	 */
 	@Deprecated
 	public Boolean isSelectable() {
@@ -306,7 +314,8 @@ public class WSubMenu extends AbstractNamingContextContainer implements Disablea
 
 	/**
 	 * @param selectable true if this item is selectable, false if not, or null to default to the container.
-	 * @deprecated Use {@link #setSelectability(java.lang.Boolean)} instead.
+	 * @deprecated WSubMenu is never selectable for a11y reasons. If you need a selectable use
+	 * {@link com.github.bordertech.wcomponents.WTree}.
 	 */
 	@Deprecated
 	public void setSelectable(final Boolean selectable) {
@@ -315,18 +324,34 @@ public class WSubMenu extends AbstractNamingContextContainer implements Disablea
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @deprecated WSubMenu is never selectable for a11y reasons. If you need a selectable use
+	 * {@link com.github.bordertech.wcomponents.WTree}.
 	 */
+	@Deprecated
 	@Override
-	public Boolean getSelectability() {
+	public final Boolean getSelectability() {
 		return getComponentModel().selectability;
 	}
 
 	/**
-	 * @param selectability true if this item is selectable, false if not, or null to default to the container.
+	 * {@inheritDoc}
+	 *
+	 * @deprecated WSubMenu is never selectable for a11y reasons. If you need a selectable use
+	 * {@link com.github.bordertech.wcomponents.WTree}.
 	 */
 	@Override
-	public void setSelectability(final Boolean selectability) {
+	@Deprecated
+	public final void setSelectability(final Boolean selectability) {
 		getOrCreateComponentModel().selectability = selectability;
+	}
+
+	/**
+	 * @return always {@code false} for WSubMenu.
+	 */
+	@Override
+	public boolean isSelectAllowed() {
+		return false;
 	}
 
 	/**
@@ -478,15 +503,10 @@ public class WSubMenu extends AbstractNamingContextContainer implements Disablea
 	 * Indicates whether this sub-menu is selected (for menu types which support sub-menu selection).
 	 *
 	 * @return true if this sub-menu is selected, false otherwise.
+	 * @deprecated WSubMenu is never selectable for a11y reasons. If you need a selectable see WTree.
 	 */
-	@Override
+	@Deprecated
 	public boolean isSelected() {
-		WMenu menu = WebUtilities.getAncestorOfClass(WMenu.class, this);
-
-		if (menu != null) {
-			return menu.getSelectedMenuItems().contains(this);
-		}
-
 		return false;
 	}
 
@@ -559,20 +579,22 @@ public class WSubMenu extends AbstractNamingContextContainer implements Disablea
 		switch (getComponentModel().mode) {
 			case LAZY: {
 				getContent().setVisible(isOpen());
-				AjaxHelper.registerContainer(getId(), contentId, targetId, request);
+				AjaxHelper.registerContainer(getId(), contentId, targetId);
 				break;
 			}
 			case DYNAMIC: {
-				AjaxHelper.registerContainer(getId(), contentId, targetId, request);
+				AjaxHelper.registerContainer(getId(), contentId, targetId);
 				getContent().setVisible(isOpen());
 				break;
 			}
 			case EAGER: {
-				AjaxHelper.registerContainer(getId(), contentId, targetId, request);
+				AjaxHelper.registerContainer(getId(), contentId, targetId);
 				// Will always be visible
 				break;
 			}
 			case SERVER: {
+				// same as DYNAMIC
+				AjaxHelper.registerContainer(getId(), contentId, targetId);
 				getContent().setVisible(isOpen());
 				break;
 			}

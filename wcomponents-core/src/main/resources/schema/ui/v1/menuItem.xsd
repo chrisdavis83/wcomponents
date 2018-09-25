@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
-	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0">
+<xs:schema
+	xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
+	xmlns:html="http://www.w3.org/1999/xhtml"
+	elementFormDefault="qualified"
+	targetNamespace="https://github.com/bordertech/wcomponents/namespace/ui/v1.0">
 	<xs:include schemaLocation="attributeGroups.button.xsd" />
 	<xs:include schemaLocation="decoratedLabel.xsd" />
 	<xs:element name="menuitem">
@@ -43,7 +47,7 @@
 			<xs:sequence>
 				<xs:element ref="ui:decoratedlabel" />
 			</xs:sequence>
-
+			
 			<xs:attributeGroup ref="ui:button.attributes" />
 			<xs:attributeGroup ref="ui:button.menu.attributes" />
 
@@ -69,18 +73,35 @@
 				</xs:annotation>
 			</xs:attribute>
 
-			<xs:attribute name="selectable" type="xs:boolean">
-				<xs:annotation>
-					<xs:documentation>Indicates that the sub menu may be selected as an entity separate from its contained components. Explicitly output if explicitly set "false"
-						to override a parent component's selectMode. Selectable defaults to the container. e.g. if the container has a selectMode of NONE, then selectable defaults
-						to false.</xs:documentation>
-				</xs:annotation>
-			</xs:attribute>
-
 			<xs:attribute name="selected" type="xs:boolean">
 				<xs:annotation>
 					<xs:documentation>indicates that the submenu is selected. Not output if "false".</xs:documentation>
 				</xs:annotation>
+			</xs:attribute>
+			
+			<xs:attribute name="role" default="menuitem">
+				<xs:annotation>
+					<xs:documentation>Indicates the selction mode for the menu item.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:NMTOKEN">
+						<xs:enumeration value="menuitem">
+							<xs:annotation>
+								<xs:documentation>Indicates that selection is not supported.</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="menuitemradio">
+							<xs:annotation>
+								<xs:documentation>Indicates that selection is exclusive.</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="menuitemcheckbox">
+							<xs:annotation>
+								<xs:documentation>Indicates that selection is not exclusive.</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+					</xs:restriction>
+				</xs:simpleType>
 			</xs:attribute>
 
 		</xs:complexType>

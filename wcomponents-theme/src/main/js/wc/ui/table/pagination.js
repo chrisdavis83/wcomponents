@@ -1,17 +1,16 @@
 define(["wc/dom/attribute",
-		"wc/dom/event",
-		"wc/dom/focus",
-		"wc/dom/formUpdateManager",
-		"wc/dom/initialise",
-		"wc/dom/shed",
-		"wc/dom/Widget",
-		"wc/ui/ajaxRegion",
-		"wc/ui/ajax/processResponse",
-		"wc/ui/onloadFocusControl",
-		"wc/timers",
-		"wc/ui/table/common",
-		"wc/i18n/i18n"],
-	function(attribute, event, focus, formUpdateManager, initialise, shed, Widget, ajaxRegion, processResponse, onloadFocusControl, timers, common, i18n) {
+	"wc/dom/event",
+	"wc/dom/focus",
+	"wc/dom/formUpdateManager",
+	"wc/dom/initialise",
+	"wc/dom/shed",
+	"wc/dom/Widget",
+	"wc/ui/ajaxRegion",
+	"wc/ui/ajax/processResponse",
+	"wc/timers",
+	"wc/ui/table/common",
+	"wc/i18n/i18n"],
+	function(attribute, event, focus, formUpdateManager, initialise, shed, Widget, ajaxRegion, processResponse, timers, common, i18n) {
 		"use strict";
 
 		/**
@@ -43,6 +42,7 @@ define(["wc/dom/attribute",
 				triggerButtonId,
 				BUSY = "aria-busy",
 				PAGE_ATTRIB = "data-wc-pages",
+				TRUE = "true",
 				NUM_BEFORE_AFTER_CURRENT_PAGE_OPTIONS = 4, // this is the number of selections to show around the current page option.
 				NUM_PAGE_OPTIONS = 2 * NUM_BEFORE_AFTER_CURRENT_PAGE_OPTIONS + 3; // This weird number gives us FIRST (4 before selected) SELECTED (4 after selected) LAST.
 			SELECTOR.descendFrom(PAGINATION_CONTAINER);
@@ -85,7 +85,7 @@ define(["wc/dom/attribute",
 				var labels = PAGINATION_LABEL_WRAPPER.findDescendants(wrapper);
 
 				Array.prototype.forEach.call(labels, function (next) {
-					var rows, rpp, currentPage, i18nString, startIdx, endIdx;
+					var rows, rpp, currentPage, promise, startIdx, endIdx;
 					if (getWrapper(next) === wrapper) {
 						// we have the correct spans
 						rows = next.getAttribute("data-wc-tablerows");
@@ -99,19 +99,19 @@ define(["wc/dom/attribute",
 						currentPage = parseInt(currentPage, 10); // currentpage is 0 based.
 						startIdx = (rpp * currentPage) + 1;
 						if (rpp === 1) {
-							i18nString = i18n.get("table_pagination_label_one", startIdx, rows);
-						}
-						else {
+							promise = i18n.translate("table_pagination_label_one", startIdx, rows);
+						} else {
 							endIdx = Math.min(rows, (rpp * currentPage) + rpp);
 							if (startIdx === endIdx) {
-								i18nString = i18n.get("table_pagination_label_one", endIdx, rows);
-							}
-							else {
-								i18nString = i18n.get("table_pagination_label_many", startIdx, endIdx, rows);
+								promise = i18n.translate("table_pagination_label_one", endIdx, rows);
+							} else {
+								promise = i18n.translate("table_pagination_label_many", startIdx, endIdx, rows);
 							}
 						}
-						if (i18nString) {
-							next.innerHTML = i18nString;
+						if (promise) {
+							promise.then(function(i18nString) {
+								next.innerHTML = i18nString;
+							});
 						}
 					}
 				});
@@ -151,7 +151,7 @@ define(["wc/dom/attribute",
 				currentPage = parseInt(element.value, 10);
 				options = element.options;
 
-				element.setAttribute(BUSY, "true");
+				element.setAttribute(BUSY, TRUE);
 				startVal = getStartValue(currentPage, totalPages);
 
 				for (i = 1; i < options.length - 1; ++i) {
@@ -164,10 +164,10 @@ define(["wc/dom/attribute",
 					nextOption.value = startVal++;
 					nextOption.innerHTML = startVal; // already incremented.
 				}
-				element.removeAttribute(BUSY);
 				if (!ignoreOther && (otherSelect = getOtherSelector(element))) {
 					updateSelectOptions(otherSelect, true);
 				}
+				element.removeAttribute(BUSY);
 			}
 
 			/**
@@ -236,7 +236,7 @@ define(["wc/dom/attribute",
 			 * @function
 			 * @private
 			 * @param {Element} selector a page selection dropdown.
-			 * @returns {?Element} the other pagination dropdown.
+			 * @returns {Element} the other pagination dropdown.
 			 */
 			function getOtherSelector(selector) {
 				var i,
@@ -287,20 +287,17 @@ define(["wc/dom/attribute",
 					selector = PAGINATION_SELECTOR.findDescendant(paginationContainer),
 					otherSelector;
 
-				if (selector && !shed.isDisabled(selector) && selector.getAttribute(BUSY) !== "true") {// don't do anything if selector disabled or busy
+				if (selector && !shed.isDisabled(selector) && selector.getAttribute(BUSY) !== TRUE) {// don't do anything if selector disabled or busy
 					len = selector.options.length;
 					oldIndex = selector.selectedIndex;
 					buttonType = getButtonType(button);
 					if (buttonType === IDX_BUTTON.LAST) {
 						newIndex = len - 1;  // select last option in list
-					}
-					else if (buttonType === IDX_BUTTON.PREV) {
+					} else if (buttonType === IDX_BUTTON.PREV) {
 						newIndex = oldIndex ? oldIndex - 1 : oldIndex;  // if oldIndex is zero don't decrement
-					}
-					else if (buttonType === IDX_BUTTON.NEXT) {
+					} else if (buttonType === IDX_BUTTON.NEXT) {
 						newIndex = (oldIndex < (len - 1)) ? oldIndex + 1 : oldIndex;  // if we are at last page don't increment
-					}
-					else {  // FIRST
+					} else {  // FIRST
 						newIndex = 0;
 					}
 					if (newIndex >= 0 && newIndex !== oldIndex) {
@@ -345,26 +342,24 @@ define(["wc/dom/attribute",
 
 				if (buttons) {
 					Array.prototype.forEach.call(buttons, function(button) {
+						button.setAttribute(BUSY, TRUE);
 						var type = getButtonType(button);
 						if (idx === 0) {
 							if (type === IDX_BUTTON.FIRST || type === IDX_BUTTON.PREV) {
 								shed[d](button, true);
-							}
-							else {
+							} else {
 								shed[e](button, true);
 							}
-						}
-						else if (idx === element.options.length - 1) {
+						} else if (idx === element.options.length - 1) {
 							if (type === IDX_BUTTON.FIRST || type === IDX_BUTTON.PREV) {
 								shed[e](button, true);
-							}
-							else {
+							} else {
 								shed[d](button, true);
 							}
-						}
-						else {
+						} else {
 							shed[e](button, true);
 						}
+						button.removeAttribute(BUSY);
 					});
 				}
 			}
@@ -393,8 +388,7 @@ define(["wc/dom/attribute",
 						if (nextShow) {
 							shed.show(nextShow);
 						}
-					}
-					else {
+					} else {
 						break;
 					}
 				}
@@ -441,8 +435,7 @@ define(["wc/dom/attribute",
 				if (isAjax(element)) {
 					triggerButtonId = button.id;
 					requestAjaxLoad(element);
-				}
-				else if ((wrapper = getWrapper(element)) && (paginatedTable = TABLE.findDescendant(wrapper, true)) && (page = PAGE.findDescendant(paginatedTable, true))) {
+				} else if ((wrapper = getWrapper(element)) && (paginatedTable = TABLE.findDescendant(wrapper, true)) && (page = PAGE.findDescendant(paginatedTable, true))) {
 					rows = ROW.findDescendants(page, true);
 					len = rows.length;
 					requestedPage = element.value;
@@ -504,8 +497,7 @@ define(["wc/dom/attribute",
 				if (SELECTOR.isOneOfMe(element) && isAjax(element)) {
 					// dynamic pagination and change rows per page (latter always ajax).
 					requestAjaxLoad(element);
-				}
-				else if (PAGINATION_SELECTOR.isOneOfMe(element)) {
+				} else if (PAGINATION_SELECTOR.isOneOfMe(element)) {
 					requestPageChange(element);
 				}
 			}
@@ -544,7 +536,7 @@ define(["wc/dom/attribute",
 					element = $event.target;
 				if (!$event.defaultPrevented) {
 					tree = PAGINATION_BUTTON.findAncestor(element, "", true);
-					if (tree && (element = tree[0])) {
+					if (tree && (element = tree[0]) && !shed.isDisabled(element) && element.getAttribute(BUSY) !== TRUE) {
 						paginationContainer = tree[1];
 						actionButton(element, paginationContainer);
 					}
@@ -562,8 +554,7 @@ define(["wc/dom/attribute",
 				if (event.canCapture) {
 					// event.add(element, event.TYPE.focus, focusEvent, null, null, true);
 					event.add(element, event.TYPE.change, changeEvent, 1);
-				}
-				else {
+				} else {
 					event.add(element, event.TYPE.focusin, focusEvent);
 				}
 				event.add(element, event.TYPE.click, clickEvent);
@@ -592,26 +583,15 @@ define(["wc/dom/attribute",
 				if (triggerId && triggerButtonId && (trigger = document.getElementById(triggerId)) && PAGINATION_SELECTOR.isOneOfMe(trigger)) {
 					try {
 						if ((button = document.getElementById(triggerButtonId))) {
-							if (document.activeElement === trigger) {
-								/* onLoadFocusControl has already set the focus to the ajax trigger
+							if (!shed.isDisabled(button) && (!document.activeElement || document.activeElement === trigger || document.activeElement === document.body)) {
+								/* onLoadFocusControl may have already set the focus to the ajax trigger
 								 * so we cannot use it to refocus to the button but we can determine that
 								 * we do not need to re-test for other focus since onloadFocusControl will
 								 * have done that before focussing the select.*/
 								focus.setFocusRequest(button);
 							}
-							else {
-								/*
-								 * There are two circumstances where we may not have focused the
-								 * select: something else has focus OR onloadFocusControl's own
-								 * AJAX subscriber has not yet fired. In both cases we can simply
-								 * call the focus helper from onloadFocusControl which will take care
-								 * of the alternate focus issue for us.
-								 */
-								onloadFocusControl.requestFocus(triggerButtonId);
-							}
 						}
-					}
-					finally {
+					} finally {
 						/* NOTE: only set triggerButtonId to null when we are sure we are
 						 * processing the pagination ajax response as there may be many
 						 * responses betwixt setting the triggerButtonId and the one we
@@ -706,7 +686,6 @@ define(["wc/dom/attribute",
 		 * @requires module:wc/dom/Widget
 		 * @requires module:wc/ui/ajaxRegion
 		 * @requires module:wc/ui/ajax/processResponse
-		 * @requires module:wc/ui/onloadFocusControl
 		 * @requires module:wc/timers
 		 * @requires module:wc/ui/table/common
 		 * @requires module:wc/i18n/i18n

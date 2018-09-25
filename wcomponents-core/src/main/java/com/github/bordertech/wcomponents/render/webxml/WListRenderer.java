@@ -1,5 +1,6 @@
 package com.github.bordertech.wcomponents.render.webxml;
 
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.UIContext;
 import com.github.bordertech.wcomponents.UIContextHolder;
 import com.github.bordertech.wcomponents.WComponent;
@@ -13,6 +14,7 @@ import java.util.List;
  * The Renderer for the {@link WList} component.
  *
  * @author Yiannis Paschalidis
+ * @author Mark Reeves
  * @since 1.0.0
  */
 final class WListRenderer extends AbstractWebXmlRenderer {
@@ -29,8 +31,8 @@ final class WListRenderer extends AbstractWebXmlRenderer {
 		XmlStringBuilder xml = renderContext.getWriter();
 		WList.Type type = list.getType();
 		WList.Separator separator = list.getSeparator();
-		int gap = list.getGap();
-
+		Size gap = list.getSpace();
+		String gapString = gap == null ? null : gap.toString();
 		xml.appendTagOpen("ui:panel");
 		xml.appendAttribute("id", component.getId());
 		xml.appendOptionalAttribute("class", component.getHtmlClass());
@@ -42,7 +44,7 @@ final class WListRenderer extends AbstractWebXmlRenderer {
 		MarginRendererUtil.renderMargin(list, renderContext);
 
 		xml.appendTagOpen("ui:listlayout");
-		xml.appendOptionalAttribute("gap", gap > 0, gap);
+		xml.appendOptionalAttribute("gap", gapString);
 
 		if (type != null) {
 			switch (type) {

@@ -3,14 +3,10 @@ package com.github.bordertech.wcomponents.lde;
 import com.github.bordertech.wcomponents.AbstractWComponent;
 import com.github.bordertech.wcomponents.RenderContext;
 import com.github.bordertech.wcomponents.Request;
-import com.github.bordertech.wcomponents.UIContext;
 import com.github.bordertech.wcomponents.UIContextHolder;
-import com.github.bordertech.wcomponents.UIContextImpl;
 import com.github.bordertech.wcomponents.WApplication;
 import com.github.bordertech.wcomponents.WComponent;
 import com.github.bordertech.wcomponents.WText;
-import com.github.bordertech.wcomponents.WebUtilities;
-import com.github.bordertech.wcomponents.servlet.WServlet.WServletEnvironment;
 import com.github.bordertech.wcomponents.util.Config;
 import com.github.bordertech.wcomponents.util.ConfigurationProperties;
 import com.github.bordertech.wcomponents.util.StreamUtil;
@@ -88,12 +84,10 @@ public class PlainLauncher_Test {
 
 	@Test
 	public void testServer() throws Exception {
-		Config.getInstance().setProperty(ConfigurationProperties.LDE_PLAINLAUNCHER_COMPONENT_TO_LAUNCH,
-				MyTestApp.class.getName());
+		Config.getInstance().setProperty(ConfigurationProperties.LDE_PLAINLAUNCHER_COMPONENT_TO_LAUNCH, MyTestApp.class.getName());
 		// random port
 		Config.getInstance().setProperty(ConfigurationProperties.LDE_SERVER_PORT, "0");
-		Config.getInstance().
-				setProperty(ConfigurationProperties.WHITESPACE_FILTER, "false");
+		Config.getInstance().setProperty(ConfigurationProperties.WHITESPACE_FILTER, "false");
 
 		launcher = new PlainLauncher();
 		launcher.run();
@@ -107,7 +101,8 @@ public class PlainLauncher_Test {
 		Assert.assertEquals("HandleRequest should have been called once", 1,
 				MyTestApp.handleRequestCount);
 		Assert.assertEquals("PaintComponent should have been called once", 1, MyTestApp.paintCount);
-		Assert.assertTrue("Content should contain the rendered application", content.contains((new MyTestApp()).getContent()));
+		Assert.assertTrue("Content should contain the rendered application, got '" + content + "'",
+				content.contains((new MyTestApp()).getContent()));
 	}
 
 	/**

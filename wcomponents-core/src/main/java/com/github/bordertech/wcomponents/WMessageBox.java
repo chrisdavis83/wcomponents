@@ -3,11 +3,13 @@ package com.github.bordertech.wcomponents;
 import com.github.bordertech.wcomponents.util.Duplet;
 import com.github.bordertech.wcomponents.util.HtmlToXMLUtil;
 import com.github.bordertech.wcomponents.util.I18nUtilities;
+import com.github.bordertech.wcomponents.util.MemoryUtil;
 import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * <p>
@@ -146,7 +148,9 @@ public class WMessageBox extends AbstractWComponent implements AjaxTarget, Subor
 	 * @param type the messageBox type, one of {@link #SUCCESS}, {@link #INFO}, {@link #WARN} or {@link #ERROR}.
 	 */
 	public void setType(final Type type) {
-		getOrCreateComponentModel().type = type;
+		if (type != getType()) {
+			getOrCreateComponentModel().type = type;
+		}
 	}
 
 	/**
@@ -163,8 +167,13 @@ public class WMessageBox extends AbstractWComponent implements AjaxTarget, Subor
 	 * @param args optional arguments for the message format string.
 	 */
 	public void setTitleText(final String title, final Serializable... args) {
-		MessageModel model = getOrCreateComponentModel();
-		model.title = I18nUtilities.asMessage(title, args);
+		Serializable currTitle = getComponentModel().title;
+		Serializable titleToBeSet = I18nUtilities.asMessage(title, args);
+
+		if (!Objects.equals(titleToBeSet, currTitle)) {
+			MessageModel model = getOrCreateComponentModel();
+			model.title = titleToBeSet;
+		}
 	}
 
 	/**
@@ -194,6 +203,8 @@ public class WMessageBox extends AbstractWComponent implements AjaxTarget, Subor
 	public void addMessage(final boolean encode, final String msg, final Serializable... args) {
 		MessageModel model = getOrCreateComponentModel();
 		model.messages.add(new Duplet<>(I18nUtilities.asMessage(msg, args), encode));
+		// Potential for leaking memory here
+		MemoryUtil.checkSize(model.messages.size(), this.getClass().getSimpleName());
 	}
 
 	/**

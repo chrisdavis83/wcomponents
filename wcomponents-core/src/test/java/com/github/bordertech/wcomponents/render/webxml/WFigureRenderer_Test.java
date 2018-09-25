@@ -5,6 +5,7 @@ import com.github.bordertech.wcomponents.AjaxOperation;
 import com.github.bordertech.wcomponents.ComponentModel;
 import com.github.bordertech.wcomponents.DefaultWComponent;
 import com.github.bordertech.wcomponents.Margin;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.UIContext;
 import com.github.bordertech.wcomponents.WFigure;
 import com.github.bordertech.wcomponents.WFigure.FigureMode;
@@ -112,23 +113,23 @@ public class WFigureRenderer_Test extends AbstractWebXmlRendererTestCase {
 		figure.setMargin(margin);
 		assertXpathNotExists("//ui:figure/ui:margin", figure);
 
-		margin = new Margin(1);
+		margin = new Margin(Size.SMALL);
 		figure.setMargin(margin);
 		assertSchemaMatch(figure);
-		assertXpathEvaluatesTo("1", "//ui:figure/ui:margin/@all", figure);
+		assertXpathEvaluatesTo("sm", "//ui:figure/ui:margin/@all", figure);
 		assertXpathEvaluatesTo("", "//ui:figure/ui:margin/@north", figure);
 		assertXpathEvaluatesTo("", "//ui:figure/ui:margin/@east", figure);
 		assertXpathEvaluatesTo("", "//ui:figure/ui:margin/@south", figure);
 		assertXpathEvaluatesTo("", "//ui:figure/ui:margin/@west", figure);
 
-		margin = new Margin(1, 2, 3, 4);
+		margin = new Margin(Size.SMALL, Size.MEDIUM, Size.LARGE, Size.XL);
 		figure.setMargin(margin);
 		assertSchemaMatch(figure);
 		assertXpathEvaluatesTo("", "//ui:figure/ui:margin/@all", figure);
-		assertXpathEvaluatesTo("1", "//ui:figure/ui:margin/@north", figure);
-		assertXpathEvaluatesTo("2", "//ui:figure/ui:margin/@east", figure);
-		assertXpathEvaluatesTo("3", "//ui:figure/ui:margin/@south", figure);
-		assertXpathEvaluatesTo("4", "//ui:figure/ui:margin/@west", figure);
+		assertXpathEvaluatesTo("sm", "//ui:figure/ui:margin/@north", figure);
+		assertXpathEvaluatesTo("med", "//ui:figure/ui:margin/@east", figure);
+		assertXpathEvaluatesTo("lg", "//ui:figure/ui:margin/@south", figure);
+		assertXpathEvaluatesTo("xl", "//ui:figure/ui:margin/@west", figure);
 	}
 
 }

@@ -1,6 +1,7 @@
 package com.github.bordertech.wcomponents.examples.validation.repeater;
 
 import com.github.bordertech.wcomponents.Margin;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WDataRenderer;
 import com.github.bordertech.wcomponents.WField;
 import com.github.bordertech.wcomponents.WFieldLayout;
@@ -35,7 +36,7 @@ public class RepeaterComponent extends WDataRenderer {
 	public RepeaterComponent() {
 		fieldSet = new WFieldSet("Repeated Fields");
 		add(fieldSet);
-		fieldSet.setMargin(new Margin(0, 0, 12, 0));
+		fieldSet.setMargin(new Margin(null, null, Size.LARGE, null));
 		WFieldLayout fields = new WFieldLayout();
 		fieldSet.add(fields);
 

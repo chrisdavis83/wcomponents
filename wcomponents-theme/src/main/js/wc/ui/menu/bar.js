@@ -10,11 +10,11 @@ define(["wc/ui/menu/core",
 	"wc/dom/classList",
 	"wc/timers",
 	"wc/ui/ajax/processResponse",
-	"wc/loader/resource",
-	"lib/handlebars/handlebars",
+	"wc/template",
 	"wc/ui/viewportUtils",
 	"wc/ui/menu/menuItem"],
-	function(abstractMenu, toArray, event, keyWalker, shed, Widget, initialise, uid, i18n, classList, timers, processResponse, loader, handlebars, viewportUtils) {
+	function(abstractMenu, toArray, event, keyWalker, shed, Widget, initialise, uid, i18n, classList, timers,
+		processResponse, template, viewportUtils) {
 		"use strict";
 
 		/* Unused dependencies:
@@ -29,15 +29,13 @@ define(["wc/ui/menu/core",
 		 * @private
 		 */
 		function Menubar() {
-			var BANNER = BANNER || new Widget("header", "", {role: "banner"}),
-				HAMBURGER,
+			var HAMBURGER,
 				MENU_FIXED = "wc_menu_fix",
 				resizeTimer,
 				BURGER_MENU_CLASS = "wc_menu_hbgr",
-				submenuTemplate,
-				closeButtonTemplate,
 				DECORATED_LABEL,
-				RESPONSIVE_MENU;
+				RESPONSIVE_MENU,
+				SEPARATOR;
 
 			/**
 			 * The descriptors for this menu type.
@@ -156,16 +154,14 @@ define(["wc/ui/menu/core",
 						this._keyMap[VK_LEFT] = this._FUNC_MAP.CLOSE_MY_BRANCH;
 						this._keyMap[VK_UP] = keyWalker.MOVE_TO.PREVIOUS;
 						this._keyMap[VK_DOWN] = keyWalker.MOVE_TO.NEXT;
-					}
-					else {
+					} else {
 						// this._keyMap[VK_LEFT] = "openPreviousTopLevelSibling";
 						this._keyMap[VK_LEFT] = null;
 					}
 
 					if (this._isBranchOrOpener(_item)) {
 						this._keyMap[VK_RIGHT] = this._FUNC_MAP.ACTION;
-					}
-					else {
+					} else {
 						// this._keyMap[VK_RIGHT] = "openNextTopLevelSibling";
 						this._keyMap[VK_RIGHT] = null;
 					}
@@ -183,22 +179,19 @@ define(["wc/ui/menu/core",
 							if (isFirstLastItem(_item, root)) {
 								// If I am the first submenu item UP should go to the opener
 								this._keyMap[VK_UP] = keyWalker.MOVE_TO.PARENT;
-							}
-							else {
+							} else {
 								this._keyMap[VK_UP] = keyWalker.MOVE_TO.PREVIOUS;
 							}
 							// this is no an else if because an item can be both first and last
 							if (isFirstLastItem(_item, root, true)) {
 								// If I am the last submenu item then DOWN should go to the opener
 								this._keyMap[VK_DOWN] = keyWalker.MOVE_TO.PARENT;
-							}
-							else {
+							} else {
 								this._keyMap[VK_DOWN] = keyWalker.MOVE_TO.NEXT;
 							}
 						}
 					}
-				}
-				else {
+				} else {
 					this._keyMap[VK_LEFT] = keyWalker.MOVE_TO.PREVIOUS;
 					this._keyMap[VK_RIGHT] = keyWalker.MOVE_TO.NEXT;
 					// if I am a branch/opener and the menu is open then I have to cycle through my children
@@ -209,8 +202,7 @@ define(["wc/ui/menu/core",
 						if (shed.isExpanded(_item)) {
 							this._keyMap[VK_UP] = keyWalker.MOVE_TO.LAST_CHILD; // "lastChildItem";
 							this._keyMap[VK_DOWN] = keyWalker.MOVE_TO.CHILD;
-						}
-						else {
+						} else {
 							this._keyMap[VK_UP] = this._FUNC_MAP.ACTION;
 							this._keyMap[VK_DOWN] = this._FUNC_MAP.ACTION;
 						}
@@ -238,6 +230,13 @@ define(["wc/ui/menu/core",
 				};
 			};
 
+			/**
+			 * Clear the iconified state of any menu.
+			 *
+			 * @function
+			 * @private
+			 * @param {Element} nextMenu the menu to manipulate
+			 */
 			function removeIconified(nextMenu) {
 				var burger,
 					submenuContent,
@@ -259,62 +258,59 @@ define(["wc/ui/menu/core",
 					while ((current = submenuContent.firstChild)) {
 						if (classList.contains(current, "wc_closesubmenu")) {
 							submenuContent.removeChild(current);
-						}
-						else {
+						} else {
 							nextMenu.appendChild(current);
 						}
 					}
 					burger.parentNode.removeChild(burger);
 
-				}
-				finally {
+				} finally {
 					classList.remove(nextMenu, MENU_FIXED);
 				}
 			}
 
+			/**
+			 * Attach a close button to a submenu if required.
+			 *
+			 * @function
+			 * @private
+			 * @param {Element} el the element to test and (possibly) manipulate.
+			 */
 			function attachSubMenuCloseButton(el) {
 				var branch,
 					opener,
 					label,
-					props = {},
-					closeButton;
-				if (el && instance.isSubMenu(el)) {
-					closeButtonTemplate = closeButtonTemplate || getTemplate("submenuCloseButton.mustache");
-					if ((branch = instance._getBranch(el)) && (opener = instance._getBranchOpener(branch))) {
-						DECORATED_LABEL = DECORATED_LABEL || new Widget("", "wc-decoratedlabel");
-						label = DECORATED_LABEL.findDescendant(opener);
+					closeButton,
+					tempWrapper,
+					closeButtonHTML;
+				try {
+					if (el && instance.isSubMenu(el)) {
+						if ((branch = instance._getBranch(el)) && (opener = instance._getBranchOpener(branch))) {
+							DECORATED_LABEL = DECORATED_LABEL || new Widget("", "wc-decoratedlabel");
+							label = DECORATED_LABEL.findDescendant(opener);
 
-						if (label) {
-							Array.prototype.forEach.call(label.childNodes, function(child) {
-								if (child.nodeType !== Node.ELEMENT_NODE) {
-									return;
+							if (label) {
+								tempWrapper = document.createElement("span");
+								closeButtonHTML = "<button class=\"wc-menuitem wc_closesubmenu wc-nobutton wc-invite\" role=\"menuitem\" type=\"button\">" +
+									label.outerHTML +
+									"</button>";
+								tempWrapper.insertAdjacentHTML("afterbegin", closeButtonHTML);
+								closeButton = tempWrapper.firstChild;
+								if ((label = DECORATED_LABEL.findDescendant(closeButton))) {
+									label.insertAdjacentHTML("afterbegin", "<i class=\"fa fa-caret-left wc_dlbl_seg\" aria-hidden=\"true\"></i>");
 								}
-								if (classList.contains(child, "wc-labelhead")) {
-									props.labelhead = child.innerHTML;
+								Array.prototype.forEach.call(closeButton.querySelectorAll("[id]"), function(next) {
+									next.id = uid();
+								});
+								if (el.hasChildNodes()) {
+									el.insertBefore(closeButton, el.firstChild);
 								}
-								else if (classList.contains(child, "wc-labeltail")) {
-									props.labeltail = child.innerHTML;
-								}
-								else {
-									props.content = child.innerHTML;
-								}
-							});
+							}
 						}
 					}
-					if (!props.content) {
-						props.content = i18n.get("menu_close_label");
-					}
-					el.insertAdjacentHTML("afterBegin", closeButtonTemplate(props));
-					closeButton = el.firstChild;
-					if (!closeButton.id) {
-						closeButton.id = uid();
-					}
+				} finally {
+					tempWrapper = null;
 				}
-			}
-
-			function getTemplate(name) {
-				var template = loader.load(name, true);
-				return handlebars.compile(template);
 			}
 
 			/**
@@ -328,44 +324,41 @@ define(["wc/ui/menu/core",
 			 * @param {Element} nextMenu The menu to be processed.
 			 */
 			function makeIconified(nextMenu) {
-				var branchElement,
-					props;
-
 				if (classList.contains(nextMenu, MENU_FIXED)) {
 					return;
 				}
-
-				props = {
-					id: uid(),
-					class: " " + BURGER_MENU_CLASS,
-					opener: {
-						class: " wc_hbgr wc-icon",
-						tooltip: i18n.get("menu_open_label")
-					},
-					contentId: uid(),
-					open: false,
-					closeText: i18n.get("menu_close_label"),
-					items: nextMenu.innerHTML
-				};
-				submenuTemplate = submenuTemplate || getTemplate("submenu.mustache");
-				branchElement = submenuTemplate(props);
-				nextMenu.innerHTML = branchElement;
-				classList.add(nextMenu, MENU_FIXED);
-			}
-
-			function resizeEvent(/* $event */) {
-				if (resizeTimer) {
-					timers.clearTimeout(resizeTimer);
-				}
-				resizeTimer = timers.setTimeout(toggleIconMenus, 100);
+				i18n.translate(["menu_open_label", "menu_close_label"]).then(function(strings) {
+					var props = {
+						id: uid(),
+						class: " " + BURGER_MENU_CLASS,
+						opener: {
+							class: " wc_hbgr fa fa-bars",
+							tooltip: strings[0]
+						},
+						contentId: uid(),
+						open: false,
+						closeText: strings[1],
+						items: nextMenu.innerHTML
+					};
+					template.process({
+						source: "submenu.mustache",
+						loadSource: true,
+						target: nextMenu,
+						context: props,
+						callback: function() {
+							classList.add(nextMenu, MENU_FIXED);
+						}
+					});
+				});
 			}
 
 			/**
-			 * Determine if the iconification of any menus has to be toggled.
+			 * Determine if the iconification of any menus has to be toggled and call the appropriate manipulation
+			 * function if required.
 			 *
 			 * @function
 			 * @private
-			 * @param {Element} el The element which may be a menu, submenu or something containing a menu.
+			 * @param {Element} el the element to test which may be a menu, submenu or something containing a menu.
 			 */
 			function toggleIconMenus(el) {
 				var candidates, element = el || document.body;
@@ -376,8 +369,7 @@ define(["wc/ui/menu/core",
 
 				if (RESPONSIVE_MENU.isOneOfMe(element)) {
 					candidates = [element];
-				}
-				else {
+				} else {
 					candidates = toArray(RESPONSIVE_MENU.findDescendants(element));
 				}
 
@@ -392,17 +384,75 @@ define(["wc/ui/menu/core",
 				if (candidates.length) {
 					if (viewportUtils.isPhoneLike()) {
 						candidates.forEach(makeIconified);
-					}
-					else {
+					} else {
 						candidates.forEach(removeIconified);
 					}
 				}
-			};
+			}
 
+			/**
+			 * Resize event sets up a timer to undertake menu manipulation.
+			 * @function
+			 * @private
+			 */
+			function resizeEvent(/* $event */) {
+				if (resizeTimer) {
+					timers.clearTimeout(resizeTimer);
+				}
+				resizeTimer = timers.setTimeout(toggleIconMenus, 100);
+			}
+
+			/**
+			 * Set the orientation on vertical separators.
+			 *
+			 * @function
+			 * @private
+			 * @param {Element} element any element which may contain a bar/flyout menu separators
+			 */
+			function setSeparatorOrientation(element) {
+				if (!SEPARATOR) {
+					SEPARATOR =  new Widget("hr");
+					SEPARATOR.descendFrom(instance.ROOT, true);
+				}
+				Array.prototype.forEach.call(SEPARATOR.findDescendants(element), function(next) {
+					next.setAttribute("aria-orientation", "vertical");
+				});
+			}
+
+			/**
+			 * Pre-insertion ajax subscriber function to set the orientation of vertical separators in an ajax response.
+			 *
+			 * @function
+			 * @private
+			 * @param {Element} element the target element, not used
+			 * @param {DocumentFragment} documentFragment the DocumentFragment to be inserted
+			 */
+			function ajaxSubscriber(element, documentFragment) {
+				setSeparatorOrientation(documentFragment);
+			}
+
+			function attachClosebuttons(container) {
+				var el = container || document.body;
+				if (container && instance.isSubMenu(container)) {
+					attachSubMenuCloseButton(container);
+				}
+				Array.prototype.forEach.call(instance._wd.submenu.findDescendants(el), attachSubMenuCloseButton);
+			}
+
+			/**
+			 * Extended initialisation for bar/flyout menus. Should not be called manually.
+			 *
+			 * @function
+			 * @public
+			 * @param {Element} element the element being initialised
+			 */
 			this.initialise = function(element) {
 				this.constructor.prototype.initialise.call(this, element);
+				attachClosebuttons();
 				toggleIconMenus(element);
-				processResponse.subscribe(attachSubMenuCloseButton, true);
+				setSeparatorOrientation(element);
+				processResponse.subscribe(ajaxSubscriber);
+				processResponse.subscribe(attachClosebuttons, true);
 				processResponse.subscribe(toggleIconMenus, true);
 				event.add(window, event.TYPE.resize, resizeEvent, 1);
 			};
@@ -412,7 +462,7 @@ define(["wc/ui/menu/core",
 		 * Menu controller extension for WMenu of type BAR and type FLYOUT. These are menus which are horizontal at the top
 		 * level and if they have submenus they are transient fly-out artifacts.
 		 *
-		 * @see {@link http://www.w3.org/TR/wai-aria-practices/#menu}
+		 * @see http://www.w3.org/TR/wai-aria-practices/#menu
 		 *
 		 * @module
 		 * @extends module:wc/ui/menu/core
@@ -429,8 +479,7 @@ define(["wc/ui/menu/core",
 		 * @requires module:wc/dom/classList
 		 * @requires module:wc/timers
 		 * @requires module:wc/ui/ajax/processResponse
-		 * @requires module:wc/loader/resource
-		 * @requires:module:lib/handlebars/handlebars
+		 * @requires:module:wc/template
 		 * @requires module:wc/ui/viewportUtils
 		 */
 		var instance;

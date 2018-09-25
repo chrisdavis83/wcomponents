@@ -79,13 +79,13 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 		 * Get the previous node in the tree.
 		 * @function module:wc/compat/TreeWalker~TreeWalker~previous
 		 * @private
-		 * @param {TreeWalker} self The current treeWalker instance.
-		 * @returns {?Node}
+		 * @param {TreeWalker} mySelf The current treeWalker instance.
+		 * @returns {Node}
 		 * @throws {TypeError} A type error if self.currentNode is undefined.
 		 */
-		function previous(self) {
+		function previous(mySelf) {
 			var result,
-				node = self.currentNode,
+				node = mySelf.currentNode,
 				filterResult = null,
 				parent,
 				child,
@@ -120,17 +120,17 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 				filterResult = 0; // trigger the filter function
 			}
 
+			// Keep processing until explicit break
+			// eslint-disable-next-line no-constant-condition
 			PROCESSING: while (true) {
 				// filter
 				// first time in while loop don't worry about the filter, were just
 				// interested in finding the next logical element in the tree
 				if (filterResult === null) {
 					filterResult = 0; // case for first time run - filterResult is null
-				}
-				else if (nodeTypeMap[node.nodeType] & whatToShow) { // if this nodeType matches whatToShow then we pass it through the filter function
+				} else if (nodeTypeMap[node.nodeType] & whatToShow) { // if this nodeType matches whatToShow then we pass it through the filter function
 					filterResult = filter ? filter.acceptNode(node) : FILTER_ACCEPT;
-				}
-				else { // 'hop' over/into this node
+				} else { // 'hop' over/into this node
 					filterResult = FILTER_SKIP;
 				}
 				// TODO typecheck filterResult
@@ -154,9 +154,8 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 				if (filterResult === FILTER_ACCEPT) {
 					if (isPreviousNode && child) {
 						backtrack = node;
-					}
-					else {
-						result = self.currentNode = node;
+					} else {
+						result = mySelf.currentNode = node;
 						break;
 					}
 				}
@@ -167,31 +166,26 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 						if ((lastChild = child.lastChild)) {
 							node = child = lastChild;
 							continue PROCESSING;
-						}
-						else if (!(nodeTypeMap[node.nodeType] & whatToShow)) {  // is this node a type we can accept?
+						} else if (!(nodeTypeMap[node.nodeType] & whatToShow)) {  // is this node a type we can accept?
 							if (node.previousSibling) {
 								node = (node.previousSibling);
 							}
 							filterResult = FILTER_REJECT;
 							child = null;
 							continue PROCESSING;
-						}
-						else if (backtrack) {
-							result = self.currentNode = backtrack;
+						} else if (backtrack) {
+							result = mySelf.currentNode = backtrack;
 							break;
-						}
-						// child is lastChild in the previous skipped branch
-						else {
+						} else {
+							// child is lastChild in the previous skipped branch
 							node = branch;
 						}
-					}
-					else if (backtrack) {
-						result = self.currentNode = backtrack;
+					} else if (backtrack) {
+						result = mySelf.currentNode = backtrack;
 						break;
-					}
-					// if the child rejects and we have no successful backtrack node we reset node to
-					// the top of this branch and go from there
-					else {
+					} else {
+						// if the child rejects and we have no successful backtrack node we reset node to
+						// the top of this branch and go from there
 						node = branch;
 					}
 				}
@@ -207,8 +201,7 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 						if ((node.id || root.id) && node.id === root.id) {  // this is  a cheap test which IE will probably pass
 							result = null;
 							break;
-						}
-						else if ((root.outerHTML || node.outerHTML) && root.outerHTML === node.outerHTML) {  // this is a definitive IE test for the same elements if the element has no id
+						} else if ((root.outerHTML || node.outerHTML) && root.outerHTML === node.outerHTML) {  // this is a definitive IE test for the same elements if the element has no id
 							result = null;
 							break;
 						}
@@ -218,8 +211,7 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 					if ((child = branch = node.previousSibling)) {
 						node = child;
 						continue PROCESSING;
-					}
-					else if ((parent = node.parentNode)) {
+					} else if ((parent = node.parentNode)) {
 						node = parent;
 						continue PROCESSING;
 					}
@@ -234,12 +226,12 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 		 * Get the next node in the tree.
 		 * @function module:wc/compat/TreeWalker~TreeWalker~next
 		 * @private
-		 * @param {TreeWalker} self The current treeWalker instance.
-		 * @returns {?Node}
+		 * @param {TreeWalker} mySelf The current treeWalker instance.
+		 * @returns {Node}
 		 * @throws {TypeError} A type error if self.currentNode is undefined.
 		 * @throws {Error} Throws if the tree cannot be processed - usually only if the tree is malformed.
 		 */
-		function next(self) {
+		function next(mySelf) {
 			var result,
 				queryRoot,
 				node,
@@ -248,7 +240,7 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 				child,
 				sibling,
 				trueParent, temp;
-			node = queryRoot = self.currentNode;
+			node = queryRoot = mySelf.currentNode;
 			if (!node) {
 				throw new TypeError("currentNode has been set to null, check your usage of this property");
 			}
@@ -265,8 +257,7 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 							trueParent = temp.parentNode;
 							break;
 						}
-					}
-					else {
+					} else {
 						break;
 					}
 				}
@@ -275,26 +266,26 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 
 			// process each node depth first
 			PROCESSING:
+			// Keep processing until explicit break
+			// eslint-disable-next-line no-constant-condition
 			while (true) { // <-- looks like a scary test huh
 				// filter
 				// first time in while loop don't worry about the filter, were just interested in finding the next logical
 				// element in the tree and then filtering it
 				if (filterResult === null) {
 					filterResult = 0; // case for first time run - filterResult is null
-				}
-				else {
+				} else {
 					// if this nodeType matches whatToShow then we pass it through the filter function
 					if (nodeTypeMap[node.nodeType] & whatToShow) {
 						filterResult = filter ? filter.acceptNode(node) : FILTER_ACCEPT;
-					}
-					else { // 'hop' over/into this node
+					} else { // 'hop' over/into this node
 						filterResult = FILTER_SKIP;
 					}
 					// TODO typecheck filterResult
 
 					// if this node is accepted set & return it
 					if (filterResult === FILTER_ACCEPT) {
-						result = self.currentNode = node;
+						result = mySelf.currentNode = node;
 						break;
 					}
 				}
@@ -321,8 +312,7 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 							if (node !== sibling) {
 								node = sibling;
 								continue PROCESSING;
-							}
-							else {
+							} else {
 								throw new Error("Treewalker can not process this tree, appears malformed");
 							}
 						}
@@ -343,7 +333,7 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 		 * Get the first node in the tree which is acceptable according to the tree walker's filter function.
 		 * @function
 		 * @public
-		 * @returns {?Node}
+		 * @returns {Node}
 		 */
 		this.firstChild = function() {
 			isFirstChild = true;
@@ -356,7 +346,7 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 		 * Get the last node in the tree which is acceptable according to the tree walker's filter function.
 		 * @function
 		 * @public
-		 * @returns {?Node}
+		 * @returns {Node}
 		 */
 		this.lastChild = function() {
 			isLastChild = true;
@@ -368,7 +358,7 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 		 * Get the next sibling node in the tree which is acceptable according to the tree walker's filter function.
 		 * @function
 		 * @public
-		 * @returns {?Node}
+		 * @returns {Node}
 		 */
 		this.nextSibling = function() {
 			isFirstChild = false;
@@ -381,7 +371,7 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 		 * Get the next node in the tree which is acceptable according to the tree walker's filter function.
 		 * @function
 		 * @public
-		 * @returns {?Node}
+		 * @returns {Node}
 		 */
 		this.nextNode = function() {
 			isFirstChild = false;
@@ -394,7 +384,7 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 		 * Get the previous sibling node in the tree which is acceptable according to the tree walker's filter function.
 		 * @function
 		 * @public
-		 * @returns {?Node}
+		 * @returns {Node}
 		 */
 		this.previousSibling = function() {
 			isLastChild = false;
@@ -406,7 +396,7 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 		 * Get the previous node in the tree which is acceptable according to the tree walker's filter function.
 		 * @function
 		 * @public
-		 * @returns {?Node}
+		 * @returns {Node}
 		 */
 		this.previousNode = function() {
 			isLastChild = false;
@@ -418,7 +408,7 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 		 * Get the parent node in the tree which is acceptable according to the tree walker's filter function.
 		 * @function
 		 * @public
-		 * @returns {?Node}
+		 * @returns {Node}
 		 * @throws {TypeError} Thrown if the current treeWalker instance currentNode is unset.
 		 */
 		this.parentNode = function() {
@@ -430,8 +420,7 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 			while ((node = node === root ? null : node.parentNode)) {
 				if (nodeTypeMap[node.nodeType] & whatToShow) {
 					filterResult = filter ? filter.acceptNode(node) : FILTER_ACCEPT;
-				}
-				else {
+				} else {
 					return null;
 				}
 				if (filterResult === FILTER_ACCEPT) {

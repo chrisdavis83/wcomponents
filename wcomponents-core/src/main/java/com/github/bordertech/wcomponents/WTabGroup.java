@@ -17,7 +17,7 @@ public class WTabGroup extends AbstractContainer implements Disableable {
 	 * @param groupName the tab group name.
 	 */
 	public WTabGroup(final String groupName) {
-		this(new WDecoratedLabel(groupName));
+		// NO OP
 	}
 
 	/**
@@ -26,34 +26,41 @@ public class WTabGroup extends AbstractContainer implements Disableable {
 	 * @param label the tab group label.
 	 */
 	public WTabGroup(final WDecoratedLabel label) {
-		add(label);
+		// NO OP
 	}
 
 	/**
 	 * Adds a separator to the tab group.
+	 *
+	 * @deprecated No separators in TabGroups as it does not conform with a11y requirements.
 	 */
+	@Deprecated
 	public void addSeparator() {
-		add(new WSeparator());
+		// NO OP
 	}
 
 	/**
-	 * Indicates whether the WTabSet is disabled.
+	 * Indicates whether the WTabGroup is disabled.
 	 *
 	 * @return true if the input is disabled, otherwise false.
+	 * @deprecated TabGroups do not exist and therefore cannot be disabled.
 	 */
+	@Deprecated
 	@Override
 	public boolean isDisabled() {
-		return isFlagSet(ComponentModel.DISABLED_FLAG);
+		return false;
 	}
 
 	/**
 	 * Sets whether the WTabSet is disabled.
 	 *
 	 * @param disabled if true, the input is disabled. If false, it is enabled.
+	 * @deprecated TabGroups do not exist and therefore cannot be disabled.
 	 */
+	@Deprecated
 	@Override
 	public void setDisabled(final boolean disabled) {
-		setFlag(ComponentModel.DISABLED_FLAG, disabled);
+		// No-Op
 	}
 
 	/**
@@ -124,7 +131,8 @@ public class WTabGroup extends AbstractContainer implements Disableable {
 	 * Adds a tab to the tab set.
 	 *
 	 * @param tab the tab to add.
-	 * @deprecated use e.g. {@link #addTab(WComponent, String, TabMode)}
+	 * @deprecated use e.g.
+	 * {@link #addTab(com.github.bordertech.wcomponents.WComponent, java.lang.String, com.github.bordertech.wcomponents.WTabSet.TabMode)}
 	 */
 	@Deprecated
 	public void add(final WTab tab) {

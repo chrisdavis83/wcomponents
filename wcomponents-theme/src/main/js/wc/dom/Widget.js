@@ -109,7 +109,10 @@ define(["wc/dom/getAncestorOrSelf", "wc/dom/uid"], /** @param getAncestorOrSelf 
 				if (p1 !== ESC) {
 					res = ESC + res;
 				}
-				return p1 + res;
+				if (typeof p1 !== "undefined") {
+					res = p1 + res;
+				}
+				return res;
 			});
 		}
 		return result;
@@ -137,8 +140,7 @@ define(["wc/dom/getAncestorOrSelf", "wc/dom/uid"], /** @param getAncestorOrSelf 
 					cn.forEach(function(nxt) {
 						result += (DOT + escapeQs(nxt));
 					});
-				}
-				else {
+				} else {
 					result += DOT + cn;
 				}
 			}
@@ -174,8 +176,7 @@ define(["wc/dom/getAncestorOrSelf", "wc/dom/uid"], /** @param getAncestorOrSelf 
 				operator = "=";
 			if (hasVal && name === "id") {
 				result += "#" + escapeQs(val);
-			}
-			else {
+			} else {
 				if (hasVal && val.indexOf(" ") === -1) {
 					operator = "~" + operator;
 				}
@@ -219,7 +220,7 @@ define(["wc/dom/getAncestorOrSelf", "wc/dom/uid"], /** @param getAncestorOrSelf 
 	 *    will be the result for this widget's container and so on...
 	 * @param {Boolean} [outermost] If true then get the matching ancestor which is furthest from element rather than
 	 *    the first matching ancestor.
-	 * @returns {?Element} The ancestor element if found or null (null even if getTree true).
+	 * @returns {Element} The ancestor element if found or null (null even if getTree true).
 	 */
 	Widget.prototype.findAncestor = function(element, limitTagName, getTree, outermost) {
 		var result = null,
@@ -242,19 +243,16 @@ define(["wc/dom/getAncestorOrSelf", "wc/dom/uid"], /** @param getAncestorOrSelf 
 								if (next.length) {
 									result = tree.concat(next);
 								}
-							}
-							else {
+							} else {
 								result = tree[0];
 							}
 						}
 					}
-				}
-				else {
+				} else {
 					result = getTree ? [next] : next;
 				}
 			}
-		}
-		finally {
+		} finally {
 			this.element = null;
 			this.limitTagName = null;
 			this.outermost = null;
@@ -280,7 +278,7 @@ define(["wc/dom/getAncestorOrSelf", "wc/dom/uid"], /** @param getAncestorOrSelf 
 	 * @public
 	 * @param {Element} element The element whose descendant we are searching.
 	 * @param {Boolean} [immediate] Only searches immediate child nodes.
-	 * @returns {?Element} The descendant element if found otherwise null.
+	 * @returns {Element} The descendant element if found otherwise null.
 	 */
 	Widget.prototype.findDescendant = function(element, immediate) {
 		return findDescendantsHelper(this, element, immediate, false);
@@ -295,7 +293,7 @@ define(["wc/dom/getAncestorOrSelf", "wc/dom/uid"], /** @param getAncestorOrSelf 
 	 * @param {Element} element The element whose descendants we are searching.
 	 * @param {Booelan} [immediate] If true only searches immediate child nodes.
 	 * @param {Boolean} [findAll] If false returns the first match only, toerwise finds all.
-	 * @returns {?(NodeList|Element)} Array-like collection of descendants OR, if findAll false, an element.
+	 * @returns {(NodeList|Element)} Array-like collection of descendants OR, if findAll false, an element.
 	 */
 	function findDescendantsHelper(widget, element, immediate, findAll) {
 		var result,
@@ -319,8 +317,7 @@ define(["wc/dom/getAncestorOrSelf", "wc/dom/uid"], /** @param getAncestorOrSelf 
 					}
 				}
 				qs += immediatePrefix + toQs(next);
-			}
-			else {
+			} else {
 				qs += toQs(next);
 			}
 		}
@@ -366,8 +363,7 @@ define(["wc/dom/getAncestorOrSelf", "wc/dom/uid"], /** @param getAncestorOrSelf 
 			if (additionalClassName) {
 				if (this.className) {
 					result.className = [].concat(this.className, additionalClassName);
-				}
-				else {
+				} else {
 					result.className = additionalClassName;
 				}
 			}
@@ -380,8 +376,7 @@ define(["wc/dom/getAncestorOrSelf", "wc/dom/uid"], /** @param getAncestorOrSelf 
 					result.attributes[key] = this.attributes[key];
 				}
 			}
-		}
-		else {
+		} else {
 			throw new TypeError("You do not need to extend this widget");
 		}
 		return result;
@@ -412,8 +407,7 @@ define(["wc/dom/getAncestorOrSelf", "wc/dom/uid"], /** @param getAncestorOrSelf 
 			result = widgets.some(function(widget) {
 				return widget.isOneOfMe(element);
 			});
-		}
-		else {
+		} else {
 			result = widgets.isOneOfMe(element);
 		}
 		return result;
@@ -427,7 +421,7 @@ define(["wc/dom/getAncestorOrSelf", "wc/dom/uid"], /** @param getAncestorOrSelf 
 	 * @param {Element} element the start element
 	 * @param {(module:wc/dom/Widget[]|module:wc/dom/Widget)} widgets an array of Widgets.
 	 * @param {boolean} [immediate] If true look only in element's child nodes otherwise look in descendant nodes.
-	 * @returns {?Element} The first matching descendant element.
+	 * @returns {Element} The first matching descendant element.
 	 */
 	Widget.findDescendant = function(element, widgets, immediate) {
 		return findDescendantsHelper(widgets, element, immediate, false);
@@ -457,7 +451,7 @@ define(["wc/dom/getAncestorOrSelf", "wc/dom/uid"], /** @param getAncestorOrSelf 
 	 * @param {String} [config.limit] tagName for limit tag.
 	 * @param {Boolean} [config.tree] return tree from individual widgets.
 	 * @param {Boolean} [config.outermost] If true returns the outermost matching ancestor from all of the widgets.
-	 * @returns {?(Element|Array)} The ancestor element, if any or the ancestor tree array if config.tree is true.
+	 * @returns {(Element|Array)} The ancestor element, if any or the ancestor tree array if config.tree is true.
 	 */
 	Widget.findAncestor = function(element, widgets, config) {
 		var matches = [],

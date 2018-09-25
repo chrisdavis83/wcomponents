@@ -6,42 +6,69 @@
 	</div>
 	<div class="wc_img_cap wc-column" style="height: {{style.height}}px">
 		<div id="wc_img_video_container"></div>
-		<button title="{{t 'imgedit_message_snap'}}" type="button" class="wc_btn_snap wc_btn_icon" name="snap"><span class="wc-off">{{t 'imgedit_action_snap'}}</span></button>
+		<button title="{{imgedit_message_snap}}" type="button" class="wc_btn_snap {{style.btnclass}}" name="snap"><i aria-hidden="true" class="fa fa-camera"></i><span class="{{style.textclass}}">{{imgedit_action_snap}}</span></button>
 	</div>
 	<div class="wc_img_nocap wc-column">
-		<p>{{t 'imgedit_message_nocapture'}}</p>
+		<p>{{imgedit_message_nocapture}}</p>
 	</div>
 	<div class="wc_img_controls wc-column">
+		{{#feature.rotate}}
 		<fieldset>
-			<legend>{{t 'imgedit_rotate'}}</legend>
-			<button title="{{t 'imgedit_message_rotate_left90'}}" type="button" class="wc_btn_anticlock90 wc_btn_icon" name="anticlock90"><span class="wc-off">{{t 'imgedit_rotate_left90'}}</span></button>
-			<button title="{{t 'imgedit_message_rotate_left'}}" type="button" class="wc_btn_anticlock wc_btn_icon" name="anticlock"><span class="wc-off">{{t 'imgedit_rotate_left'}}</span></button>
-			<button title="{{t 'imgedit_message_rotate_right'}}" type="button" class="wc_btn_clock wc_btn_icon" name="clock"><span class="wc-off">{{t 'imgedit_rotate_right'}}</span></button>
-			<button title="{{t 'imgedit_message_rotate_right90'}}" type="button" class="wc_btn_clock90 wc_btn_icon" name="clock90"><span class="wc-off">{{t 'imgedit_rotate_right90'}}</span></button>
+			<legend>{{imgedit_rotate}}</legend>
+			<button title="{{imgedit_message_rotate_left90}}" type="button" class="wc_btn_anticlock90 {{style.btnclass}}" name="anticlock90"><i aria-hidden="true" class="fa fa-step-backward"></i><span class="{{style.textclass}}">{{imgedit_rotate_left90}}</span></button>
+			<button title="{{imgedit_message_rotate_left}}" type="button" class="wc_btn_anticlock {{style.btnclass}}" name="anticlock"><i aria-hidden="true" class="fa fa-undo"></i><span class="{{style.textclass}}">{{imgedit_rotate_left}}</span></button>
+			<button title="{{imgedit_message_rotate_right}}" type="button" class="wc_btn_clock {{style.btnclass}}" name="clock"><i aria-hidden="true" class="fa fa-repeat"></i><span class="{{style.textclass}}">{{imgedit_rotate_right}}</span></button>
+			<button title="{{imgedit_message_rotate_right90}}" type="button" class="wc_btn_clock90 {{style.btnclass}}" name="clock90"><i aria-hidden="true" class="fa fa-step-forward"></i><span class="{{style.textclass}}">{{imgedit_rotate_right90}}</span></button>
 		</fieldset>
+		{{/feature.rotate}}
+		{{#feature.zoom}}
 		<fieldset>
-			<legend>{{t 'imgedit_zoom'}}</legend>
-			<button title="{{t 'imgedit_message_zoom_out'}}" type="button" class="wc_btn_out wc_btn_icon" name="out"><span class="wc-off">{{t 'imgedit_zoom_out'}}</span></button>
-			<button title="{{t 'imgedit_message_zoom_in'}}" type="button" class="wc_btn_in wc_btn_icon" name="in"><span class="wc-off">{{t 'imgedit_zoom_in'}}</span></button>
+			<legend>{{imgedit_zoom}}</legend>
+			<button title="{{imgedit_message_zoom_out}}" type="button" class="wc_btn_out {{style.btnclass}}" name="out"><i aria-hidden="true" class="fa fa-search-minus"></i><span class="{{style.textclass}}">{{imgedit_zoom_out}}</span></button>
+			<button title="{{imgedit_message_zoom_in}}" type="button" class="wc_btn_in {{style.btnclass}}" name="in"><i aria-hidden="true" class="fa fa-search-plus"></i><span class="{{style.textclass}}">{{imgedit_zoom_in}}</span></button>
 			{{#feature.face}}
-			<button title="{{message.face}}" type="button" class="wc_btn_face wc_btn_icon" name="face"><span class="wc-off">{{action.face}}</span></button>
+			<button title="{{message.face}}" type="button" class="wc_btn_face {{style.btnclass}}" name="face"><i aria-hidden="true" class="fa fa-user"></i><span class="{{style.textclass}}">{{action.face}}</span></button>
 			{{/feature.face}}
 		</fieldset>
+		{{/feature.zoom}}
+		{{#feature.move}}
 		<fieldset class="wc_img_buttons">
-			<legend>{{t 'imgedit_move'}}</legend>
-			<button title="{{t 'imgedit_message_move_up'}}" type="button" class="wc_btn_up wc_btn_icon" name="up"><span class="wc-off">{{t 'imgedit_move_up'}}</span></button>
-			<button title="{{t 'imgedit_message_move_left'}}" type="button" class="wc_btn_left wc_btn_icon" name="left"><span class="wc-off">{{t 'imgedit_move_left'}}</span></button>
-			<button title="{{t 'imgedit_message_move_right'}}" type="button" class="wc_btn_right wc_btn_icon" name="right"><span class="wc-off">{{t 'imgedit_move_right'}}</span></button>
-			<button title="{{t 'imgedit_message_move_down'}}" type="button" class="wc_btn_down wc_btn_icon" name="down"><span class="wc-off">{{t 'imgedit_move_down'}}</span></button>
+			<legend>{{imgedit_move}}</legend>
+			<button title="{{imgedit_message_move_up}}" type="button" class="wc_btn_up {{style.btnclass}}" name="up"><i aria-hidden="true" class="fa fa-caret-up"></i><span class="{{style.textclass}}">{{imgedit_move_up}}</span></button>
+			<button title="{{imgedit_message_move_left}}" type="button" class="wc_btn_left {{style.btnclass}}" name="left"><i aria-hidden="true" class="fa fa-caret-left"></i><span class="{{style.textclass}}">{{imgedit_move_left}}</span></button>
+			<button title="{{imgedit_message_move_center}}" type="button" class="wc_btn_center {{style.btnclass}}" name="center"><i aria-hidden="true" class="fa fa-bullseye"></i><span class="{{style.textclass}}">{{imgedit_move_center}}</span></button>
+			<button title="{{imgedit_message_move_right}}" type="button" class="wc_btn_right {{style.btnclass}}" name="right"><i aria-hidden="true" class="fa fa-caret-right"></i><span class="{{style.textclass}}">{{imgedit_move_right}}</span></button>
+			<button title="{{imgedit_message_move_down}}" type="button" class="wc_btn_down {{style.btnclass}}" name="down"><i aria-hidden="true" class="fa fa-caret-down"></i><span class="{{style.textclass}}">{{imgedit_move_down}}</span></button>
 		</fieldset>
+		{{/feature.move}}
+		{{#feature.redact}}
+		<fieldset>
+			<legend>{{imgedit_redact}}</legend>
+			<label>{{imgedit_action_redact}}
+				<input title="{{imgedit_message_redact}}" type="checkbox" name="redact"/>
+			</label>
+		</fieldset>
+		{{/feature.redact}}
 		<fieldset class="wc_img_capture">
-			<legend>{{t 'imgedit_capture'}}</legend>
-			<button title="{{t 'imgedit_message_camera'}}" type="button" class="wc_btn_camera wc_btn_icon" name="camera"><span class="wc-off">{{t 'imgedit_action_camera'}}</span></button>
+			<legend>{{imgedit_capture}}</legend>
+			<button title="{{imgedit_message_camera}}" type="button" class="wc_btn_camera {{style.btnclass}}" name="camera"><i aria-hidden="true" class="fa fa-video-camera"></i><span class="{{style.textclass}}">{{imgedit_action_camera}}</span></button>
 		</fieldset>
+		{{#feature.reset}}
 		<div>
-			<button title="{{t 'imgedit_message_reset'}}" type="button" class="wc_btn_reset wc_btn_icon" name="reset"><span class="wc-off">{{t 'imgedit_action_reset'}}</span></button>
-			<button title="{{t 'imgedit_message_cancel'}}" type="button" class="wc_btn_cancel wc_btn_icon" name="cancel"><span class="wc-off">{{t 'imgedit_action_cancel'}}</span></button>
-			<button title="{{t 'imgedit_message_save'}}" type="button" class="wc_btn_save wc_btn_icon" name="save"><span class="wc-off">{{t 'imgedit_action_save'}}</span></button>
+			<button title="{{imgedit_message_reset}}" type="button" name="reset">{{imgedit_action_reset}}</button>
+		</div>
+		{{/feature.reset}}
+		<div>
+			{{#feature.undo}}
+			<button title="{{imgedit_message_undo}}" type="button" class="wc_btn_undo {{style.btnclass}}" name="undo"><i aria-hidden="true" class="fa fa-reply"></i><span class="{{style.textclass}}">{{imgedit_action_undo}}</span></button>
+			<button title="{{imgedit_message_redo}}" type="button" class="wc_btn_redo {{style.btnclass}}" name="redo"><i aria-hidden="true" class="fa fa-share"></i><span class="{{style.textclass}}">{{imgedit_action_redo}}</span></button>
+			{{/feature.undo}}
+			{{#feature.cancel}}
+			<button title="{{imgedit_message_cancel}}" type="button" class="wc_btn_cancel {{style.btnclass}}" name="cancel"><i aria-hidden="true" class="fa fa-trash"></i><span class="{{style.textclass}}">{{imgedit_action_cancel}}</span></button>
+			{{/feature.cancel}}
+			{{#feature.save}}
+			<button title="{{imgedit_message_save}}" type="button" class="wc_btn_save {{style.btnclass}}" name="save"><i aria-hidden="true" class="fa fa-floppy-o"></i><span class="{{style.textclass}}">{{imgedit_action_save}}</span></button>
+			{{/feature.save}}
 		</div>
 	</div>
 </div>

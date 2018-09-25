@@ -19,6 +19,7 @@ import com.github.bordertech.wcomponents.WMessages;
 import com.github.bordertech.wcomponents.WPanel;
 import com.github.bordertech.wcomponents.WPartialDateField;
 import com.github.bordertech.wcomponents.WRadioButtonSelect;
+import com.github.bordertech.wcomponents.WSuggestions;
 import com.github.bordertech.wcomponents.WText;
 import com.github.bordertech.wcomponents.WTextField;
 import com.github.bordertech.wcomponents.WebUtilities;
@@ -172,7 +173,6 @@ public class WDialogExample extends WPanel implements MessageContainer {
 		// Modal Dialog which opens after round trip to server
 		final WDialog modalDialogRT = new WDialog(selectPanel);
 		modalDialogRT.setMode(WDialog.MODAL);
-		modalDialogRT.setResizable(true);
 		WButton dialogButton1 = new WButton("Show modal search Dialog (round trip)");
 		//When a WButton will cause a dialog to open when the page is reloaded it should be
 		//marked as a popup trigger. This is an accessibility enhancement.
@@ -215,24 +215,6 @@ public class WDialogExample extends WPanel implements MessageContainer {
 		 */
 		final WDialog dialogWithTitle = new WDialog(new ViewPersonList(), new WButton("Show dialog with specified title"));
 		dialogWithTitle.setTitle("List of people");
-		/*
-		 * NOT RESIZEABLE
-		 * A WDialog is resizeable by the user unless resizing is explicitly
-		 * disabled: you usually don't want to do this as it may cause usability
-		 * problems.
-		 */
-		final WDialog fixedSizeDialog = new WDialog(new ViewPersonList(), new WButton("Show dialog which is not resizeable"));
-		fixedSizeDialog.setResizable(false);
-		/*
-		 * NOT RESIZEABLE with fixed dimensions
-		 * A WDialog is resizeable by the user unless resizing is explicitly
-		 * disabled: you usually don't want to do this as it may cause usability
-		 * problems.
-		 */
-		final WDialog fixedSizeDialog2 = new WDialog(new ViewPersonList(), new WButton("Show dialog with size but not resizeable"));
-		fixedSizeDialog2.setResizable(false);
-		fixedSizeDialog2.setWidth(300);
-		fixedSizeDialog2.setHeight(150);
 
 		/*
 		 * SET THE WIDTH of a dialog
@@ -264,12 +246,10 @@ public class WDialogExample extends WPanel implements MessageContainer {
 		add(new WHeading(HeadingLevel.H2,
 				"Dialogs which display use of various properties one at a time"));
 		add(dialogWithTitle);
-		add(fixedSizeDialog);
 		add(dialogWithWidth);
 		add(dialogWithHeight);
 		add(dialogWithHeight2);
 		add(dialogWithMode);
-		add(fixedSizeDialog2);
 
 		add(new WHeading(WHeading.MAJOR, "Dialogs which open without page reload"));
 		//remember the button of an immediate is part of the dialog: it will be place into the UI wherever the dialog is placed
@@ -303,6 +283,13 @@ public class WDialogExample extends WPanel implements MessageContainer {
 		});
 
 		WFieldLayout dateDlgFldLayout = new WFieldLayout();
+		WSuggestions suggestions = new WSuggestions("icao");
+		WContainer suggestionsContainer = new WContainer();
+		suggestionsContainer.add(suggestions);
+		WTextField text1 = new WTextField();
+		text1.setSuggestions(suggestions);
+		suggestionsContainer.add(text1);
+		dateDlgFldLayout.addField("Select a contry", suggestionsContainer);
 		dateDlgFldLayout.addField("Set a date", pdfDate);
 		WContainer dateBtnContainer = new WContainer();
 		dateBtnContainer.add(dateButton);
@@ -325,6 +312,32 @@ public class WDialogExample extends WPanel implements MessageContainer {
 		pollingDialog.setTrigger(openPollingButton);
 		add(openPollingButton);
 		add(pollingDialog);
+
+
+		add(new WHeading(HeadingLevel.H3, "WDialog with disabled launch button"));
+		add(new ExplanatoryText("This is here to test a workaround for an IE 'feature'."));
+		// WDialog with disabled activation button
+		WButton disabledButton = new WButton("Open dialog (disabled)");
+		disabledButton.setDisabled(true);
+		WDialog dialogWithDisabledButton = new WDialog(new ViewPersonList(), disabledButton);
+		add(dialogWithDisabledButton);
+
+		WButton ajaxTriggerButton = new WButton("Open a dialog from an ajax response");
+		add(ajaxTriggerButton);
+		WPanel ajaxTargetPanel = new WPanel(WPanel.Type.BOX);
+		add(ajaxTargetPanel);
+		final WDialog dlgInAjax = new WDialog(new ViewPersonList());
+		dlgInAjax.setMode(WDialog.MODAL);
+		ajaxTargetPanel.add(dlgInAjax);
+		ajaxTriggerButton.setAction(new Action() {
+			@Override
+			public void execute(ActionEvent event) {
+				if (dlgInAjax.getState() == WDialog.INACTIVE_STATE) {
+					dlgInAjax.display();
+				}
+			}
+		});
+		ajaxTriggerButton.setAjaxTarget(ajaxTargetPanel);
 	}
 
 	/**

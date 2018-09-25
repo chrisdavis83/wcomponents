@@ -1,241 +1,97 @@
 <project name="BuildCss" default="build" >
 	<!--
 		Build the CSS (from Sass in SCSS format) for a given implementation.
-
-		This build must be called with the name of the implementation rootdir set in property "implementation.name". If
-		 not set then the css from "wcomponents-theme" alone will be used.
-
-		build-images.xml and build-resource.xml needs to be called before this build so that the base64
-		task can find images and webfonts to embed
 	-->
 	<import file="build-import.xml" />
-	<!--
-		Temp directories used in the build for copy and Sass compile. The copy step is necessary for implementation
-		over-rides and ANT property replacement.
-	-->
-	<property name="style.tmp.src.dir" location="${tmp.dir}/css" />
-	<property name="style.tmp.target.dir" location="${tmp.dir}/css-built" />
-	<property name="sass.rootdir" location="${common.src.rootdir}/sass" />
-	<property name="impl.sass.rootdir" location="${impl.src.main.dir}/sass" />
-	<property name="sass.tmp.src.dir" location="${tmp.dir}/sass" />
 
-	<target name="build" depends="init, copyCssSrc, compileScssVaadinAntWrapper, initExcludes, buildCss, minify" description="Builds CSS artifacts then minifies them"> </target>
+	<target name="build" depends="init, copySassSrc, compileSass, minify" description="Builds CSS artifacts then minifies them"> </target>
 
-	<target name="minify" unless="minifiy.resources.off" depends="imagesToDataUrl">
-		<stopwatch name="minifyCss" action="start" />
-		<for param="file">
-			<fileset dir="${style.build.target.dir}">
-				<include name="*${debug.target.file.name.suffix}.css" />
-			</fileset>
-			<sequential>
-				<var name="base.name" unset="true" />
-				<var name="css.name" unset="true" />
-				<basename property="base.name" file="@{file}" />
-				<!-- base.name is now the file name without the path -->
-				<copy file="@{file}" todir="${tmp.dir}" overwrite="true" />
-				<propertyregex property="css.name" input="${base.name}"
-								regexp="(.+)${debug.target.file.name.suffix}.css"
-								select="\1"
-								casesensitive="false" />
-				<!-- css.name is now the file name without the ${debug.target.file.name.suffix}.css bit -->
-				<minify sourceFile="${tmp.dir}/${base.name}" destFile="${style.build.target.dir}/${css.name}.css" />
-			</sequential>
-		</for>
-		<stopwatch name="minifyCss" action="total" />
-	</target>
-
-	<target name="clean" description="Cleans up all artifacts produced by this build">
-		<delete dir="${style.build.target.dir}" />
-		<delete dir="${style.tmp.src.dir}" />
-		<delete dir="${sass.tmp.src.dir}" />
-		<echo message="Clean from ${ant.file}" />
-	</target>
-
-	<target name="init" depends="clean">
-		<property file="${properties.build.constants}" />
-		<mkdir dir="${style.build.target.dir}" />
-		<mkdir dir="${style.tmp.src.dir}" />
-		<mkdir dir="${sass.tmp.src.dir}" />
-		<tempfile property="style.excludesfile.dynamic" destdir="${tmp.dir}" createfile="true" deleteonexit="true" />
-	</target>
-
-
-	<target name="buildCss" depends="buildBrowserCss">
-		<concat destfile="${style.tmp.target.dir}/${css.target.file.name}${debug.target.file.name.suffix}.css" fixlastline="yes" encoding="UTF-8">
-			<path id="style.full.path">
-				<path refid="style.core.file.path" />
-				<fileset dir="${style.tmp.src.dir}" includes="wc.*.css">
-					<excludesfile name="${tmp.dir}/style.core.txt" />
-					<excludesfile name="${style.excludesfile.dynamic}" />
-				</fileset>
-				<fileset dir="${style.tmp.src.dir}" includes="*.css">
-					<excludesfile name="${tmp.dir}/style.core.txt" />
-					<excludesfile name="${style.excludesfile.dynamic}" />
-				</fileset>
-			</path>
-		</concat>
-	</target>
-
-	<!--
-		To be called after copyCssSource is complete
-	-->
-	<target name="initExcludes">
-		<path id="style.core.file.path">
-			<!--
-				NOTE: wc.imports.css MUST come first in the CSS file. The rest of this is not really necessary - it
-				is a hangover from a simpler time.
-			-->
-			<fileset dir="${style.tmp.src.dir}" includes="wc.imports.css" />
-			<fileset dir="${style.tmp.src.dir}" includes="*.imports.css" excludes="wc.imports.css" />
-			<fileset dir="${style.tmp.src.dir}" includes="wc.common.page.css" />
-			<fileset dir="${style.tmp.src.dir}" includes="*.page.css" excludes="wc.common.page.css" />
-			<fileset dir="${style.tmp.src.dir}" includes="wc.common.form.css" />
-			<fileset dir="${style.tmp.src.dir}" includes="*.form.css" excludes="wc.common.form.css" />
-		</path>
-		<pathToExcludesFile excludesFileName="${tmp.dir}/style.core.txt" pathId="style.core.file.path" />
+	<target name="init">
+		<mkdir dir="${target.rootdir}/style" />
+		<mkdir dir="${tmp.dir}/css-built" />
+    <delete dir="${component.rootdir}/src/main/sass/.sass-cache"/>
+    <delete dir="${impl.src.dir}/src/main/sass/sass/.sass-cache"/>
 	</target>
 
 	<!--
 		Make a copy of the source which the rest of the build will use. This also the implementation files to overwrite
 		the core files of the same name so the rest of the build script doesn't need to worry about that.
-		NOTE: we use two copies here because there appears to be an ANT bug which changes the path order and fails to
-		overwrite correctly.
 	-->
-	<target name="copyCssSrc">
+	<target name="copySassSrc">
 		<!-- wcomponents-theme SCSS -->
-		<copy todir="${sass.tmp.src.dir}" overwrite="true">
-			<fileset dir="${sass.rootdir}" includes="**/*.scss" excludesfile="${excludesfile}" />
-			<filterchain>
-				<expandproperties />
-			</filterchain>
+		<copy todir="${tmp.dir}/sass" overwrite="true" quiet="true">
+			<fileset dir="${component.rootdir}/src/main/sass" includes="**" excludes="**/.sass-cache" />
 		</copy>
 
 		<!-- Implementation SCSS -->
-		<copy todir="${sass.tmp.src.dir}" overwrite="true">
-			<fileset dir="${impl.sass.rootdir}" includes="**/*.scss" erroronmissingdir="false"/>
-			<filterchain>
-				<expandproperties />
-			</filterchain>
+		<copy todir="${tmp.dir}/sass" overwrite="true" quiet="true">
+			<fileset dir="${impl.src.dir}/src/main/sass" includes="**" excludes="**/.sass-cache" erroronmissingdir="false" />
 		</copy>
 	</target>
 
 	<!--
-		Compile Sass to CSS using Vaadin Sass-compiler wrapped by SassTask for efficiency.
+		Compile Sass to CSS using sass ( https://www.npmjs.com/package/sass )
 	-->
-	<target name="compileScssVaadinAntWrapper">
-		<stopwatch name="compileScss" action="start" />
-		<taskdef name="sass" classname="com.github.bordertech.wcomponents.sass.SassTask" classpathref="project.class.path"/>
-		<sass in="${sass.tmp.src.dir}" out="${style.tmp.src.dir}" urlmode="absolute"/>
-		<stopwatch name="compileScss" action="total" />
+  <target name="lint">
+    <echo level="verbose" message="${basedir}/node_modules/sass-lint/bin/sass-lint -c ${sass-lint-config} -o ${tmp.dir}/sass-lint.txt -i ${tmp.dir}/sass/lib/** ${tmp.dir}/sass/**.scss"/>
+			<nodejs.exec failonerror="true" cwd="${target.rootdir}">
+				<arguments>
+					<arg value="${basedir}/node_modules/sass-lint/bin/sass-lint"/>
+          <arg value="-f"/>
+          <arg value="stylish"/>
+          <arg value="-v"/>
+          <arg value="-c"/>
+          <arg value="${sass-lint-config}" />
+          <arg value="-o"/>
+          <arg value="${tmp.dir}/sass-lint.txt"/>
+          <arg value="-i"/>
+          <arg value="${tmp.dir}/sass/lib/**" />
+					<arg value="${tmp.dir}/sass/**.scss"/>
+				</arguments>
+			</nodejs.exec>
+  </target>
+
+  <target name="compileSass" depends="lint">
+		<stopwatch name="compileSass" action="start" />
+    <property name="sass.executable" location="${basedir}/node_modules/sass/sass"/>
+    <echo level="verbose" message="${sass.executable} --no-source-map ${tmp.dir}/sass:${tmp.dir}/css-built"/>
+    <nodejs.exec failonerror="true" cwd="${target.rootdir}">
+      <arguments>
+        <arg value="${sass.executable}"/>
+        <arg value="--no-source-map"/>
+        <arg value="${tmp.dir}/sass:${tmp.dir}/css-built"/>
+      </arguments>
+    </nodejs.exec>
+		<stopwatch name="compileSass" action="total" />
 	</target>
 
-	<!--
-		Build browser and platform dependent CSS.
-	-->
-	<target name="buildBrowserCss" depends="buildDebugCss">
-		<gatherIeVersionInfo sourceDir="${style.tmp.src.dir}" sourceFileExt=".css" nameOfLowestVersionPropToSet="ie.support.lowest.css.version" />
-		<for list="${ie.version.list}" param="version">
+	<target name="minify">
+		<stopwatch name="minifyCss" action="start" />
+		<for param="file">
+			<fileset dir="${tmp.dir}/css-built">
+				<include name="*.css" />
+			</fileset>
 			<sequential>
-				<buildCSSSets pattern="@{version}" targetFile="${css.target.file.name}.@{version}" />
+				<var name="base.name" unset="true" />
+				<basename property="base.name" file="@{file}" />
+				<minify sourceFile="@{file}" destFile="${target.rootdir}/style/${base.name}" />
 			</sequential>
 		</for>
-		<buildCSSSets pattern="dt" targetFile="${css.target.file.name}.dt" />
-		<getPlatformCSS sourceDir="${style.tmp.src.dir}" />
-		<for list="${platform.list}" param="platform">
-			<sequential>
-				<buildCSSSets pattern="@{platform}" targetFile="${css.target.file.name}.@{platform}" />
-			</sequential>
-		</for>
-		<!-- <buildCSSSets pattern="print" targetFile="${css.target.file.name.print}"/>-->
+		<stopwatch name="minifyCss" action="total" />
 	</target>
-
-	<target name="buildDebugCss">
-		<buildCSSSets pattern="${common.debugFiles.name.pattern}" targetFile="${css.target.file.name.debug}" />
-	</target>
-
-	<!--
-		Trawl the copied (and transpiled) source and find files with pattern_X in their names. Make a list of all
-		these patterns and write them to a property for future use in JS.
-	-->
-	<macrodef name="getPlatformCSS">
-		<attribute name="sourceDir"/>
-		<sequential>
-			<var name="platform.list" value=""/>
-			<for param="file">
-				<fileset dir="@{sourceDir}" includes="*.css">
-					<filename regex="\.pattern_[^\.]+\."/>
-				</fileset>
-				<sequential>
-					<var name="platform.name" unset="true"/>
-					<var name="platform.version" unset="true"/>
-					<basename suffix=".css" property="platform.name" file="@{file}"/>
-					<propertyregex property="platform.version"
-						input="${platform.name}"
-						regexp="\.pattern_(.+)$"
-						select="\1"
-						casesensitive="false" />
-					<if>
-						<not>
-							<contains string="${platform.list}" substring="${platform.version}"/>
-						</not>
-						<then>
-							<if>
-								<length string="${platform.list}" length="0"/>
-								<then>
-									<var name="platform.list" value="${platform.version}"/>
-								</then>
-								<else>
-									<var name="platform.list" value="${platform.list},${platform.version}"/>
-								</else>
-							</if>
-						</then>
-					</if>
-				</sequential>
-			</for>
-			<propertyfile file="${properties.build.constants}">
-				<entry key="css.pattern.list" value="${platform.list}"/>
-			</propertyfile>
-		</sequential>
-	</macrodef>
-
-	<macrodef name="buildCSSSets">
-		<attribute name="pattern" />
-		<attribute name="targetFile" />
-		<sequential>
-			<concat destfile="${style.tmp.target.dir}/@{targetFile}${debug.target.file.name.suffix}.css" fixlastline="yes">
-				<path>
-					<fileset dir="${style.tmp.src.dir}" includes="wc.*@{pattern}.css">
-						<excludesfile name="${tmp.dir}/style.core.txt" />
-						<excludesfile name="${style.excludesfile.dynamic}" />
-					</fileset>
-					<fileset dir="${style.tmp.src.dir}" includes="*@{pattern}.css" excludes="wc.*.@{pattern}.css">
-						<excludesfile name="${tmp.dir}/style.core.txt" />
-						<excludesfile name="${style.excludesfile.dynamic}" />
-					</fileset>
-				</path>
-			</concat>
-			<simpleAddPatternToExcludes pattern="*@{pattern}.css" destfile="${style.excludesfile.dynamic}" />
-		</sequential>
-	</macrodef>
 
 	<macrodef name="minify">
 		<attribute name="sourceFile" />
 		<attribute name="destFile" />
 		<sequential>
-			<property name="cleancss.executable" location="${basedir}/node_modules/clean-css/bin/cleancss"/>
-			<echo>node ${cleancss.executable} --skip-import --skip-aggressive-merging --skip-rebase --rounding-precision -1 -o @{destFile} @{sourceFile}</echo>
+			<property name="cleancss.executable" location="${basedir}/node_modules/clean-css-cli/bin/cleancss"/>
+			<echo level="verbose">node ${cleancss.executable} --skip-rebase --level 2 -o @{destFile} @{sourceFile}</echo>
 			<nodejs.exec failonerror="true" cwd="${target.rootdir}">
 				<arguments>
 					<arg value="${cleancss.executable}"/>
-					<arg value="--skip-import"/>
-<!--					<arg value="-\-skip-advanced"/>-->
-					<arg value="--skip-aggressive-merging"/>
-<!--					<arg value="-\-skip-media-merging"/>-->
 					<arg value="--skip-rebase"/>
-<!--					<arg value="-\-skip-restructuring"/>
-					<arg value="-\-skip-shorthand-compacting"/> -->
-					<arg value="--rounding-precision"/>
-					<arg value="-1"/>
+					<arg value="--level"/>
+					<arg value="2"/> <!-- 1 for safe, 2 for compact 0 for pretty much nothing-->
 					<arg value="-o"/>
 					<arg value="@{destFile}"/>
 					<arg value="@{sourceFile}"/>
@@ -244,49 +100,4 @@
 		</sequential>
 	</macrodef>
 
-	<!-- NOTE: base64 encoding of svg is not supported in firefox before version 5 -->
-	<target name="imagesToDataUrl" description="Convert images urls to base64 data urls in CSS files">
-		<if>
-			<and>
-				<istrue value="${build.optimise.http1}"/>
-				<istrue value="${images.to.base64.dataurls}" />
-				<available file="${images.tmp.src.dir}" type="dir" />
-			</and>
-			<then>
-				<stopwatch name="imagesToDataUrl" action="start" />
-				<!--
-					IE7 and IE6 - why are these still in the build scripts?
-					It may be offensive to thine eye but not so fast with the delete key...
-					Regardless of what WComponents supports we should always leave these ie7 and ie6
-					excludes in place to facilitate any users of WComponents adding legacy support.
-					Remember that the implementation mechanism does not allow custom build scripts,
-					so the build scripts need to cater for it all.
-					The fact that IE7 and earlier did not support data URLs is a constant that won't
-					change and can therefore be safely hardcoded in place here.
-				-->
-				<nodejs.exec failonerror="true" cwd="${target.rootdir}">
-					<arguments>
-						<arg value="${component.rootdir}/base64.js"/>
-						<arg value="${target.rootdir}"/>
-						<arg value="${css.target.file.name}ie6${debug.target.file.name.suffix}.css,${css.target.file.name}ie7${debug.target.file.name.suffix}.css"/>
-						<arg value="${style.tmp.target.dir}"/>
-						<arg value="${style.build.target.dir}"/>
-					</arguments>
-				</nodejs.exec>
-				<!-- copy the legacy stuff -->
-				<copy todir="${style.build.target.dir}" overwrite="true">
-					<fileset dir="${style.tmp.target.dir}">
-						<include name="${css.target.file.name}ie6${debug.target.file.name.suffix}.css" />
-						<include name="${css.target.file.name}ie7${debug.target.file.name.suffix}.css" />
-					</fileset>
-				</copy>
-				<stopwatch name="imagesToDataUrl" action="total" />
-			</then>
-			<else>
-				<copy todir="${style.build.target.dir}" overwrite="true">
-					<fileset dir="${style.tmp.target.dir}" includes="*.css" />
-				</copy>
-			</else>
-		</if>
-	</target>
 </project>

@@ -3,12 +3,14 @@ package com.github.bordertech.wcomponents.examples.theme;
 import com.github.bordertech.wcomponents.Action;
 import com.github.bordertech.wcomponents.ActionEvent;
 import com.github.bordertech.wcomponents.Margin;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WAjaxControl;
 import com.github.bordertech.wcomponents.WContainer;
-import com.github.bordertech.wcomponents.WToggleButton;
 import com.github.bordertech.wcomponents.WFieldLayout;
 import com.github.bordertech.wcomponents.WPanel;
+import com.github.bordertech.wcomponents.WStyledText;
 import com.github.bordertech.wcomponents.WText;
+import com.github.bordertech.wcomponents.WToggleButton;
 import com.github.bordertech.wcomponents.examples.common.ExplanatoryText;
 import com.github.bordertech.wcomponents.layout.FlowLayout;
 import com.github.bordertech.wcomponents.subordinate.builder.SubordinateBuilder;
@@ -37,7 +39,7 @@ public class WToggleButtonExample extends WPanel {
 		add(new ExplanatoryText("Toggle button as Subordinate trigger."));
 		toggle = new WToggleButton("Controller");
 		WPanel target = new WPanel(WPanel.Type.FEATURE);
-		target.setMargin(new Margin(4, 0, 0, 0));
+		target.setMargin(new Margin(Size.SMALL, null, null, null));
 		target.add(new WText("Subordinate target"));
 		SubordinateBuilder builder = new SubordinateBuilder();
 		builder.condition().equals(toggle, String.valueOf(true));
@@ -63,8 +65,8 @@ public class WToggleButtonExample extends WPanel {
 				innerTarget.setVisible(ajaxToggle.isSelected());
 			}
 		});
-		innerTarget.setMargin(new Margin(4, 0, 0, 0));
-		innerTarget.add(new WText("Ajax target"));
+		innerTarget.setMargin(new Margin(Size.SMALL, null, null, null));
+		innerTarget.add(new ExplanatoryText("Ajax target", WStyledText.Type.EMPHASISED));
 		target.add(innerTarget);
 		container = new WContainer();
 		container.add(ajaxToggle);

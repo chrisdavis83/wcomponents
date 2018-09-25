@@ -4,6 +4,7 @@ import com.github.bordertech.wcomponents.Action;
 import com.github.bordertech.wcomponents.ActionEvent;
 import com.github.bordertech.wcomponents.HeadingLevel;
 import com.github.bordertech.wcomponents.Margin;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WButton;
 import com.github.bordertech.wcomponents.WCheckBox;
 import com.github.bordertech.wcomponents.WDropdown;
@@ -70,7 +71,7 @@ public class WStyledTextOptionsExample extends WPanel {
 
 		add(new WHeading(HeadingLevel.H2, "Styled Text"));
 		WPanel panel = new WPanel(WPanel.Type.BOX);
-		panel.setMargin(new Margin(20));
+		panel.setMargin(new Margin(Size.XL));
 		add(panel);
 		panel.add(styled);
 		setDefaultSubmitButton(button);

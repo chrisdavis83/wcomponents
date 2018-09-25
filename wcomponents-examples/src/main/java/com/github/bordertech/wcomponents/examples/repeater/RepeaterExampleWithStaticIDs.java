@@ -6,10 +6,10 @@ import com.github.bordertech.wcomponents.AjaxTarget;
 import com.github.bordertech.wcomponents.HeadingLevel;
 import com.github.bordertech.wcomponents.Margin;
 import com.github.bordertech.wcomponents.Request;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.UIContext;
 import com.github.bordertech.wcomponents.UIContextHolder;
 import com.github.bordertech.wcomponents.WAjaxControl;
-import com.github.bordertech.wcomponents.WApplication;
 import com.github.bordertech.wcomponents.WButton;
 import com.github.bordertech.wcomponents.WCheckBoxSelect;
 import com.github.bordertech.wcomponents.WContainer;
@@ -27,6 +27,7 @@ import com.github.bordertech.wcomponents.WTextArea;
 import com.github.bordertech.wcomponents.WTextField;
 import com.github.bordertech.wcomponents.WebUtilities;
 import com.github.bordertech.wcomponents.layout.BorderLayout;
+import com.github.bordertech.wcomponents.util.SpaceUtil;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -118,7 +119,7 @@ public class RepeaterExampleWithStaticIDs extends WContainer {
 	private void createButtonBar() {
 		// Update and reset controls for the repeater.
 		WPanel buttonPanel = new WPanel(WPanel.Type.FEATURE);
-		buttonPanel.setMargin(new Margin(6, 0 , 12, 0));
+		buttonPanel.setMargin(new Margin(Size.MEDIUM, null , Size.LARGE, null));
 		buttonPanel.setLayout(new BorderLayout());
 
 		WButton updateButton = new WButton("Update");
@@ -185,7 +186,7 @@ public class RepeaterExampleWithStaticIDs extends WContainer {
 
 		WFieldLayout layout = new WFieldLayout();
 		add(layout);
-		layout.setMargin(new Margin(12, 0, 0, 0));
+		layout.setMargin(new Margin(Size.LARGE, null, null, null));
 		layout.addField("Print output", printOutput);
 		layout.addField((WLabel) null, printBtn);
 		add(new WAjaxControl(printBtn, printOutput));

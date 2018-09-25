@@ -15,14 +15,13 @@ define(["wc/date/isLeapYear"], /** @param isLeapYear wc/date/isLeapYear @ignore 
 	 * @alias module:wc/date/daysInMonth
 	 * @param {number} year The 2 or 4 digit year to check.
 	 * @param {number} month The month - this <strong>not</strong> zero based, ie january = 1, december = 12
-	 * @returns {?int} The number of days in the month if we can detemine it.
+	 * @returns {int} The number of days in the month if we can detemine it.
 	 */
 	function daysInMonth(year, month) {
 		var result;
 		if (month === 2) {
 			result = (year || year === 0) ? (isLeapYear(year) ? 29 : 28) : 29;
-		}
-		else {
+		} else {
 			result = [undefined, 31, undefined, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month];
 		}
 		return result;

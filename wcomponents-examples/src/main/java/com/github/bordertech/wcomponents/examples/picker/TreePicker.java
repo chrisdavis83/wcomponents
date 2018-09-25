@@ -5,6 +5,7 @@ import com.github.bordertech.wcomponents.AjaxTarget;
 import com.github.bordertech.wcomponents.HeadingLevel;
 import com.github.bordertech.wcomponents.Margin;
 import com.github.bordertech.wcomponents.Request;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WAjaxControl;
 import com.github.bordertech.wcomponents.WButton;
 import com.github.bordertech.wcomponents.WContainer;
@@ -17,6 +18,7 @@ import com.github.bordertech.wcomponents.examples.common.ExplanatoryText;
 import com.github.bordertech.wcomponents.layout.ColumnLayout;
 import com.github.bordertech.wcomponents.layout.ListLayout;
 import com.github.bordertech.wcomponents.util.HtmlClassProperties;
+import com.github.bordertech.wcomponents.util.HtmlIconUtil;
 import com.github.bordertech.wcomponents.util.Util;
 import com.github.bordertech.wcomponents.validation.ValidatingAction;
 import java.text.SimpleDateFormat;
@@ -82,7 +84,7 @@ public class TreePicker extends WContainer {
 
 		mainPanel.setIdName("main_panel");
 		mainPanel.setLayout(new ColumnLayout(COL_WIDTH, COL_ALIGN, COL_HGAP, COL_VGAP));
-		mainPanel.setMargin(new Margin(COL_HGAP));
+		mainPanel.setMargin(new Margin(Size.LARGE));
 		mainPanel.setHtmlClass(HtmlClassProperties.RESPOND);
 
 		buildUI();
@@ -195,14 +197,14 @@ public class TreePicker extends WContainer {
 		 * Add the UI controls to the utility bar.
 		 */
 		private void setUp() {
-			setMargin(new Margin(0, 8, 0, 0));
+			setMargin(new Margin(null, Size.MEDIUM, null, null));
 			setLayout(new ListLayout(ListLayout.Type.FLAT, ListLayout.Alignment.RIGHT, ListLayout.Separator.NONE,
 					false));
 			// The select another example button.
 			final WButton selectOtherButton = new WButton("\u200b");
 			selectOtherButton.setToolTip("Select");
 			//selectOtherButton.setImage("/image/open-in-browser-w.png");
-			selectOtherButton.setHtmlClass("wc-icon fa-file-code-o");
+			selectOtherButton.setHtmlClass(HtmlIconUtil.getIconClasses("fa-file-code-o"));
 			selectOtherButton.setRenderAsLink(true);
 			selectOtherButton.setAction(new ValidatingAction(exampleSection.getMessages().getValidationErrors(), selectOtherButton) {
 				@Override

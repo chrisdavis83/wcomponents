@@ -10,7 +10,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.junit.runner.Runner;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
@@ -58,7 +58,8 @@ public class MultiBrowserRunner extends Suite {
 		//Configuration error - no drivers defined.
 		if (ArrayUtils.isEmpty(drivers)) {
 			throw new SystemException("Cannot run the MultiBrowserRunner without drivers defined in default param ["
-					+ ConfigurationProperties.TEST_SELENIUM_MULTI_BROWSER_DRIVERS + "] or test-specific param [" + ConfigurationProperties.TEST_SELENIUM_MULTI_BROWSER_DRIVERS + "." + testClassName + "]");
+					+ ConfigurationProperties.TEST_SELENIUM_MULTI_BROWSER_DRIVERS + "] or test-specific param ["
+					+ ConfigurationProperties.TEST_SELENIUM_MULTI_BROWSER_DRIVERS + "." + testClassName + "]");
 		}
 
 		boolean runParallel = ConfigurationProperties.getTestSeleniumMultiBrowserDriverParallel();

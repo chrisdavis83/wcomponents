@@ -36,8 +36,6 @@ public class WDialogRenderer_Test extends AbstractWebXmlRendererTestCase {
 
 		setActiveContext(createUIContext());
 		dialog.display();
-
-		assertSchemaMatch(dialog);
 	}
 
 	@Test
@@ -47,7 +45,6 @@ public class WDialogRenderer_Test extends AbstractWebXmlRendererTestCase {
 		dialog.setMode(WDialog.MODELESS);
 		dialog.setWidth(0);
 		dialog.setHeight(0);
-		dialog.setResizable(false);
 		dialog.setLocked(true);
 
 		String xml = renderDialog(dialog);
@@ -80,7 +77,7 @@ public class WDialogRenderer_Test extends AbstractWebXmlRendererTestCase {
 		assertXpathExists("//ui:dialog", dialog);
 		assertXpathEvaluatesTo(dialog.getId(), "//ui:dialog/@id", dialog);
 		assertXpathNotExists("//ui:dialog/@open", dialog);
-		assertXpathEvaluatesTo(trigger.getId(), "//ui:dialog/ui:button/@id", dialog);
+		assertXpathEvaluatesTo(trigger.getId(), "//ui:dialog/html:button/@id", dialog);
 		assertXpathEvaluatesTo(trigger.getId(), "//ui:dialog/@triggerid", dialog);
 	}
 

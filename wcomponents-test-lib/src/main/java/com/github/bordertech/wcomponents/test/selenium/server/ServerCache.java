@@ -1,14 +1,16 @@
 package com.github.bordertech.wcomponents.test.selenium.server;
 
+import com.github.bordertech.wcomponents.WApplication;
+import com.github.bordertech.wcomponents.WComponent;
 import com.github.bordertech.wcomponents.lde.LdeLauncher;
+import com.github.bordertech.wcomponents.test.selenium.DynamicLauncher;
 import com.github.bordertech.wcomponents.util.Factory;
 import com.github.bordertech.wcomponents.util.SystemException;
 
 /**
  * <p>
- * Static utility testing class to keep a Web Server open between tests. This is
- * to prevent the expensive server creation/deploy occurring multiple times per
- * test suite.</p>
+ * Static utility testing class to keep a Web Server open between tests. This is to prevent the expensive server
+ * creation/deploy occurring multiple times per test suite.</p>
  *
  * @author Joshua Barclay
  * @since 1.2.0
@@ -20,6 +22,8 @@ public final class ServerCache {
 	 */
 	private static final LdeLauncher LAUNCHER = Factory.newInstance(LdeLauncher.class);
 
+	private static boolean inSuite;
+
 	/**
 	 * Static class - no constructor.
 	 */
@@ -30,9 +34,8 @@ public final class ServerCache {
 	 * <p>
 	 * Get the shared instance of the launcher.</p>
 	 * <p>
-	 * <b>Warning: </b> ensure concurrency is considered with any commands run
-	 * on the TestLauncher. Lock on the returned instance to ensure safe
-	 * concurrent behaviour with other threads using this class.</p>
+	 * <b>Warning: </b> ensure concurrency is considered with any commands run on the TestLauncher. Lock on the returned
+	 * instance to ensure safe concurrent behaviour with other threads using this class.</p>
 	 *
 	 * @return the TestLauncher.
 	 */
@@ -53,6 +56,9 @@ public final class ServerCache {
 	 * Stop the server.
 	 */
 	public static void stopServer() {
+		if (isInSuite()) {
+			return;
+		}
 		synchronized (LAUNCHER) {
 			try {
 				LAUNCHER.stop();
@@ -90,7 +96,6 @@ public final class ServerCache {
 	 */
 	public static void startServer() {
 		synchronized (LAUNCHER) {
-
 			try {
 				if (!isRunning()) {
 					LAUNCHER.run();
@@ -100,4 +105,71 @@ public final class ServerCache {
 			}
 		}
 	}
+
+	/**
+	 * Set true if running in a suite.
+	 *
+	 * @param flag true if running in a suite
+	 */
+	public static void setInSuite(final boolean flag) {
+		synchronized (LAUNCHER) {
+			inSuite = flag;
+		}
+	}
+
+	/**
+	 *
+	 * @return true if running a test suite
+	 */
+	public static boolean isInSuite() {
+		return inSuite;
+	}
+
+	/**
+	 * Set the UI for the launcher.
+	 *
+	 * @param key the UI key
+	 * @param ui the UI component
+	 * @return the registered UI instance
+	 */
+	public static WComponent setUI(final String key, final WComponent ui) {
+
+		if (!(LAUNCHER instanceof DynamicLauncher)) {
+			return ui;
+		}
+
+		// If a DynamicLauncher is being used, set the UI to match this component.
+		synchronized (LAUNCHER) {
+			DynamicLauncher dynamic = (DynamicLauncher) LAUNCHER;
+			// Set the current key
+			dynamic.setCurrentKey(key);
+			// Check if already registered
+			WApplication egUI = dynamic.getRegisteredComponent(key);
+			if (egUI != null) {
+				// Already registered, check if wrapped
+				return (ui instanceof WApplication) ? egUI : egUI.getChildAt(0);
+			}
+			// Register UI - Check if needs to be wrapped
+			dynamic.registerComponent(key, wrapUI(ui));
+			// This is the registered instance
+			return ui;
+		}
+	}
+
+	/**
+	 *
+	 * @param ui the UI component
+	 * @return the UI component wrapped in WApplication
+	 */
+	private static WApplication wrapUI(final WComponent ui) {
+		WApplication egUI;
+		if (ui instanceof WApplication) {
+			egUI = (WApplication) ui;
+		} else {
+			egUI = new WApplication();
+			egUI.add(ui);
+		}
+		return egUI;
+	}
+
 }

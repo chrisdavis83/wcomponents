@@ -61,7 +61,7 @@ define(["wc/dom/group", "wc/dom/shed"],
 		 *    an array.
 		 * @param {module:wc/dom/getFilteredGroup~config} [config] Arguments to tweak the default behavior of this
 		 *    function.
-		 * @returns {(?Element[]|module:wc/dom/getFilteredGroup~groupAsObject)} A nullable array of elements which match
+		 * @returns {(Element[]|module:wc/dom/getFilteredGroup~groupAsObject)} A nullable array of elements which match
 		 *    the filters (or are "selected" if no custom filter supplied); or an object encapsulating both the filtered
 		 *    and unfiltered groups.
 		 * @throws {TypeError} Throws a TypeError if element is false-y.
@@ -76,7 +76,7 @@ define(["wc/dom/group", "wc/dom/shed"],
 				asObject,
 				shedAttributeOnly = false,
 				mask = getFilteredGroup.FILTERS,
-				filterFunc = function(element) {
+				filterFunc = function(el) {
 					var _result = true,
 						i,
 						nextMask,
@@ -91,7 +91,7 @@ define(["wc/dom/group", "wc/dom/shed"],
 						flags = filter & nextMask;  // extract the relevant flags from the provided filter
 						if (flags && flags !== nextMask) {  // if one flag is set (but not BOTH flags)
 							reverse = !!(flags & negative);  // do we need to reverse the results from SHED?
-							_result = reverse ^ shed[SHED_FILTERS[Math.floor(i / 2)]](element, shedAttributeOnly);
+							_result = reverse ^ shed[SHED_FILTERS[Math.floor(i / 2)]](el, shedAttributeOnly);
 						}
 					}
 					return !!_result;  // XOR returns a bitmask not === true
@@ -101,21 +101,18 @@ define(["wc/dom/group", "wc/dom/shed"],
 					itemWd = config.itemWd;
 					containerWd = config.containerWd;
 					asObject = config.asObject;
-					filter = config.filter || mask.selected;
+					filter = config.filter || (mask.selected | mask.enabled);
 					ignoreInnerGroups = config.ignoreInnerGroups;
 					shedAttributeOnly = !! config.shedAttributeOnly;
-				}
-				else {
-					filter = mask.selected;
+				} else {
+					filter = mask.selected | mask.enabled;
 				}
 
 				if (Array.isArray(element)) {
 					group = element;
-				}
-				else if (itemWd) {
+				} else if (itemWd) {
 					group = $group.getGroup(element, itemWd, containerWd);
-				}
-				else {
+				} else {
 					group = $group.get(element, ignoreInnerGroups);
 				}
 				if (asObject) {
@@ -123,12 +120,10 @@ define(["wc/dom/group", "wc/dom/shed"],
 						unfiltered: group,
 						filtered: group.filter(filterFunc)
 					};
-				}
-				else {
+				} else {
 					result = group.filter(filterFunc);
 				}
-			}
-			else {
+			} else {
 				throw new TypeError("Element can not be null");
 			}
 			return result;

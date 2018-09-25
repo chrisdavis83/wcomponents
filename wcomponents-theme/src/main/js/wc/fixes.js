@@ -30,9 +30,14 @@ define(["wc/has"], function(has) {
 	}
 
 	addTest("edge", parseFloat(dua.split("Edge/")[1]) || undefined);
+
+	addTest("uc", function () {
+		return !has("css-flex");
+	});
 	/* end sniff additions */
 
 	if (has("ie") || has("trident")) {
+		result.push("wc/fix/focus_ie");
 		result.push("wc/fix/disabledControl_ieAll");
 		result.push("wc/fix/defaultSubmit_ieAll");
 		result.push("wc/fix/placeholder_ieAll");
@@ -45,13 +50,16 @@ define(["wc/has"], function(has) {
 				document.body.innerHTML = "<h1>You are in Compatibility View. Please use Standards Mode</h1>";
 			}, 0);
 		}
-	}
-	else if (has("webkit")) {
+	}	else if (has("webkit")) {
 		result.push("wc/fix/focus_webkit");
 	}
 
 	if (!has("global-performance")) {
 		result.push("wc/compat/navigationTiming");
+	}
+
+	if (has("uc") && has("android")) {
+		result.push("wc/fix/width_uc");
 	}
 	return result;
 });

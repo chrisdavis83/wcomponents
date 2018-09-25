@@ -1,32 +1,16 @@
-/**
- * Provides functionality to undertake client validation of WDateField.
- *
- * @module wc/ui/validation/dateField
- * @requires module:wc/date/interchange
- * @requires module:wc/date/getDifference
- * @requires module:wc/dom/attribute
- * @requires module:wc/dom/event
- * @requires module:wc/dom/initialise
- * @requires module:wc/i18n/i18n
- * @requires module:wc/ui/dateField
- * @requires module:wc/ui/validation/validationManager
- * @requires module:wc/ui/getFirstLabelForElement
- * @requires external:lib/sprintf
- * @requires module:wc/ui/validation/isComplete
- */
 define(["wc/date/interchange",
-		"wc/date/getDifference",
-		"wc/dom/attribute",
-		"wc/dom/event",
-		"wc/dom/initialise",
-		"wc/i18n/i18n",
-		"wc/ui/dateField",
-		"wc/ui/validation/validationManager",
-		"wc/ui/getFirstLabelForElement",
-		"lib/sprintf",
-		"wc/ui/validation/isComplete"],
-	/** @param interchange wc/date/interchange @param getDifference wc/date/getDifference @param attribute wc/dom/attribute @param event wc/dom/event @param initialise wc/dom/initialise @param i18n wc/i18n/i18n @param dateField wc/ui/dateField @param validationManager wc/ui/validation/validationManager @param getFirstLabelForElement wc/ui/getFirstLabelForElement @param sprintf lib/sprintf @param isComplete wc/ui/validation/isComplete @ignore */
-	function(interchange, getDifference, attribute, event, initialise, i18n, dateField, validationManager, getFirstLabelForElement, sprintf, isComplete) {
+	"wc/date/getDifference",
+	"wc/dom/attribute",
+	"wc/dom/event",
+	"wc/dom/initialise",
+	"wc/dom/shed",
+	"wc/i18n/i18n",
+	"wc/ui/dateField",
+	"wc/ui/validation/validationManager",
+	"lib/sprintf",
+	"wc/ui/validation/isComplete",
+	"wc/ui/feedback"],
+	function(interchange, getDifference, attribute, event, initialise, shed, i18n, dateField, validationManager, sprintf, isComplete, feedback) {
 		"use strict";
 		/**
 		 * @constructor
@@ -52,18 +36,17 @@ define(["wc/date/interchange",
 			function isDateInvalid(element) {
 				var invalid = false,
 					date, flag, value,
-					textbox = dateField.getTextBox(element),
+					textbox,
 					comparisonDate,
-					label,
 					LABEL_PLACEHOLDER = "%s",
 					minAttrib = "data-wc-min",
 					maxAttrib = "data-wc-max";
 
-				if (!textbox || dateField.getPartialDateWidget().isOneOfMe(textbox)) {
-					return false;  // do not apply constraint validation to partial date fields, even if the date entered is a full date.
+				if (dateField.isReadOnly(element) || !(textbox = dateField.getTextBox(element)) || dateField.getPartialDateWidget().isOneOfMe(textbox)) {
+					return false;  // do not apply constraint validation to read-only or partial date fields, even if the date entered is a full date.
 				}
 
-				if (textbox && (value = dateField.getValue(element)) && !validationManager.isExempt(element)) {
+				if ((value = dateField.getValue(element)) && !validationManager.isExempt(element)) {
 					if (textbox.getAttribute("type") === "date") {
 						minAttrib = "min";
 						maxAttrib = "max";
@@ -104,16 +87,14 @@ define(["wc/date/interchange",
 								flag = sprintf.sprintf(flag, LABEL_PLACEHOLDER, comparisonDate);
 							}
 						}
-					}
-					else {
+					} else {
 						// a full date field can only be valid if a full date is entered and getDateFromElement will return ""
 						flag = i18n.get("validation_date_incomplete");
 						invalid = true;
 					}
 				}
 				if (invalid) {
-					label = getFirstLabelForElement(textbox, true) || element.title || i18n.get("validation_common_unlabelledfield");
-					validationManager.flagError({element: element, message: sprintf.sprintf(flag, label)});
+					feedback.flagError({element: element, message: sprintf.sprintf(flag, validationManager.getLabelText(element))});
 				}
 				return invalid;
 			}
@@ -126,9 +107,8 @@ define(["wc/date/interchange",
 			 * @returns {String} The formatted validation message.
 			 */
 			function messageFunction(element) {
-				var textbox = dateField.getTextBox(element),
-					label = getFirstLabelForElement(textbox, true) || textbox.title || i18n.get("validation_common_unlabelledfield");
-				return sprintf.sprintf(i18n.get("validation_common_incomplete"), label);
+				var textbox = dateField.getTextBox(element);
+				return sprintf.sprintf(i18n.get("validation_common_incomplete"), validationManager.getLabelText(textbox));
 			}
 
 			/**
@@ -154,12 +134,14 @@ define(["wc/date/interchange",
 
 				if (dateField.isOneOfMe(container, true)) {
 					candidates = [container];
-				}
-				else {
+				} else {
 					candidates = DATE_FIELD.findDescendants(container);
 				}
 				Array.prototype.forEach.call(candidates, function(next) {
 					var textBox;
+					if (dateField.isReadOnly(next)) {
+						return;
+					}
 					if (dateField.isLameDateField(next)) {
 						if (!next.getAttribute("aria-required")) {
 							return;
@@ -167,8 +149,7 @@ define(["wc/date/interchange",
 						if (!dateField.getValue(next)) {
 							incomplete.push(next);
 						}
-					}
-					else {
+					} else {
 						textBox = dateField.getTextBox(next);
 						if (!textBox.getAttribute("required")) {
 							return;
@@ -183,17 +164,13 @@ define(["wc/date/interchange",
 					complete = false;
 
 					incomplete.forEach(function(next) {
-						var message = messageFunction(next),
-							obj = {element: next, message: message};
-						validationManager.flagError(obj);
+						feedback.flagError({element: next, message: messageFunction(next)});
 					});
 				}
 
-
 				if (dateField.isOneOfMe(container, true)) {
-					valid = !isDateInvalid(container);
-				}
-				else {
+					valid = dateField.isReadOnly(container) || !isDateInvalid(container);
+				} else {
 					invalid = Array.prototype.filter.call(candidates, isDateInvalid, this);
 					if (invalid && invalid.length) {
 						valid = false;
@@ -201,18 +178,6 @@ define(["wc/date/interchange",
 				}
 				return complete && valid;
 			}
-
-
-			/**
-			 * Re-validate a WDateField which was in an invalid state.
-			 * @function
-			 * @private
-			 * @param {Element} element The WDateField to test.
-			 */
-			function revalidate(element) {
-				validationManager.revalidationHelper(element, validate);
-			}
-
 
 			/**
 			 * Change event handler. This is attached to body in browsers which capture and bubble change events and
@@ -222,18 +187,32 @@ define(["wc/date/interchange",
 			 * @param {wc/dom/event} $event The wrapped change event as published by the WComponent event manager
 			 */
 			function changeEvent($event) {
-				var dateField = DATE_FIELD.findAncestor($event.target);
-				if (dateField) {
-					revalidate(dateField);
+				var element = DATE_FIELD.findAncestor($event.target);
+				if (element) {
+					if (validationManager.isValidateOnChange()) {
+						if (validationManager.isInvalid(element)) {
+							validationManager.revalidationHelper(element, validate);
+							return;
+						}
+						validate(element);
+						return;
+					}
+					validationManager.revalidationHelper(element, validate);
 				}
 			}
 
+			function blurEvent($event) {
+				var element = DATE_FIELD.findAncestor($event.target);
+				if (element && shed.isMandatory(element)) {
+					validate(element);
+				}
+			}
 
 			/**
 			 * Focus event handler used to lazily attach a change event listener to a WDateField when first focused.
 			 * @function
 			 * @private
-			 * @param {wc/dom/event} $event the wrapped focus/focusin event as published by the WComponent event manager.
+			 * @param {Event} $event the wrapped focus/focusin event as published by the WComponent event manager.
 			 */
 			function focusEvent($event) {
 				var element = $event.target,
@@ -241,22 +220,25 @@ define(["wc/date/interchange",
 				if (!$event.defaultPrevented && dateField.isOneOfMe(element, false) && !attribute.get(element, BOOTSTRAPPED)) {
 					attribute.set(element, BOOTSTRAPPED, true);
 					event.add(element, event.TYPE.change, changeEvent, 1);
+					if (validationManager.isValidateOnBlur()) {
+						if (event.canCapture) {
+							event.add(element, event.TYPE.blur, blurEvent, 1, null, true);
+						} else {
+							event.add(element, event.TYPE.focusout, blurEvent);
+						}
+					}
 				}
 			}
 
-
 			/**
-			 * Initialisation function to attach the change event listener (or focus listener in obsolete browsers).
-			 * TODO: maybe move to postInit?
 			 * @function module:wc/ui/validation/dateField.initialise
 			 * @public
 			 * @param {Element} element The element being initialised.
 			 */
 			this.initialise = function(element) {
 				if (event.canCapture) {
-					event.add(element, event.TYPE.change, changeEvent, 1, null, true);
-				}
-				else {
+					event.add(element, event.TYPE.focus, focusEvent, 1, null, true);
+				} else {
 					event.add(element, event.TYPE.focusin, focusEvent, 1);
 				}
 			};
@@ -279,7 +261,6 @@ define(["wc/date/interchange",
 				return iAmComplete;
 			}
 
-
 			/**
 			 * Subscriber function for {@link ./isComplete} to test the completeness of a container.
 			 * @function
@@ -290,7 +271,6 @@ define(["wc/date/interchange",
 			function isCompleteSubscriber(container) {
 				return isComplete.isCompleteHelper(container, DATE_FIELD, isCompleteHelper);
 			}
-
 
 			/**
 			 * Late initialisation function to set up dateField validation.
@@ -304,7 +284,23 @@ define(["wc/date/interchange",
 			};
 		}
 
-		var /** @alias module:wc/ui/validation/dateField */ instance = new ValidationDateInput();
+		/**
+		 * Provides functionality to undertake client validation of WDateField.
+		 *
+		 * @module
+		 * @requires wc/date/interchange
+		 * @requires wc/date/getDifference
+		 * @requires wc/dom/attribute
+		 * @requires wc/dom/event
+		 * @requires wc/dom/initialise
+		 * @requires wc/i18n/i18n
+		 * @requires wc/ui/dateField
+		 * @requires wc/ui/validation/validationManager
+		 * @requires external:lib/sprintf
+		 * @requires wc/ui/validation/isComplete
+		 * @requires wc/ui/feedback
+		 */
+		var instance = new ValidationDateInput();
 		initialise.register(instance);
 		return instance;
 	});

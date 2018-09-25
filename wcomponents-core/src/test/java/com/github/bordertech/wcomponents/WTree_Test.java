@@ -209,7 +209,6 @@ public class WTree_Test extends AbstractWComponentTestCase {
 
 	@Test
 	public void testGetItemImageUrlWithUrl() {
-		// TODO Also test static resource and Image resource
 		WTree tree = MockTreeItemData.setupWTree();
 		// Idx for Item A
 		List<Integer> idx = Arrays.asList(0);
@@ -280,6 +279,12 @@ public class WTree_Test extends AbstractWComponentTestCase {
 		org.junit.Assert.assertTrue("NodeB child list should be empty", nodeB.getChildren().isEmpty());
 	}
 
+	/**
+	 * Helper for making mock requests.
+	 * @param tree the WTree being tested
+	 * @param options the options being tested
+	 * @return a mock request
+	 */
 	private MockRequest setupRequest(final WTree tree, final String... options) {
 		MockRequest request = new MockRequest();
 		request.setParameter(tree.getId() + "-h", "x");

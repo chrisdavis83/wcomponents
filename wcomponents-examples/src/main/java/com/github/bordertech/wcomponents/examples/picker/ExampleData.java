@@ -53,6 +53,7 @@ import com.github.bordertech.wcomponents.examples.WNumberFieldExample;
 import com.github.bordertech.wcomponents.examples.WPanelExample;
 import com.github.bordertech.wcomponents.examples.WPasswordFieldExample;
 import com.github.bordertech.wcomponents.examples.WPopupExample;
+import com.github.bordertech.wcomponents.examples.WPrintButtonExample;
 import com.github.bordertech.wcomponents.examples.WRadioButtonInRepeater;
 import com.github.bordertech.wcomponents.examples.WRadioButtonTriggerActionExample;
 import com.github.bordertech.wcomponents.examples.WSectionExample;
@@ -111,25 +112,7 @@ import com.github.bordertech.wcomponents.examples.subordinate.SubordinateControl
 import com.github.bordertech.wcomponents.examples.subordinate.SubordinateControlSimpleWFieldExample;
 import com.github.bordertech.wcomponents.examples.subordinate.SubordinateControlSimpleWMultiSelectExample;
 import com.github.bordertech.wcomponents.examples.subordinate.SubordinateControlSuite;
-import com.github.bordertech.wcomponents.examples.table.FilterableTableExample;
-import com.github.bordertech.wcomponents.examples.table.SimpleEditableTableExample;
-import com.github.bordertech.wcomponents.examples.table.SimpleExpandableContentTableExample;
-import com.github.bordertech.wcomponents.examples.table.SimpleExpandableTableExample;
-import com.github.bordertech.wcomponents.examples.table.SimplePaginationTableExample;
-import com.github.bordertech.wcomponents.examples.table.SimplePaginationWithRowOptionsTableExample;
-import com.github.bordertech.wcomponents.examples.table.SimpleSelectableTableExample;
-import com.github.bordertech.wcomponents.examples.table.SimpleSortingTableExample;
-import com.github.bordertech.wcomponents.examples.table.SimpleTableExample;
-import com.github.bordertech.wcomponents.examples.table.TableBeanProviderExample;
-import com.github.bordertech.wcomponents.examples.table.TableCellActionExample;
-import com.github.bordertech.wcomponents.examples.table.TableContentExample;
-import com.github.bordertech.wcomponents.examples.table.TableExpandableContentModelExample;
-import com.github.bordertech.wcomponents.examples.table.TableRowEditingAjaxExample;
-import com.github.bordertech.wcomponents.examples.table.TableScrollableModelExample;
-import com.github.bordertech.wcomponents.examples.table.WTableColumnAlignmentExample;
-import com.github.bordertech.wcomponents.examples.table.WTableColumnWidthExample;
-import com.github.bordertech.wcomponents.examples.table.WTableExample;
-import com.github.bordertech.wcomponents.examples.table.WTableOptionsExample;
+import com.github.bordertech.wcomponents.examples.table.*;
 import com.github.bordertech.wcomponents.examples.theme.AccessKeyExample;
 import com.github.bordertech.wcomponents.examples.theme.NestedTabSetExample;
 import com.github.bordertech.wcomponents.examples.theme.WButtonDefaultSubmitExample;
@@ -254,6 +237,7 @@ public final class ExampleData implements Serializable {
 		new ExampleData("WPasswordField", WPasswordFieldExample.class),
 		new ExampleData("Phone Number Field", WPhoneNumberFieldExample.class),
 		new ExampleData("RadioButton", WRadioButtonExample.class),
+		new ExampleData("WPrintButton", WPrintButtonExample.class),
 		new ExampleData("RadioButton (action on change)", WRadioButtonTriggerActionExample.class),
 		new ExampleData("RadioButton in a repeater", WRadioButtonInRepeater.class),
 		new ExampleData("RadioButtonSelect", WRadioButtonSelectExample.class),
@@ -320,6 +304,7 @@ public final class ExampleData implements Serializable {
 		new ExampleData("Simple pagination", SimplePaginationTableExample.class),
 		new ExampleData("Simple pagination with row options", SimplePaginationWithRowOptionsTableExample.class),
 		new ExampleData("Simple selectable", SimpleSelectableTableExample.class),
+		new ExampleData("Simple pagination with selectable", SimplePaginationTableWithSelectablesExample.class),
 		new ExampleData("Simple sorting", SimpleSortingTableExample.class),
 		new ExampleData("Table using a bean provider", TableBeanProviderExample.class),
 		new ExampleData("Cell action", TableCellActionExample.class),

@@ -2,6 +2,7 @@ package com.github.bordertech.wcomponents;
 
 import com.github.bordertech.wcomponents.util.EmptyIterator;
 import com.github.bordertech.wcomponents.util.InternalMessages;
+import com.github.bordertech.wcomponents.util.MemoryUtil;
 import com.github.bordertech.wcomponents.validation.Diagnostic;
 import com.github.bordertech.wcomponents.validator.FieldValidator;
 import java.util.ArrayList;
@@ -38,6 +39,8 @@ public abstract class AbstractInput extends WBeanComponent implements Input {
 
 		validator.setInputField(this);
 		model.validators.add(validator);
+		// possible source of memory leaks
+		MemoryUtil.checkSize(model.validators.size(), this.getClass().getSimpleName());
 	}
 
 	/**
@@ -293,24 +296,25 @@ public abstract class AbstractInput extends WBeanComponent implements Input {
 
 	/**
 	 * Perform change logic for this component.
+	 * <p>Reset focus ONLY if the current Request is an Ajax request. See https://github.com/BorderTech/wcomponents/issues/501.</p>
 	 */
 	protected void doHandleChanged() {
 		// If there is an associated action, execute it
 		if (getActionOnChange() != null) {
 			final ActionEvent event = new ActionEvent(this, getActionCommand(), getActionObject());
+			final boolean isCAT = isCurrentAjaxTrigger();
 			Runnable later = new Runnable() {
 				@Override
 				public void run() {
 					getActionOnChange().execute(event);
-
-					if (isSubmitOnChange() && UIContextHolder.getCurrent().getFocussed() == null) {
+					if (isCAT && UIContextHolder.getCurrent().getFocussed() == null) {
 						setFocussed();
 					}
 				}
 			};
 
 			invokeLater(later);
-		} else if (isSubmitOnChange() && UIContextHolder.getCurrent().getFocussed() == null) {
+		} else if (AjaxHelper.isCurrentAjaxTrigger(this) && UIContextHolder.getCurrent().getFocussed() == null) {
 			setFocussed();
 		}
 	}
@@ -373,13 +377,23 @@ public abstract class AbstractInput extends WBeanComponent implements Input {
 		}
 	}
 
+	/**
+	 * @return {@code true} if the current Input is also the current Ajax trigger.
+	 */
+	public final boolean isCurrentAjaxTrigger() {
+		return AjaxHelper.isCurrentAjaxTrigger(this);
+	}
+
 	// ================================
 	// Submit On Change
 	/**
 	 * Setting this flag to true will cause this component to post the form to the server when it changes.
 	 *
 	 * @param flag if true, the form is submitted when the component changes.
+	 * @deprecated 1.4.0 as it results in a level A accessibility problem See
+	 * https://www.w3.org/TR/UNDERSTANDING-WCAG20/consistent-behavior-unpredictable-change.html.
 	 */
+	@Deprecated
 	void setSubmitOnChange(final boolean flag) {
 		setFlag(ComponentModel.SUBMIT_ON_CHANGE_FLAG, flag);
 	}
@@ -388,7 +402,10 @@ public abstract class AbstractInput extends WBeanComponent implements Input {
 	 * Indicates whether the form should submit to server when the component's value changes.
 	 *
 	 * @return true if the form is submitted when the value changes.
+	 * @deprecated 1.4.0 as it results in a level A accessibility problem See
+	 * https://www.w3.org/TR/UNDERSTANDING-WCAG20/consistent-behavior-unpredictable-change.html.
 	 */
+	@Deprecated
 	boolean isSubmitOnChange() {
 		return isFlagSet(ComponentModel.SUBMIT_ON_CHANGE_FLAG);
 	}
@@ -401,6 +418,72 @@ public abstract class AbstractInput extends WBeanComponent implements Input {
 		String text = getValueAsString();
 		text = text == null ? "null" : '"' + text + '"';
 		return toString(text);
+	}
+
+
+	// Diagnostics
+	/**
+	 * Iterates over the {@link Diagnostic}s and finds the diagnostics that related to the current component.
+	 *
+	 * @param diags A List of Diagnostic objects.
+	 * @param severity A Diagnostic severity code. e.g. {@link Diagnostic#ERROR}
+	 */
+	protected void showIndicatorsForComponent(final List<Diagnostic> diags, final int severity) {
+		InputModel model = getOrCreateComponentModel();
+		if (severity == Diagnostic.ERROR) {
+			model.errorDiagnostics.clear();
+		} else {
+			model.warningDiagnostics.clear();
+		}
+		UIContext uic = UIContextHolder.getCurrent();
+		for (int i = 0; i < diags.size(); i++) {
+			Diagnostic diagnostic = diags.get(i);
+			// NOTE: double equals because they must be the same instance.
+			if (diagnostic.getSeverity() == severity && uic == diagnostic.getContext() && this == diagnostic.getComponent()) {
+				if (severity == Diagnostic.ERROR) {
+					model.errorDiagnostics.add(diagnostic);
+				} else {
+					model.warningDiagnostics.add(diagnostic);
+				}
+			}
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected final void showErrorIndicatorsForComponent(final List<Diagnostic> diags) {
+		showIndicatorsForComponent(diags, Diagnostic.ERROR);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected final void showWarningIndicatorsForComponent(final List<Diagnostic> diags) {
+		showIndicatorsForComponent(diags, Diagnostic.WARNING);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public List<Diagnostic> getDiagnostics(final int severity) {
+		InputModel model = getComponentModel();
+
+		switch (severity) {
+			case Diagnostic.ERROR:
+				return model.errorDiagnostics;
+			case Diagnostic.WARNING:
+				return model.warningDiagnostics;
+			case Diagnostic.INFO:
+				return model.infoDiagnostics;
+			case Diagnostic.SUCCESS:
+				return model.successDiagnostics;
+			default:
+				return null;
+		}
 	}
 
 	/**
@@ -464,5 +547,24 @@ public abstract class AbstractInput extends WBeanComponent implements Input {
 		 */
 		private Action actionOnChange;
 
+		/**
+		 * A List of error level Diagnostic objects.
+		 */
+		private final List<Diagnostic> errorDiagnostics = new ArrayList<>();
+
+		/**
+		 * A List of warning level Diagnostic objects.
+		 */
+		private final List<Diagnostic> warningDiagnostics = new ArrayList<>();
+
+		/**
+		 * A List of info level Diagnostic objects.
+		 */
+		private final List<Diagnostic> infoDiagnostics = new ArrayList<>();
+
+		/**
+		 * A List of success level Diagnostic objects.
+		 */
+		private final List<Diagnostic> successDiagnostics = new ArrayList<>();
 	}
 }

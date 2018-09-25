@@ -205,6 +205,13 @@ define(["intern!object", "intern/chai!assert", "./resources/test.utils!"], funct
 			assert.strictEqual(result.id, expectedId);
 		},
 
+		testDescendantWithHrefAtrributeMatch: function() {
+			var result, expectedId = "a4", widget = new Widget("a");
+			widget = widget.extend("", { href: "#dd33" });
+			result = widget.findDescendant(testHolder);
+			assert.strictEqual(result.id, expectedId);
+		},
+
 		testDescendantWithId: function() {
 			var result = matchId.findDescendant(testHolder),
 				expectedId = "greg";
@@ -442,8 +449,7 @@ define(["intern!object", "intern/chai!assert", "./resources/test.utils!"], funct
 			try {
 				fooDiv.extend();
 				assert.fail(null, !null, "Shoulda got an exception extending WD with nothing");
-			}
-			catch (ex) {
+			} catch (ex) {
 				assert.isTrue(true, "Exception expected");  // no op - we expect this failure
 			}
 		},
@@ -531,8 +537,7 @@ define(["intern!object", "intern/chai!assert", "./resources/test.utils!"], funct
 			var threw = false;
 			try {
 				new Widget("", "");  // eslint-disable-line no-new
-			}
-			catch (ex) {
+			} catch (ex) {
 				threw = true;
 			}
 			assert.isTrue(threw);

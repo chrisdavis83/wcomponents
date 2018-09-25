@@ -52,27 +52,44 @@ public abstract class AbstractWFieldIndicator extends AbstractWComponent {
 	 * @param severity A Diagnostic severity code. e.g. {@link Diagnostic#ERROR}
 	 */
 	protected void showIndicatorsForComponent(final List<Diagnostic> diags, final int severity) {
-		FieldIndicatorModel model = getOrCreateComponentModel();
-		model.diagnostics.clear();
-		UIContext uic = UIContextHolder.getCurrent();
+		FieldIndicatorModel model = getComponentModel();
+		if (model != null && !model.diagnostics.isEmpty()) {
+			model = getOrCreateComponentModel();
+			model.diagnostics.clear();
+		}
 
-		for (int i = 0; i < diags.size(); i++) {
-			Diagnostic diagnostic = diags.get(i);
+		if (diags != null && !diags.isEmpty()) {
+			model = getOrCreateComponentModel();
+			UIContext uic = UIContextHolder.getCurrent();
 
-			if (diagnostic.getSeverity() == severity && uic == diagnostic.getContext()
+			for (int i = 0; i < diags.size(); i++) {
+				Diagnostic diagnostic = diags.get(i);
+
+				if (diagnostic.getSeverity() == severity && uic == diagnostic.getContext()
 					// To support repeated components.
 					&& relatedField == diagnostic.getComponent()) {
-				model.diagnostics.add(diagnostic);
+					model.diagnostics.add(diagnostic);
+				}
 			}
 		}
+
 	}
 
 	/**
 	 * Provide subclasses with access to the related field.
 	 *
 	 * @return The Related Field.
+	 * @deprecated use {@link #getTargetComponent()} instead.
 	 */
+	@Deprecated
 	protected WComponent getRelatedField() {
+		return getTargetComponent();
+	}
+
+	/**
+	 * @return the component which is the validation target for this indicator.
+	 */
+	public WComponent getTargetComponent() {
 		return this.relatedField;
 	}
 
@@ -136,7 +153,11 @@ public abstract class AbstractWFieldIndicator extends AbstractWComponent {
 		/**
 		 * Error Type.
 		 */
-		ERROR
+		ERROR,
+		/**
+		 * Success Type.
+		 */
+		SUCCESS
 	};
 
 	/**

@@ -27,7 +27,6 @@ final class WRadioButtonSelectRenderer extends AbstractWebXmlRenderer {
 	public void doRender(final WComponent component, final WebXmlRenderContext renderContext) {
 		WRadioButtonSelect rbSelect = (WRadioButtonSelect) component;
 		XmlStringBuilder xml = renderContext.getWriter();
-		int tabIndex = rbSelect.getTabIndex();
 		int cols = rbSelect.getButtonColumns();
 		boolean readOnly = rbSelect.isReadOnly();
 
@@ -42,7 +41,6 @@ final class WRadioButtonSelectRenderer extends AbstractWebXmlRenderer {
 			xml.appendOptionalAttribute("disabled", rbSelect.isDisabled(), "true");
 			xml.appendOptionalAttribute("required", rbSelect.isMandatory(), "true");
 			xml.appendOptionalAttribute("submitOnChange", rbSelect.isSubmitOnChange(), "true");
-			xml.appendOptionalAttribute("tabIndex", component.hasTabIndex(), String.valueOf(tabIndex));
 			xml.appendOptionalAttribute("toolTip", component.getToolTip());
 			xml.appendOptionalAttribute("accessibleText", component.getAccessibleText());
 		}
@@ -82,6 +80,9 @@ final class WRadioButtonSelectRenderer extends AbstractWebXmlRenderer {
 			}
 		}
 
+		if (!readOnly) {
+			DiagnosticRenderUtil.renderDiagnostics(rbSelect, renderContext);
+		}
 		xml.appendEndTag("ui:radiobuttonselect");
 
 		if (rbSelect.isAjax()) {

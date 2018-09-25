@@ -10,13 +10,11 @@
  * @requires module:wc/dom/shed
  * @requires module:wc/dom/Widget
  * @requires module:wc/ui/containerload
- * @requires module:wc/ajax/setLoading
  * @requires module:wc/dom/focus
  * @requires module:wc/dom/classList
  * @requires module:wc/ui/viewportUtils
  * @requires module:wc/ui/ajax/processResponse
  * @requires module:wc/dom/event
- * @requires module:wc/timers
  *
  */
 define(["wc/array/toArray",
@@ -27,15 +25,15 @@ define(["wc/array/toArray",
 	"wc/dom/shed",
 	"wc/dom/Widget",
 	"wc/ui/containerload",
-	"wc/ajax/setLoading",
 	"wc/dom/focus",
 	"wc/dom/classList",
 	"wc/ui/viewportUtils",
 	"wc/ui/ajax/processResponse",
 	"wc/dom/event",
-	"wc/timers"],
+	"wc/debounce",
+	"wc/dom/getStyle"],
 	function(toArray, ariaAnalog, formUpdateManager, getFilteredGroup, initialise, shed, Widget, containerload,
-		setLoading, focus, classList, viewportUtils, processResponse, event, timers) {
+		focus, classList, viewportUtils, processResponse, event, debounce, getStyle) {
 		"use strict";
 
 		/**
@@ -78,12 +76,34 @@ define(["wc/array/toArray",
 				 * @private
 				 */
 				lastTabId,
+				resizeEvent = debounce(function() {
+					toggleToFromAccordions();
+				}, 100),
 				CONVERTED = "data-wc-converted",
 				MULTISELECT = "aria-multiselectable",
 				TRUE = "true",
 				FALSE = "false",
 				ACCORDION_CLASS = "wc-tabset-type-accordion",
-				resizeTimer;
+				/**
+				 * @constant {String} OLD_HEIGHT The name of the attribute used to hold the pre-ajax height of a target
+				 * container if it was specified in a style attribute. Used to reset the height of the container to its
+				 * initial (fixed) height after it stops being busy.
+				 * @private
+				 */
+				OLD_HEIGHT = "data-wc-height",
+				/**
+				 * @constant {String} OLD_WIDTH The name of the attribute used to hold the pre-ajax width of a target
+				 * container if it was specified in a style attribute. Used to reset the width of the container to its
+				 * initial (fixed) width after it stops being busy.
+				 * @private
+				 */
+				OLD_WIDTH = "data-wc-width",
+				/**
+				 * @constant {String} UPDATE_SIZE The attribute name used to indicate that the busy region has had its
+				 * pre-update size calculated and set so that a region which has its contents removed does not collapse.
+				 * @private
+				 */
+				UPDATE_SIZE = "data-wc-size";
 
 			/**
 			 * The description of a tab control.
@@ -182,6 +202,57 @@ define(["wc/array/toArray",
 				}
 			}
 
+			/**
+			 * Removes the custom size set when making an ajax region busy.
+			 *
+			 * @function
+			 * @private
+			 * @param {Element} element The element being made no longer busy.
+			 */
+			function clearSize (element) {
+				var size;
+				if (element.getAttribute(UPDATE_SIZE)) {
+					element.removeAttribute(UPDATE_SIZE);
+					if ((size = element.getAttribute(OLD_WIDTH))) {
+						element.style.width = size;
+					} else if (element.style.width) {
+						element.style.width = "";
+					}
+					if ((size = element.getAttribute(OLD_HEIGHT))) {
+						element.style.height = size;
+					} else if (element.style.height) {
+						element.style.height = "";
+					}
+				}
+			}
+
+			function fixSize (element) {
+				var result = false, width, height, oldWidth, oldHeight;
+
+				if (!element.getAttribute(UPDATE_SIZE)) {  // already targeted (ie: a conflict) therefore nothing to do
+					width = getStyle(element, "width", true, true);
+					height = getStyle(element, "height", true, true);
+					if (width && height) { // no point playing with custom sizes if the target has no size
+						result = true;
+						element.setAttribute(UPDATE_SIZE, "x");
+						oldWidth = element.style.width;
+
+						if (oldWidth) {
+							element.setAttribute(OLD_WIDTH, oldWidth);
+						} else {
+							element.style.width = width;
+						}
+						oldHeight = element.style.height;
+						if (oldHeight) {
+							element.setAttribute(OLD_HEIGHT, oldHeight);
+						} else {
+							element.style.height = height;
+						}
+					}
+				}
+				return result;
+			}
+
 			function expandCollapseAll(tabset, expand) {
 				var list = TABLIST.findDescendant(tabset),
 					func,
@@ -256,8 +327,7 @@ define(["wc/array/toArray",
 							if (getAccordion(container) === FALSE) {
 								collapseOthers(element);
 							}
-						}
-						else if (action === shed.actions.COLLAPSE) {
+						} else if (action === shed.actions.COLLAPSE) {
 							shed.hide(content);
 
 						}
@@ -273,7 +343,12 @@ define(["wc/array/toArray",
 			function onItemSelection(action, element) {
 				var content,
 					contentContainer,
-					container;
+					container,
+					onShown = function() {
+						if (contentContainer) {
+							clearSize(contentContainer);
+						}
+					};
 
 				if (action === shed.actions.SELECT) {
 					instance.setFocusIndex(element);
@@ -287,15 +362,10 @@ define(["wc/array/toArray",
 						}
 						if (action === shed.actions.SELECT) {
 							shed.show(content, true);
-							containerload.onshow(content).then(function() {
-								if (contentContainer) {
-									setLoading.clearSize(contentContainer);
-								}
-							});
-						}
-						else if (action === shed.actions.DESELECT) {
+							containerload.onshow(content).then(onShown).catch(onShown);
+						} else if (action === shed.actions.DESELECT) {
 							if (contentContainer) {
-								setLoading.fixSize(contentContainer);  // TODO only do this if it's an AJAX tab
+								fixSize(contentContainer);  // TODO only do this if it's an AJAX tab
 							}
 							shed.hide(content);
 						}
@@ -418,8 +488,7 @@ define(["wc/array/toArray",
 								console.warn("Unknown action", action);
 								break;
 						}
-					}
-					else if ((action === shed.actions.DISABLE || action === shed.actions.ENABLE) && TABLIST.isOneOfMe(element)) {
+					} else if ((action === shed.actions.DISABLE || action === shed.actions.ENABLE) && TABLIST.isOneOfMe(element)) {
 						// if the tablist is disabled or enabled, diable/enable all the tabs.
 						Array.prototype.forEach.call(this.ITEM.findDescendants(element), function (next) {
 							shed[action](next);
@@ -447,12 +516,10 @@ define(["wc/array/toArray",
 							if (!shed.isExpanded(element)) {
 								shed.expand(element);
 							}
-						}
-						else {
+						} else {
 							shed.toggle(element, shed.actions.EXPAND);
 						}
-					}
-					else if (!shed.isSelected(element)) {
+					} else if (!shed.isSelected(element)) {
 						shed.select(element);
 					}
 				}
@@ -497,8 +564,7 @@ define(["wc/array/toArray",
 					if (openTabs && openTabs.length) {
 						instance.setFocusIndex(openTabs[0]);
 					}
-				}
-				finally {
+				} finally {
 					lastTabId = "";
 				}
 			}
@@ -515,8 +581,7 @@ define(["wc/array/toArray",
 						resetFocusIndex();
 					}
 					lastTabId = tab.id;
-				}
-				else if (lastTabId) {
+				} else if (lastTabId) {
 					resetFocusIndex();
 				}
 			};
@@ -530,8 +595,7 @@ define(["wc/array/toArray",
 				if (!(shed.isDisabled(next) || shed.isDisabled(next.parentElement))) {
 					if (getAccordion(next)) {
 						config.filter = config.filter | getFilteredGroup.FILTERS.expanded;
-					}
-					else {
+					} else {
 						config.filter = config.filter | getFilteredGroup.FILTERS.selected;
 					}
 					if ((tabs = getFilteredGroup(next, config))) {
@@ -540,8 +604,7 @@ define(["wc/array/toArray",
 						if (!selected.length) {
 							// no open tabs (or all individually disabled)
 							formUpdateManager.writeStateField(stateContainer, tabsetName, "", false, true);
-						}
-						else {
+						} else {
 							selected.forEach(function(theTab) {
 								position = tabs.indexOf(theTab);
 								formUpdateManager.writeStateField(stateContainer, tabsetName, position, false, true);
@@ -629,11 +692,9 @@ define(["wc/array/toArray",
 						direction = (keyCode === KeyEvent.DOM_VK_PAGE_UP ? instance.KEY_DIRECTION.PREVIOUS : instance.KEY_DIRECTION.NEXT);
 						targetTab = instance.navigate(tab, direction);
 					}
-				}
-				else if (keyCode === KeyEvent.DOM_VK_UP) {
+				} else if (keyCode === KeyEvent.DOM_VK_UP) {
 					targetTab = getTabFor(target);
-				}
-				else {
+				} else {
 					this.constructor.prototype.keydownEvent.call(this, $event);
 					return;
 				}
@@ -649,7 +710,7 @@ define(["wc/array/toArray",
 			 * @function
 			 * @private
 			 * @param {Element} tab
-			 * @returns {?Element} the tab panel for the tab.
+			 * @returns {Element} the tab panel for the tab.
 			 */
 			function getPanel(tab) {
 				var panelId;
@@ -690,10 +751,12 @@ define(["wc/array/toArray",
 						});
 						successful = true;
 					}
-				}
-				finally {
+				} finally {
 					if (successful) {
 						classList.remove(accordion, ACCORDION_CLASS);
+						if (classList.contains(accordion, "wc-tabset-type-left") || classList.contains(accordion, "wc-tabset-type-right")) {
+							tablist.setAttribute("aria-orientation", "vertical");
+						}
 						tablist.removeAttribute(MULTISELECT);
 						accordion.removeAttribute(CONVERTED);
 					}
@@ -725,8 +788,7 @@ define(["wc/array/toArray",
 							if (tabPanel) {
 								if (tab.nextSibling) {
 									parent.insertBefore(tabPanel, tab.nextSibling);
-								}
-								else {
+								} else {
 									parent.appendChild(tabPanel);
 								}
 							}
@@ -736,12 +798,12 @@ define(["wc/array/toArray",
 						});
 						successful = true;
 					}
-				}
-				finally {
+				} finally {
 					if (successful) {
 						classList.add(tabset, ACCORDION_CLASS);
 						tablist.setAttribute(MULTISELECT, FALSE); // must be a single select accordion.
-						setLoading.clearSize(tabset);
+						tablist.removeAttribute("aria-orientation");
+						clearSize(tabset);
 						tabset.setAttribute(CONVERTED, TRUE);
 					}
 				}
@@ -751,7 +813,7 @@ define(["wc/array/toArray",
 			 * Find tabset in a container and convert them if necessary.
 			 * @function
 			 * @private
-			 * @param {Element} container
+			 * @param {Element} [container]
 			 */
 			function toggleToFromAccordions(container) {
 				var candidates,
@@ -759,8 +821,7 @@ define(["wc/array/toArray",
 
 				if (TABSET.isOneOfMe(element)) {
 					candidates = [element];
-				}
-				else {
+				} else {
 					candidates = toArray(TABSET.findDescendants(element));
 				}
 
@@ -770,22 +831,9 @@ define(["wc/array/toArray",
 
 				if (viewportUtils.isSmallScreen()) {
 					candidates.forEach(tabsetToAccordion);
-				}
-				else {
+				} else {
 					candidates.forEach(accordionToTabset);
 				}
-			}
-
-			/**
-			 * Convert tabsets to/from accordions on resize.
-			 * @function
-			 * @private
-			 */
-			function resizeEvent(/* $event */) {
-				if (resizeTimer) {
-					timers.clearTimeout(resizeTimer);
-				}
-				resizeTimer = timers.setTimeout(toggleToFromAccordions, 100);
 			}
 
 			/**

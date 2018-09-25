@@ -76,8 +76,7 @@ define(function() {
 					 * See: wc/ecma5/Object.defineProperty
 					 */
 					Object.defineProperty(element, EXPANDO_NAME, {get: getter});
-				}
-				else {
+				} else {
 					// element[EXPANDO_NAME] = {};  // could just as easily do this for FF
 					element.__defineGetter__(EXPANDO_NAME, getter);
 				}
@@ -133,7 +132,7 @@ define(function() {
 		 * @alias module:wc/dom/attribute.get
 		 * @param {Element} element The Element to test.
 		 * @param {string} name The lookup "key".
-		 * @returns {?*} The value of the custom attribute or null if not found.
+		 * @returns {*} The value of the custom attribute or null if not found.
 		 */
 		this.get = function(element, name) {
 			var result = null,

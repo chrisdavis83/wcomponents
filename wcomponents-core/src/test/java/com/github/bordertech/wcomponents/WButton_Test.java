@@ -34,13 +34,8 @@ public class WButton_Test extends AbstractWComponentTestCase {
 		Assert.assertEquals("Incorrect access key returned", accessKey, button.getAccessKey());
 	}
 
-	/**
-	 * Test the access key methods on button.
-	 *
-	 * @throws java.lang.Exception
-	 */
 	@Test
-	public void testAccessKeyHandling() throws Exception {
+	public void testAccessKeyHandling() {
 		String buttonText = "ABCDE abcde";
 		WButton button = new WButton(buttonText);
 		button.setAccessKey('E');
@@ -186,7 +181,6 @@ public class WButton_Test extends AbstractWComponentTestCase {
 				isPopupTrigger());
 	}
 
-	// TODO rewrite as a parameterised test when we upgrade to jUnit4?
 	@Test
 	public void testGetText() {
 		Assert.assertNull("Incorrect text for button with nothing",
@@ -388,7 +382,6 @@ public class WButton_Test extends AbstractWComponentTestCase {
 				getButtonText(true, true, true, true, true, false));
 	}
 
-	// TODO rewrite as a parameterised test when we upgrade to jUnit4?
 	@Test
 	public void testGetValue() {
 		Assert.assertEquals("Incorrect value for button with nothing",

@@ -5,7 +5,7 @@ import com.github.bordertech.wcomponents.WPanel;
 import com.github.bordertech.wcomponents.WTextField;
 import java.util.ArrayList;
 import java.util.List;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -24,7 +24,7 @@ public class WFieldErrorIndicator_Test extends AbstractWComponentTestCase {
 		Assert.assertEquals("Incorrect indicator type",
 				AbstractWFieldIndicator.FieldIndicatorType.ERROR, indicator
 				.getFieldIndicatorType());
-		Assert.assertEquals("Incorrect releated field", component, indicator.getRelatedField());
+		Assert.assertEquals("Incorrect releated field", component, indicator.getTargetComponent());
 
 		Assert.assertEquals("Incorrect releated field id", component.getId(), indicator.
 				getRelatedFieldId());

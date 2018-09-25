@@ -4,26 +4,25 @@
 The XML schema for a WComponent page.
 
 -->
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified"
-		   targetNamespace="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
-		   xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0">
+<xs:schema
+	xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	xmlns:ui="https://github.com/bordertech/wcomponents/namespace/ui/v1.0"
+	xmlns:html="http://www.w3.org/1999/xhtml"
+	elementFormDefault="qualified"
+	targetNamespace="https://github.com/bordertech/wcomponents/namespace/ui/v1.0">
 
 	<xs:include schemaLocation="all.xsd" />
 
 	<xs:group name="contentGroup">
 		<xs:annotation>
 			<xs:documentation>
-				A group of stand-alone components: those which are able to be added directly to a WApplication or a
-				content container.
+				A group of stand-alone components: those which are able to be added directly to a WApplication or a content container.
 			</xs:documentation>
 		</xs:annotation>
 		<xs:choice>
-			<xs:element ref="ui:abbr" />
-			<xs:element ref="ui:additionalParameters" />
 			<xs:element ref="ui:application" />
 			<xs:element ref="ui:ajaxtrigger" />
 			<xs:element ref="ui:audio" />
-			<xs:element ref="ui:button" />
 			<xs:element ref="ui:checkbox" />
 			<xs:element ref="ui:checkboxselect" />
 			<xs:element ref="ui:collapsible" />
@@ -42,13 +41,13 @@ The XML schema for a WComponent page.
 			<xs:element ref="ui:figure" />
 			<xs:element ref="ui:fileupload" />
 			<xs:element ref="ui:heading" />
-			<xs:element ref="ui:image" />
 			<xs:element ref="ui:label" />
 			<xs:element ref="ui:link" />
 			<xs:element ref="ui:listbox" />
 			<xs:element ref="ui:menu" />
 			<xs:element ref="ui:messagebox" />
 			<xs:element ref="ui:multidropdown" />
+			<xs:element ref="ui:multifileupload" />
 			<xs:element ref="ui:multiselectpair" />
 			<xs:element ref="ui:multitextfield" />
 			<xs:element ref="ui:numberfield" />
@@ -56,8 +55,6 @@ The XML schema for a WComponent page.
 			<xs:element ref="ui:passwordfield" />
 			<xs:element ref="ui:phonenumberfield" />
 			<xs:element ref="ui:popup" />
-			<xs:element ref="ui:printbutton" />
-			<xs:element ref="ui:progressbar" />
 			<xs:element ref="ui:radiobutton" />
 			<xs:element ref="ui:radiobuttonselect" />
 			<xs:element ref="ui:redirect" />
@@ -80,7 +77,7 @@ The XML schema for a WComponent page.
 			<xs:element ref="ui:version" />
 			<xs:element ref="ui:video" />
 			<!-- Allow any XHTML elements such as script and style tags, and some basic formatting. -->
-			<xs:any processContents="lax" namespace="##other" />
+			<xs:any namespace="##other" processContents="skip" />
 		</xs:choice>
 	</xs:group>
 
@@ -98,7 +95,6 @@ The XML schema for a WComponent page.
 			<xs:element ref="ui:file" />
 			<xs:element ref="ui:menugroup" />
 			<xs:element ref="ui:menuitem" />
-			<xs:element ref="ui:separator" />
 			<xs:element ref="ui:submenu" />
 			<xs:element ref="ui:treeitem" />
 		</xs:choice>

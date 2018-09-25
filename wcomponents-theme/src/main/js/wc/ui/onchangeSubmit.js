@@ -1,28 +1,18 @@
-/**
- * Provides a means to invoke a form submission directly from the change event of a form control. If a form control is
- * marked as 'submitOnChange' then we need to queue up a form submission request when it changes.
- *
- * **NOTE:** this has certain negative accessibility implications around unexpectedly changing context. As a consequence
- * we recommend submitOnChange not be used and it may be removed from future releases.
- *
- * @module
- * @requires module:wc/dom/attribute
- * @requires module:wc/dom/event
- * @requires module:wc/dom/initialise
- * @requires module:wc/dom/shed
- * @requires module:wc/ajax/triggerManager
- * @requires module:wc/dom/serialize
- * @requires module:wc/dom/Widget
- * @requires module:wc/timers
- *
- * @todo document private members, check source order.
- * @deprecated
- */
-define(["wc/dom/attribute", "wc/dom/event", "wc/dom/initialise", "wc/dom/shed",
-		"wc/ajax/triggerManager",
-		"wc/dom/serialize", "wc/dom/Widget", "wc/timers"],
-	/** @param attribute wc/dom/attribute @param event wc/dom/event @param initialise wc/dom/initialise @param shed wc/dom/shed @param triggerManager wc/ajax/triggerManager @param serialize wc/dom/serialize @param Widget wc/dom/Widget @param timers wc/timers @ignore */
-	function(attribute, event, initialise, shed, triggerManager, serialize, Widget, timers) {
+define(["wc/dom/attribute",
+	"wc/dom/event",
+	"wc/dom/initialise",
+	"wc/dom/shed",
+	"wc/ajax/triggerManager",
+	"wc/dom/serialize",
+	"wc/dom/Widget",
+	"wc/timers",
+	"wc/ui/getFirstLabelForElement",
+	"wc/ui/label",
+	"wc/i18n/i18n",
+	"wc/dom/textContent",
+	"wc/ui/ajax/processResponse",
+	"wc/dom/classList"],
+	function(attribute, event, initialise, shed, triggerManager, serialize, Widget, timers, getFirstLabelForElement, label, i18n, textContent, processResponse, classList) {
 		"use strict";
 
 		/**
@@ -35,9 +25,9 @@ define(["wc/dom/attribute", "wc/dom/event", "wc/dom/initialise", "wc/dom/shed",
 				SUBMITTER = new Widget("", "wc_soc"),
 				LOAD_SELECT = SUBMITTER.extend("", {"data-wc-list": null}),
 				TRIGGERS = [SUBMITTER.extend("", {"type": "checkbox"}),
-							SUBMITTER.extend("", {"type": "radio"}),
-							SUBMITTER.extend("", {"role": "checkbox"}),
-							SUBMITTER.extend("", {"role": "radio"})],
+					SUBMITTER.extend("", {"type": "radio"}),
+					SUBMITTER.extend("", {"role": "checkbox"}),
+					SUBMITTER.extend("", {"role": "radio"})],
 				FORM = new Widget("form"),
 				optionOnLoad = [],
 				ignoreChange = false,
@@ -84,7 +74,7 @@ define(["wc/dom/attribute", "wc/dom/event", "wc/dom/initialise", "wc/dom/shed",
 			 * @function
 			 * @private
 			 * @param {Element} element The element to serialize.
-			 * @returns {?String} The serialized value of element if it is a cacheable SELECT.
+			 * @returns {String} The serialized value of element if it is a cacheable SELECT.
 			 */
 			function getElementValue(element) {
 				var result;
@@ -116,16 +106,14 @@ define(["wc/dom/attribute", "wc/dom/event", "wc/dom/initialise", "wc/dom/shed",
 									timers.setTimeout(event.fire, 0, form, event.TYPE.submit);
 								}
 								removeLoadedOptionRegistry(element);
-							}
-							else {
+							} else {
 								submitting = true;
 								console.warn(DEP_WARNING);
 								timers.setTimeout(event.fire, 0, form, event.TYPE.submit);
 							}
 						}
 					}
-				}
-				else {
+				} else {
 					console.warn("onchange submit fired twice");  // this is going to be hard to spot when the page is submitting
 				}
 			}
@@ -179,8 +167,7 @@ define(["wc/dom/attribute", "wc/dom/event", "wc/dom/initialise", "wc/dom/shed",
 					if (!$event.defaultPrevented && !ignoreChange && SUBMITTER.isOneOfMe(element) && !Widget.isOneOfMe(element, TRIGGERS)) {
 						fireElement(element);
 					}
-				}
-				finally {
+				} finally {
 					ignoreChange = false;
 				}
 			}
@@ -198,6 +185,50 @@ define(["wc/dom/attribute", "wc/dom/event", "wc/dom/initialise", "wc/dom/shed",
 				}
 			}
 
+			function addAllWarnings(container) {
+				if (SUBMITTER.isOneOfMe(container)) {
+					instance.warn(container);
+				} else {
+					Array.prototype.forEach.call(SUBMITTER.findDescendants(container), function(next) {
+						instance.warn(next);
+					});
+				}
+			}
+
+			/**
+			 * Allow an external module which manipulates labels to be able to set the SoC warning.
+			 * @function module:wc/ui/onchangeSubmit.warn
+			 * @public
+			 * @param {Element} el THe element which may be able to "submit on change"
+			 * @param {Element} [lbl] The element's label/legend/labelling element if it is already available - just prevents us having to do double
+			 * look-ups.
+			 */
+			this.warn = function(el, lbl) {
+				var myLabel;
+				if (!el || !SUBMITTER.isOneOfMe(el) || triggerManager.getTrigger(el)) {
+					return;
+				}
+				myLabel = lbl || getFirstLabelForElement(el);
+				if (myLabel) {
+					i18n.translate("submitOnChange").then(function(submitOnChangeHint) {
+						var hintContent,
+							// do not allow an application to override i18n in order to to make this warning empty
+							realSoCHint = submitOnChangeHint || "Changing the value of this field will cause immediate save.",
+							hint = label.getHint(myLabel);
+						if (hint) {
+							hintContent = textContent.get(hint);
+							if (hintContent.indexOf(realSoCHint) === -1) {
+								label.setHint(myLabel, realSoCHint);
+							}
+						} else {
+							label.setHint(myLabel, realSoCHint);
+						}
+						// if the label is off-screen force it back on.
+						classList.remove(myLabel, "wc-off");
+					});
+				}
+			};
+
 			/**
 			 * Set up the core body listeners for submit on change.
 			 * @function module:wc/ui/onchangeSubmit.initialise
@@ -208,10 +239,10 @@ define(["wc/dom/attribute", "wc/dom/event", "wc/dom/initialise", "wc/dom/shed",
 				if (event.canCapture) {
 					event.add(element, event.TYPE.focus, domFocusEvent, null, null, true);
 					event.add(element, event.TYPE.change, changeEvent, null, null, true);
-				}
-				else {
+				} else {
 					event.add(element, event.TYPE.focusin, focusEvent);
 				}
+				timers.setTimeout(addAllWarnings, 0, element);
 			};
 
 			/**
@@ -223,6 +254,7 @@ define(["wc/dom/attribute", "wc/dom/event", "wc/dom/initialise", "wc/dom/shed",
 				shed.subscribe(shed.actions.SELECT, shedObserver);
 				shed.subscribe(shed.actions.DESELECT, shedObserver);
 				shed.subscribe(shed.actions.COLLAPSE, shedObserver);
+				processResponse.subscribe(addAllWarnings, true);
 			};
 
 			/**
@@ -245,7 +277,29 @@ define(["wc/dom/attribute", "wc/dom/event", "wc/dom/initialise", "wc/dom/shed",
 			};
 		}
 
-		var /** @alias module:wc/ui/onchangeSubmit */ instance = new OnchangeSubmit();
+		/**
+		 * Provides a means to invoke a form submission directly from the change event of a form control. If a form control is
+		 * marked as 'submitOnChange' then we need to queue up a form submission request when it changes.
+		 *
+		 * **NOTE:** this has certain negative accessibility implications around unexpectedly changing context. As a consequence
+		 * we recommend submitOnChange not be used and it may be removed from future releases.
+		 *
+		 * @module
+		 * @requires module:wc/dom/attribute
+		 * @requires module:wc/dom/classList
+		 * @requires module:wc/dom/event
+		 * @requires module:wc/dom/initialise
+		 * @requires module:wc/dom/shed
+		 * @requires module:wc/ajax/triggerManager
+		 * @requires module:wc/dom/serialize
+		 * @requires module:wc/dom/Widget
+		 * @requires module:wc/timers
+		 * @requires module:wc/ui/getFirstLabelForElement
+		 *
+		 * @todo document private members, check source order.
+		 * @deprecated
+		 */
+		var instance = new OnchangeSubmit();
 		initialise.register(instance);
 		return instance;
 	});

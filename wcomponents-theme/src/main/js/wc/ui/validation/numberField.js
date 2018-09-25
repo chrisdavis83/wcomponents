@@ -1,30 +1,15 @@
-/**
- * Provides functionality to undertake client validation of WNumberField.
- *
- * @module wc/ui/validation/numberField
- * @requires module:wc/dom/attribute
- * @requires module:wc/dom/initialise
- * @requires module:wc/dom/event
- * @requires module:wc/dom/Widget
- * @requires module:wc/i18n/i18n
- * @requires module:wc/ui/validation/validationManager
- * @requires module:wc/ui/validation/required
- * @requires module:wc/ui/getFirstLabelForElement
- * @requires external:lib/sprintf
- * @requires module:wc/ui/numberField
- */
 define(["wc/dom/attribute",
-		"wc/dom/initialise",
-		"wc/dom/event",
-		"wc/dom/Widget",
-		"wc/i18n/i18n",
-		"wc/ui/validation/validationManager",
-		"wc/ui/validation/required",
-		"wc/ui/getFirstLabelForElement",
-		"lib/sprintf",
-		"wc/ui/numberField"],
-	/** @param attribute wc/dom/attribute @param initialise wc/dom/initialise @param event wc/dom/event @param Widget wc/dom/Widget @param i18n wc/i18n/i18n @param validationManager wc/ui/validation/validationManager @param required wc/ui/validation/required @param getFirstLabelForElement wc/ui/getFirstLabelForElement @param sprintf lib/sprintf @param numberField wc/ui/numberField @ignore */
-	function(attribute, initialise, event, Widget, i18n, validationManager, required, getFirstLabelForElement, sprintf, numberField) {
+	"wc/dom/initialise",
+	"wc/dom/event",
+	"wc/dom/shed",
+	"wc/dom/Widget",
+	"wc/i18n/i18n",
+	"wc/ui/validation/validationManager",
+	"wc/ui/validation/required",
+	"wc/ui/feedback",
+	"lib/sprintf",
+	"wc/ui/numberField"],
+	function(attribute, initialise, event, shed, Widget, i18n, validationManager, required, feedback, sprintf, numberField) {
 		"use strict";
 		/**
 		 * @constructor
@@ -32,7 +17,7 @@ define(["wc/dom/attribute",
 		 * @private
 		 */
 		function ValidationNumberField() {
-			var NUM_FIELD = numberField.getWidget(),
+			var NUM_FIELD = numberField.getWidget().clone(),
 				MAX = "max",
 				MIN = "min",
 				BOOTSTRAPPED = "validation.numberField.bs",
@@ -51,10 +36,12 @@ define(["wc/dom/attribute",
 			function isInvalid(element) {
 				var result = false, min, max,
 					value = numberField.getValueAsNumber(element),
-					label, message;
+					message;
 
 				if (value !== "" && !validationManager.isExempt(element)) {
-					if (Widget.isOneOfMe(element, CONSTRAINED)) {
+					if (isNaN(value)) {
+						message = i18n.get("validation_number_nan");
+					} else if (Widget.isOneOfMe(element, CONSTRAINED)) {
 						max = element.getAttribute(MAX);
 						min = element.getAttribute(MIN);
 						message = checkMax(element, value, min, max);
@@ -62,14 +49,10 @@ define(["wc/dom/attribute",
 							message = checkMin(element, value, min);
 						}
 					}
-					else if (isNaN(value)) {
-						message = i18n.get("validation_number_nan");
-					}
 					if (message) {
 						result = true;
-						label = getFirstLabelForElement(element, true) || element.title || i18n.get("validation_common_unlabelledfield");
-						message = sprintf.sprintf(message, label, (min || max), max);
-						validationManager.flagError({element: element, message: message});
+						message = sprintf.sprintf(message, validationManager.getLabelText(element), (min || max), max);
+						feedback.flagError({element: element, message: message});
 					}
 				}
 				return result;
@@ -90,8 +73,7 @@ define(["wc/dom/attribute",
 				if (MAX_FIELD.isOneOfMe(element)) {
 					if (isNaN(value)) {
 						result = min ? i18n.get("validation_number_nanwithrange") : i18n.get("validation_number_nanwithmax");
-					}
-					else if (value > parseFloat(max)) {
+					} else if (value > parseFloat(max)) {
 						// if value < min it cannot be > max
 						result = min ? i18n.get("validation_number_outofrange") : i18n.get("validation_number_overmax");
 					}
@@ -113,8 +95,7 @@ define(["wc/dom/attribute",
 				if (MIN_FIELD.isOneOfMe(element)) {
 					if (isNaN(value)) {
 						result = i18n.get("validation_number_nanwithmin");
-					}
-					else if (value < parseFloat(min)) {
+					} else if (value < parseFloat(min)) {
 						result = i18n.get("validation_number_undermin");
 					}
 				}
@@ -133,7 +114,7 @@ define(["wc/dom/attribute",
 					candidates,
 					invalid,
 					validInputs = required.doItAllForMe(container, NUM_FIELD);
-				candidates = (NUM_FIELD.isOneOfMe(container)) ? [container] : Widget.findDescendants(container, NUM_FIELD);
+				candidates = (numberField.isOneOfMe(container)) ? [container] : Widget.findDescendants(container, NUM_FIELD);
 				if (candidates && candidates.length) {
 					invalid = Array.prototype.filter.call(candidates, isInvalid);
 					result = (invalid.length === 0);
@@ -148,7 +129,24 @@ define(["wc/dom/attribute",
 			 * @param {module:wc/dom/event} $event A wrapped change event.
 			 */
 			function changeEvent($event) {
-				validationManager.revalidationHelper($event.target, validate);
+				var element = $event.target;
+
+				if (validationManager.isValidateOnChange()) {
+					if (validationManager.isInvalid(element)) {
+						validationManager.revalidationHelper(element, validate);
+						return;
+					}
+					validate(element);
+					return;
+				}
+				validationManager.revalidationHelper(element, validate);
+			}
+
+			function blurEvent($event) {
+				var element = $event.target;
+				if (!element.value && shed.isMandatory(element)) {
+					validate(element);
+				}
 			}
 
 			/**
@@ -162,6 +160,13 @@ define(["wc/dom/attribute",
 				if (!$event.defaultPrevented && numberField.isOneOfMe(element) && !attribute.get(element, BOOTSTRAPPED)) {
 					attribute.set(element, BOOTSTRAPPED, true);
 					event.add(element, event.TYPE.change, changeEvent, 1);
+					if (validationManager.isValidateOnBlur()) {
+						if (event.canCapture) {
+							event.add(element, event.TYPE.blur, blurEvent, 1, null, true);
+						} else {
+							event.add(element, event.TYPE.focusout, blurEvent);
+						}
+					}
 				}
 			}
 
@@ -172,9 +177,8 @@ define(["wc/dom/attribute",
 			 */
 			this.initialise = function(element) {
 				if (event.canCapture) {
-					event.add(element, event.TYPE.change, changeEvent, 1, null, true);
-				}
-				else {
+					event.add(element, event.TYPE.focus, focusEvent, 1, null, true);
+				} else {
 					event.add(element, event.TYPE.focusin, focusEvent);
 				}
 			};
@@ -188,7 +192,22 @@ define(["wc/dom/attribute",
 			};
 		}
 
-		var /** @alias module:wc/ui/validation/numberField */ instance = new ValidationNumberField();
+		/**
+		 * Provides functionality to undertake client validation of WNumberField.
+		 *
+		 * @module
+		 * @requires wc/dom/attribute
+		 * @requires wc/dom/initialise
+		 * @requires wc/dom/event
+		 * @requires wc/dom/Widget
+		 * @requires wc/i18n/i18n
+		 * @requires wc/ui/validation/validationManager
+		 * @requires wc/ui/validation/required
+		 * @requires wc/ui/feedback
+		 * @requires external:lib/sprintf
+		 * @requires wc/ui/numberField
+		 */
+		var instance = new ValidationNumberField();
 		initialise.register(instance);
 		return instance;
 	});

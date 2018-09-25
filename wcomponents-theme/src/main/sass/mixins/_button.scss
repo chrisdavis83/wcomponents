@@ -1,0 +1,36 @@
+// #############################################################################
+// BUTTON MIXINS
+// #############################################################################
+// Style a button with a (usually) transparent background. Handy for holding
+// iconography!
+//
+// @param {boolean|int} $border [false] If true then the border mixin is called
+//     with no params (get a default border). Set false to not include the
+//     standard border mixin. Set to any non-negative integer to create a
+//     standard coloured border of the required width. If you want a
+//     non-standard border set false and use the border mixin by itself.
+// @param {dimension} $height [-1] The height of the button. Set -1 to ignore.
+// @param {dimension} $padding [-1] The padding of the button. Set -1 to ignore.
+// @param {position} $text-align [center] The text align for your button. Set ''
+//     to ignore. TODO: why not -1?
+// @param {dimension} $width [-1] The width of the button. Set -1 to ignore.
+@mixin button($border: false, $height: -1, $padding: -1, $text-align: -1, $width: -1) {
+  @if $border == true {
+    @include border;
+  } @else if ($border != false) {
+    @include border ($width: $border);
+  }
+  @if $height != -1 {
+    height: $height;
+  }
+  @if $padding != -1 {
+    padding: $padding;
+  }
+  @if $text-align != -1 { // center is the default on all common browsers
+    text-align: $text-align;
+  }
+  @if $width != -1 {
+    width: $width;
+  }
+  @content;
+}

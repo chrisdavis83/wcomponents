@@ -1,35 +1,17 @@
-/**
- * Module to control collapsible sections. These use a DETAILS element which has some functionality in some modern
- * browsers. Eventually this module should become redundant.
- *
- * @module
- * @requires module:wc/dom/event
- * @requires module:wc/dom/attribute
- * @requires module:wc/dom/focus
- * @requires module:wc/dom/formUpdateManager
- * @requires module:wc/has
- * @requires module:wc/dom/initialise
- * @requires module:wc/dom/Widget
- * @requires module:wc/dom/shed
- * @requires module:wc/timers
- * @requires module:wc/dom/isEventInLabel
- * @requires module:wc/dom/isAcceptableTarget
- * @requires module:wc/dom/role
- */
 define(["wc/dom/event",
-		"wc/dom/attribute",
-		"wc/dom/focus",
-		"wc/dom/formUpdateManager",
-		"wc/has",
-		"wc/dom/initialise",
-		"wc/dom/Widget",
-		"wc/dom/shed",
-		"wc/timers",
-		"wc/dom/isEventInLabel",
-		"wc/dom/isAcceptableTarget",
-		"wc/dom/role"],
-	/** @param event wc/dom/event @param attribute wc/dom/attribute @param focus wc/dom/focus @param formUpdateManager wc/dom/formUpdateManager @param has wc/has @param initialise wc/dom/initialise @param Widget wc/dom/Widget @param shed wc/dom/shed @param timers wc/timers @param isEventInLabel wc/dom/isEventInLabel @param isAcceptableEventTarget wc/dom/isAcceptableTarget @param $role wc/dom/role @ignore */
-	function(event, attribute, focus, formUpdateManager, has, initialise, Widget, shed, timers, isEventInLabel, isAcceptableEventTarget, $role) {
+	"wc/dom/attribute",
+	"wc/dom/focus",
+	"wc/dom/formUpdateManager",
+	"wc/has",
+	"wc/dom/initialise",
+	"wc/dom/Widget",
+	"wc/dom/shed",
+	"wc/timers",
+	"wc/dom/isEventInLabel",
+	"wc/dom/isAcceptableTarget",
+	"wc/dom/role",
+	"wc/ui/icon"],
+	function(event, attribute, focus, formUpdateManager, has, initialise, Widget, shed, timers, isEventInLabel, isAcceptableEventTarget, $role, icon) {
 		"use strict";
 
 		/**
@@ -70,15 +52,12 @@ define(["wc/dom/event",
 					if (isOpen) {
 						if (isStillOpen) {
 							shed.collapse(container);
-						}
-						else {
+						} else {
 							shed.publish(container, shed.actions.COLLAPSE);
 						}
-					}
-					else if (!isStillOpen) {
+					} else if (!isStillOpen) {
 						shed.expand(container);
-					}
-					else {
+					} else {
 						shed.publish(container, shed.actions.EXPAND);
 					}
 
@@ -103,7 +82,7 @@ define(["wc/dom/event",
 			 * @param {Element} element A collapsible header. Element must already have been determined to be a
 			 *    COLLAPSIBLE_HEADER and since we have already extracted this from $event we may as well pass it in as
 			 *    an arg rather than re-testing.
-			 * @returns {?Element} The first interactive ancestor element of the event target if any. This may or may
+			 * @returns {Element} The first interactive ancestor element of the event target if any. This may or may
 			 *    not be the collapsible header.
 			 */
 			function toggleEventHelper($event, element) {
@@ -115,13 +94,11 @@ define(["wc/dom/event",
 					if (isAcceptableEventTarget(element, target)) {
 						toggle(element);
 						result = element;
-					}
-					else if ((focusableAncestor = focus.getFocusableAncestor(target))) {
+					} else if ((focusableAncestor = focus.getFocusableAncestor(target))) {
 						if (focusableAncestor !== target) {
 							$event.preventDefault();
 							timers.setTimeout(event.fire, 0, focusableAncestor, event.TYPE.click);
-						}
-						else {
+						} else {
 							result = focusableAncestor;
 						}
 					}
@@ -214,9 +191,14 @@ define(["wc/dom/event",
 						if (shed.isDisabled(header)) {
 							shed.enable(header, true);
 						}
-					}
-					else if ($role.get(header) === "button") {
+					} else if ($role.get(header) === "button") {
 						header.setAttribute("aria-expanded", action === shed.actions.EXPAND ? TRUE : FALSE);
+					}
+
+					if (action === shed.actions.EXPAND) {
+						icon.change(header, "fa-caret-down", "fa-caret-right");
+					} else if (action === shed.actions.COLLAPSE) {
+						icon.change(header, "fa-caret-right", "fa-caret-down");
 					}
 				}
 			}
@@ -253,11 +235,9 @@ define(["wc/dom/event",
 				var result;
 				if (onlyContainer) {
 					result = COLLAPSIBLE_CONTAINER.isOneOfMe(element);
-				}
-				else if (onlyContainer === false) {
+				} else if (onlyContainer === false) {
 					result = COLLAPSIBLE_HEADER.isOneOfMe(element);
-				}
-				else {
+				} else {
 					result = Widget.isOneOfMe(element, [COLLAPSIBLE_HEADER, COLLAPSIBLE_CONTAINER]);
 				}
 				return result;
@@ -268,7 +248,7 @@ define(["wc/dom/event",
 			 *
 			 * @function module:wc/ui/collapsible.getActionElement
 			 * @param {Element} element The start element.
-			 * @returns {?Element} If the start element is a collapsible container return its header/trigger element.
+			 * @returns {Element} If the start element is a collapsible container return its header/trigger element.
 			 */
 			this.getActionElement = function(element) {
 				var result;
@@ -287,8 +267,7 @@ define(["wc/dom/event",
 			this.initialise = function(element) {
 				if (event.canCapture) {
 					event.add(element, event.TYPE.focus, focusEvent, null, null, true);
-				}
-				else {
+				} else {
 					event.add(element, event.TYPE.focusin, focusEvent);
 				}
 				event.add(element, event.TYPE.click, clickEvent);
@@ -316,7 +295,26 @@ define(["wc/dom/event",
 		}
 
 		var repainter = null,
-			/** @alias module:wc/ui/collapsible */ instance = new Collapsible();
+			/**
+			 * Module to control collapsible sections. These use a DETAILS element which has some functionality in some modern
+			 * browsers. Eventually this module should become redundant.
+			 *
+			 * @module
+			 * @requires module:wc/dom/event
+			 * @requires module:wc/dom/attribute
+			 * @requires module:wc/dom/focus
+			 * @requires module:wc/dom/formUpdateManager
+			 * @requires module:wc/has
+			 * @requires module:wc/dom/initialise
+			 * @requires module:wc/dom/Widget
+			 * @requires module:wc/dom/shed
+			 * @requires module:wc/timers
+			 * @requires module:wc/dom/isEventInLabel
+			 * @requires module:wc/dom/isAcceptableTarget
+			 * @requires module:wc/dom/role
+			 * @requires module:wc/ui/icon
+			 */
+			instance = new Collapsible();
 
 		if (has("ie") === 8) {
 			require(["wc/fix/inlineBlock_ie8"], function(inlineBlock) {

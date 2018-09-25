@@ -6,9 +6,9 @@
  * @requires module:wc/date/explodeMask
  */
 define(["wc/date/today",
-		"wc/date/pattern",
-		"wc/date/interchange",
-		"wc/date/explodeMask"],
+	"wc/date/pattern",
+	"wc/date/interchange",
+	"wc/date/explodeMask"],
 	/** @param $today wc/date/today @param $pattern wc/date/pattern @param interchange wc/date/interchange @param explodeMask wc/date/explodeMask @ignore */
 	function($today, $pattern, interchange, explodeMask) {
 		"use strict";
@@ -144,7 +144,7 @@ define(["wc/date/today",
 					i,
 					l,
 					SEPARATOR = "/",
-					masks = getCompiledMasks(),
+					myMasks = getCompiledMasks(),
 					next,
 					patternBits,
 					normalise,
@@ -155,8 +155,8 @@ define(["wc/date/today",
 					today,
 					rolled;
 				// 'normalise' each date related value
-				for (i = 0, l = masks.length; i < l; i++) {
-					mask = masks[i];
+				for (i = 0, l = myMasks.length; i < l; i++) {
+					mask = myMasks[i];
 					match = string.match(mask.compiled);
 					if (match === null) {
 						continue;
@@ -202,8 +202,7 @@ define(["wc/date/today",
 							if (rolled) {
 								continue;
 							}
-						}
-						else {
+						} else {
 							// if we are rolling we return the 'rolled' date
 							next.day = check.getDate();
 							next.month = check.getMonth() + 1;

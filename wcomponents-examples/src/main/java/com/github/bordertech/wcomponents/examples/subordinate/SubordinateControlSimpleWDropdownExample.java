@@ -1,6 +1,7 @@
 package com.github.bordertech.wcomponents.examples.subordinate;
 
 import com.github.bordertech.wcomponents.Margin;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WContainer;
 import com.github.bordertech.wcomponents.WDropdown;
 import com.github.bordertech.wcomponents.WField;
@@ -39,7 +40,7 @@ public class SubordinateControlSimpleWDropdownExample extends WContainer {
 
 		WFieldLayout flay = new WFieldLayout();
 		flay.setLabelWidth(25);
-		flay.setMargin(new Margin(0, 0, 12, 0));
+		flay.setMargin(new Margin(null, null, Size.LARGE, null));
 		add(flay);
 		flay.addField("Extra information required?", extraInfoRequired);
 		WField extraInfoField = flay.addField("Extra information", extraField);

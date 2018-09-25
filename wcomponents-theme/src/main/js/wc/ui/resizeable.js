@@ -1,22 +1,23 @@
 define(["wc/dom/attribute",
-		"wc/dom/classList",
-		"wc/dom/clearSelection",
-		"wc/dom/event",
-		"wc/dom/getEventOffset",
-		"wc/dom/isAcceptableTarget",
-		"wc/dom/getBox",
-		"wc/dom/getStyle",
-		"wc/dom/initialise",
-		"wc/dom/shed",
-		"wc/dom/uid",
-		"wc/dom/Widget",
-		"wc/has",
-		"wc/ui/ajax/processResponse",
-		"wc/Observer",
-		"wc/timers",
-		"wc/config"],
+	"wc/dom/classList",
+	"wc/dom/clearSelection",
+	"wc/dom/event",
+	"wc/dom/getEventOffset",
+	"wc/dom/isAcceptableTarget",
+	"wc/dom/getBox",
+	"wc/dom/getStyle",
+	"wc/dom/initialise",
+	"wc/dom/shed",
+	"wc/dom/uid",
+	"wc/dom/Widget",
+	"wc/has",
+	"wc/ui/ajax/processResponse",
+	"wc/Observer",
+	"wc/timers",
+	"wc/ui/icon",
+	"wc/config"],
 	function(attribute, classList, clearSelection, event, getMouseEventOffset, isAcceptableTarget, getBox, getStyle,
-		initialise, shed, uid, Widget, has, processResponse, Observer, timers, wcconfig) {
+		initialise, shed, uid, Widget, has, processResponse, Observer, timers, icon, wcconfig) {
 
 		"use strict";
 		/**
@@ -25,7 +26,7 @@ define(["wc/dom/attribute",
 		 * @private
 		 */
 		function Resizeable() {
-			var RESIZE = new Widget("button", "wc_resize"),
+			var RESIZE = new Widget("", "wc_resize"),
 				CLASS_MAX_CONTROL = "wc_maxcont",
 				MAX = new Widget("button", CLASS_MAX_CONTROL),
 				MAX_BAR = new Widget("", CLASS_MAX_CONTROL),
@@ -66,12 +67,19 @@ define(["wc/dom/attribute",
 			}
 
 			function getNotifyTimeout() {
-				var conf = wcconfig.get("wc/ui/resizeable"),
-					result = DEFAULT_NOTIFY_TIMEOUT;
-				if (conf && (conf.delay || conf.delay === 0) && !isNaN(conf.delay) && conf.delay >= 0) {
+				var result, conf = wcconfig.get("wc/ui/resizeable", {
+						delay: DEFAULT_NOTIFY_TIMEOUT
+					});
+				if ((conf.delay || conf.delay === 0) && !isNaN(conf.delay) && conf.delay >= 0) {
 					result = conf.delay;
+				} else {
+					result = DEFAULT_NOTIFY_TIMEOUT;
 				}
 				return result;
+			}
+
+			function getResizer(element) {
+				return RESIZE.findAncestor(element);
 			}
 
 			/**
@@ -92,12 +100,10 @@ define(["wc/dom/attribute",
 					_s = parseFloat(size);
 					if (size.indexOf(UNIT)) {
 						return _s;
-					}
-					// IE8 will return the style rule eg 75% or 0.75em or even 12pt if you are silly.
-					else if (size.indexOf("%")) {
+					} else if (size.indexOf("%")) {
+						// IE8 will return the style rule eg 75% or 0.75em or even 12pt if you are silly.
 						return (16 * _s / 100);
-					}
-					else if (size.indexOf("em")) {
+					} else if (size.indexOf("em")) {
 						return (16 * _s);
 					}
 					// if you are going to set your default font size in points, picas or exes you deserve what you get
@@ -182,8 +188,7 @@ define(["wc/dom/attribute",
 					width = width ? parseFloat(width.replace(UNIT, "")) : box.width;
 
 					return {width: width, height: height};
-				}
-				finally {
+				} finally {
 					if (_width) {
 						element.style.width = _width;
 					}
@@ -229,13 +234,16 @@ define(["wc/dom/attribute",
 			 * `end-of-event` handler like mouseup or touchend.
 			 */
 			function resize(element, deltaX, deltaY, notify) {
-				var box, min, _notify, width, height, conf,
-					minSize = DEFAULT_MIN_SIZE;
+				var box, min, _notify, width, height, conf, minSize;
 				try {
 					if (element && (box = getSize(element))) {
-						conf = wcconfig.get("wc/ui/resizeable");
-						if (conf && conf.min && !isNaN(conf.min) && conf.min > 0) {
+						conf = wcconfig.get("wc/ui/resizeable", {
+							min: DEFAULT_MIN_SIZE
+						});
+						if (conf.min && !isNaN(conf.min) && conf.min > 0) {
 							minSize = conf.min;
+						} else {
+							minSize = DEFAULT_MIN_SIZE;
 						}
 						if (deltaX) {
 							min = getSizeContraint(element);
@@ -256,8 +264,7 @@ define(["wc/dom/attribute",
 							}
 						}
 					}
-				}
-				finally {
+				} finally {
 					clearSelection();
 					if (notify && _notify && observer) {
 						if (notifyTimer) {
@@ -277,7 +284,7 @@ define(["wc/dom/attribute",
 			 */
 			function mousedownEvent($event) {
 				var target = $event.target, element, id, offset, resizeTarget;
-				if (!$event.defaultPrevented && (element = RESIZE.findAncestor(target)) && isAcceptableTarget(element, target) && (resizeTarget = getResizeTarget(element))) {
+				if (!$event.defaultPrevented && (element = getResizer(target)) && isAcceptableTarget(element, target) && (resizeTarget = getResizeTarget(element))) {
 					id = resizeTarget.id || (resizeTarget.id = uid());
 
 					instance.disableAnimation(resizeTarget);
@@ -297,7 +304,7 @@ define(["wc/dom/attribute",
 			function touchstartEvent($event) {
 				var touch, target, element, id, resizeTarget;
 				if (!$event.defaultPrevented && $event.touches.length === 1 && (touch = $event.touches[0]) && (target = touch.target) &&
-					(element = RESIZE.findAncestor(target)) && isAcceptableTarget(element, target) && (resizeTarget = getResizeTarget(element))) {
+					(element = getResizer(target)) && isAcceptableTarget(element, target) && (resizeTarget = getResizeTarget(element))) {
 					id = resizeTarget.id || (resizeTarget.id = uid());
 					resizing = id;
 					instance.disableAnimation(resizeTarget);
@@ -328,7 +335,7 @@ define(["wc/dom/attribute",
 					return;
 				}
 
-				if (!(element = RESIZE.findAncestor(target))) {
+				if (!(element = getResizer(target))) {
 					return;
 				}
 
@@ -337,8 +344,10 @@ define(["wc/dom/attribute",
 				}
 
 				allowed =  getAllowedDirections(resizeTarget);
-				conf = wcconfig.get("wc/ui/resizeable");
-				if (conf && conf.step && !isNaN(conf.step) && conf.step > 0) {
+				conf = wcconfig.get("wc/ui/resizeable", {
+					step: DEFAULT_KEY_RESIZE
+				});
+				if (conf.step && !isNaN(conf.step) && conf.step > 0) {
 					step = conf.step;
 				}
 				switch (keyCode) {
@@ -502,7 +511,7 @@ define(["wc/dom/attribute",
 			 */
 			function bootstrap(element) {
 				var body = document.body;
-				if (!(attribute.get(element, BS) || shed.isHidden(element))) {
+				if (!attribute.get(element, BS)) {
 					attribute.set(element, BS, true);
 					event.add(element, event.TYPE.mousedown, mousedownEvent);
 					event.add(element, event.TYPE.keydown, keydownEvent);
@@ -527,13 +536,12 @@ define(["wc/dom/attribute",
 			 * @private
 			 * @param {Element} element The element being shown/inserted.
 			 */
-			function shedAjaxSubscriber(element) {
+			function ajaxSubscriber(element) {
 				if (element) {
 					if (RESIZE.isOneOfMe(element)) {
 						bootstrap(element);
-					}
-					else {
-						Array.prototype.forEach.call(RESIZE.findDescendants(element), bootstrap);
+					} else {
+						setup(element);
 					}
 				}
 			}
@@ -549,6 +557,11 @@ define(["wc/dom/attribute",
 				var target;
 				if (element && MAX.isOneOfMe(element) && (target = getResizeTarget(element))) {
 					classList[(action === shed.actions.SELECT ? "add" : "remove")](target, CLASS_MAX);
+					if (action === shed.actions.SELECT) {
+						icon.change(element, "fa-minus", "fa-plus");
+					} else {
+						icon.change(element, "fa-plus", "fa-minus");
+					}
 				}
 			}
 
@@ -582,17 +595,22 @@ define(["wc/dom/attribute",
 				classList.remove(element, CLASS_MAX_CONTROL);
 			};
 
+			function setup(element) {
+				var el = element || document.body;
+				Array.prototype.forEach.call(RESIZE.findDescendants(el), bootstrap);
+			}
+
 			/**
 			 * Late initialisation for ajax and shed subscribers.
 			 * @function module:wc/ui/resizeable.postInit
 			 * @public
 			 */
 			this.postInit = function() {
-				Array.prototype.forEach.call(RESIZE.findDescendants(document.body), bootstrap);
-				shed.subscribe(shed.actions.SHOW, shedAjaxSubscriber);
+				setup();
 				shed.subscribe(shed.actions.SELECT, shedSelectSubscriber);
 				shed.subscribe(shed.actions.DESELECT, shedSelectSubscriber);
-				processResponse.subscribe(shedAjaxSubscriber, true);
+				shed.subscribe(shed.actions.SHOW, setup);
+				processResponse.subscribe(ajaxSubscriber, true);
 			};
 
 			/**
@@ -602,7 +620,7 @@ define(["wc/dom/attribute",
 			 *
 			 * @param {Function} subscriber The function that will be notified. This function MUST be present at
 			 *    "publish" time, but need not be preset at "subscribe" time.
-			 * @returns {?Function} A reference to the subscriber.
+			 * @returns {Function} A reference to the subscriber.
 			 */
 			this.subscribe = function(subscriber) {
 				function _subscribe(_subscriber) {
@@ -633,7 +651,7 @@ define(["wc/dom/attribute",
 			 * @public
 			 * @param {Element} element The resize handle.
 			 * @param {boolean} keep If true store the size for later use.
-			 * @return {Boolean} true if a resizeable target was found and reset.
+			 * @returns {Boolean} true if a resizeable target was found and reset.
 			 */
 			this.clearSize = function(element, keep) {
 				var target = getResizeTarget(element),

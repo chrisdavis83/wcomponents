@@ -1,0 +1,13 @@
+
+// #############################################################################
+// Section elements and their headers
+// #############################################################################
+// the space between the section box and its content. This is reversed to "dock"
+// a menu. Must be > 0 to have any effect.
+$wc-section-space-normal: 0 !default; // $wc-gap-normal !default;
+// the padding around the title in the header. Must be > 0 to have any effect.
+// the space between the section box and its content on small viewports. This is
+// reversed to "dock" a menu. Not applied if $wc-use-respond != true or
+// $wc-respond-reduce-gap-when-narrow != true.
+$wc-section-space-reduced: -1 !default; // $wc-phone-gap-normal !default;
+// #############################################################################

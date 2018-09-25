@@ -1,23 +1,10 @@
-/**
- * Provides Ajax and state writing functionality for check boxes.
- * @module
- * @requires module:wc/dom/initialise
- * @requires module:wc/dom/Widget
- * @requires module:wc/dom/shed
- * @requires module:wc/dom/formUpdateManager
- * @requires module:wc/ui/ajax/processResponse
- * @requires module:wc/dom/cbrShedPublisher
- *
- * @todo Get rid of the state writing: it is nuts!
- */
 define(["wc/dom/initialise",
-		"wc/dom/Widget",
-		"wc/dom/shed",
-		"wc/dom/formUpdateManager",
-		"wc/ui/ajax/processResponse",
-		"wc/dom/cbrShedPublisher"],
-	/** @param initialise wc/dom/initialise @param Widget wc/dom/Widget @param shed wc/dom/shed @param formUpdateManager wc/dom/formUpdateManager @param processResponse wc/ui/ajax/processResponse @ignore */
-	function(initialise, Widget, shed, formUpdateManager, processResponse) {
+	"wc/dom/Widget",
+	"wc/dom/shed",
+	"wc/dom/formUpdateManager",
+	"wc/ui/ajax/processResponse",
+	"wc/dom/cbrShedPublisher"],
+	function(initialise, Widget, shed, formUpdateManager, processResponse, cbrShedPublisher) {
 		"use strict";
 
 		/**
@@ -26,17 +13,30 @@ define(["wc/dom/initialise",
 		 * @private
 		 */
 		function CheckBox() {
-			var CHECKBOX = new Widget("input", "", { "type": "checkbox" }),
-				CB_ALONE;
+			var CHECKBOX = cbrShedPublisher.getWidget("cb"),
+				WRAPPER = new Widget("", "wc-checkbox"),
+				WCHECKBOX = CHECKBOX.clone();
 
+			WCHECKBOX.descendFrom(WRAPPER, true);
 			/**
 			 * Provides the {@link module:wc/dom/Widget} description of a CHECKBOX.
 			 * @function module:wc/ui/checkbox.getWidget
 			 * @public
-			 * @returns {Widget}
+			 * @param {boolean} [onlyWcb] if `true` return the Widget to explicitly match WCheckBox
+			 * @returns {checkBoxL#7.Widget} the description of a CHECKBOX; or WCHECKBOX is onlyWcb is `truthy`.
 			 */
-			this.getWidget = function() {
-				return CHECKBOX;
+			this.getWidget = function(onlyWcb) {
+				return onlyWcb ? WCHECKBOX : CHECKBOX;
+			};
+
+			/**
+			 * Provides the {@link module:wc/dom/Widget} description of a CHECKBOXWCheckBox wrapper element
+			 * @function module:wc/ui/checkbox.getWrapper
+			 * @public
+			 * @returns {checkBoxL#7.Widget}
+			 */
+			this.getWrapper = function() {
+				return WRAPPER;
 			};
 
 			/**
@@ -51,8 +51,12 @@ define(["wc/dom/initialise",
 			 */
 			function writeState(form, container) {
 				var cb;
-				CB_ALONE = CB_ALONE || CHECKBOX.extend("wc-checkbox");
-				cb = CB_ALONE.findDescendants(form);
+				if (!WRAPPER) {
+					WRAPPER = new Widget("", "wc-checkbox");
+					WCHECKBOX = CHECKBOX.clone();
+					WCHECKBOX.descendFrom(WRAPPER, true);
+				}
+				cb = WCHECKBOX.findDescendants(form);
 
 				cb = Array.prototype.filter.call(cb, function (next) {
 					return !(shed.isSelected(next) || shed.isDisabled(next));
@@ -101,8 +105,7 @@ define(["wc/dom/initialise",
 											controlled = controlled.join(" ");
 											next.setAttribute(CONTROLS, controlled);
 										}
-									}
-									else {
+									} else {
 										next.setAttribute(CONTROLS, myId);
 									}
 								});
@@ -123,7 +126,20 @@ define(["wc/dom/initialise",
 			};
 		}
 
-		var /** @alias module:wc/ui/checkbox */ instance = new CheckBox();
+		/**
+		 * Provides Ajax and state writing functionality for check boxes.
+		 *
+		 * @module
+		 * @requires wc/dom/initialise
+		 * @requires wc/dom/Widget
+		 * @requires wc/dom/shed
+		 * @requires wc/dom/formUpdateManager
+		 * @requires wc/ui/ajax/processResponse
+		 * @requires module:wc/dom/cbrShedPublisher
+		 *
+		 * @todo Get rid of the state writing: it is nuts!
+		 */
+		var instance = new CheckBox();
 		initialise.register(instance);
 		return instance;
 	});

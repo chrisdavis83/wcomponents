@@ -1,31 +1,29 @@
 define(["wc/has",
-		"wc/array/unique",
-		"wc/date/Parser",
-		"wc/date/interchange",
-		"wc/date/Format",
-		"wc/dom/attribute",
-		"wc/dom/cancelUpdate",
-		"wc/dom/event",
-		"wc/dom/focus",
-		"wc/dom/formUpdateManager",
-		"wc/dom/initialise",
-		"wc/dom/shed",
-		"wc/dom/tag",
-		"wc/dom/Widget",
-		"wc/i18n/i18n",
-		"wc/timers",
-		"wc/key",
-		"wc/dom/textContent",
-		"wc/ui/ajaxRegion",
-		"wc/ui/ajax/processResponse",
-		"wc/ui/onchangeSubmit",
-		"wc/ui/listboxAnalog"],
-	function(has, unique, Parser, interchange, Format, attribute, cancelUpdate, event, focus, formUpdateManager, initialise, shed, tag, Widget, i18n, timers, key, textContent, ajaxRegion, processResponse, onchangeSubmit) {
+	"wc/array/unique",
+	"wc/date/Parser",
+	"wc/date/interchange",
+	"wc/date/Format",
+	"wc/dom/attribute",
+	"wc/ui/cancelUpdate",
+	"wc/dom/event",
+	"wc/dom/focus",
+	"wc/dom/formUpdateManager",
+	"wc/dom/initialise",
+	"wc/dom/shed",
+	"wc/dom/tag",
+	"wc/dom/Widget",
+	"wc/i18n/i18n",
+	"wc/timers",
+	"wc/key",
+	"wc/dom/textContent",
+	"wc/ui/ajaxRegion",
+	"wc/ui/ajax/processResponse",
+	"wc/ui/onchangeSubmit",
+	"wc/ui/feedback",
+	"wc/ui/listboxAnalog"],
+	function(has, unique, Parser, interchange, Format, attribute, cancelUpdate, event, focus, formUpdateManager, initialise, shed, tag, Widget, i18n,
+		timers, key, textContent, ajaxRegion, processResponse, onchangeSubmit, feedback, listboxAnalog) {
 		"use strict";
-
-		/* unused dependencies:
-		 * wc/ui/listboxAnalog is required for the suggestion list but is not used directly in this class.
-		 */
 
 		/**
 		 * @constructor
@@ -40,9 +38,7 @@ define(["wc/has",
 				BOOTSTRAPPED = "wc.ui.dateField_bootstrapped",
 				DATE_FIELD = new Widget("div", FIELD_CLASS),
 				DATE_WRAPPER_INCL_RO = new Widget("", FIELD_CLASS),
-				DATE_FIELD_RO = new Widget("time", FIELD_CLASS),
-				PARTIAL_RO = new Widget("span", FIELD_CLASS),
-				ALL_RO = [DATE_FIELD_RO, PARTIAL_RO],
+				DATE_RO = new Widget("", "", {"data-wc-component": "datefield"}),
 				INPUT = new Widget("input"),
 				DATE = INPUT.extend("", {"type": "date"}),
 				DATE_PARTIAL = INPUT.extend("", {"type": "text"}),
@@ -66,7 +62,7 @@ define(["wc/has",
 			 * @function
 			 * @private
 			 * @param {Element} element A dateField or an option in the list.
-			 * @param {integer} force Use a specific direction rather than doing a component lookup:
+			 * @param {integer} [force] Use a specific direction rather than doing a component lookup:
 			 *    <ul>
 			 *    <li>-1 look down (findDescendant)</li>
 			 *    <li>1 look up (findAncestor)</li>
@@ -84,11 +80,9 @@ define(["wc/has",
 				var result, dateField;
 				if (force === -1 || (!force && DATE_FIELD.isOneOfMe(element))) {
 					result = SUGGESTION_LIST.findDescendant(element);
-				}
-				else if (force === 1) {
+				} else if (force === 1) {
 					result = SUGGESTION_LIST.findAncestor(element);
-				}
-				else if ((dateField = DATE_FIELD.findAncestor(element))) {
+				} else if ((dateField = instance.get(element))) {
 					result = SUGGESTION_LIST.findDescendant(dateField);
 				}
 				return result;
@@ -106,7 +100,12 @@ define(["wc/has",
 				var childEl,
 					value,
 					launcherHtml,
-					id;
+					listHTML,
+					id,
+					diagnostic,
+					BEFORE_BEGIN = "beforebegin",
+					BEFORE_END = "beforeend";
+
 				childEl = instance.getTextBox(element);
 				if (!childEl) {
 					return;
@@ -121,20 +120,30 @@ define(["wc/has",
 					}
 				}
 
+				diagnostic = feedback.getLast(element);
+
 				// Add the calendar launch button.
 				if (!(LAUNCHER.findDescendant(element))) {
 					launcherHtml = "<button value='" + id + "_input' tabindex='-1' id='" + id +
-							"_cal' type='button' aria-hidden='true' class='wc_wdf_cal wc_btn_icon wc-invite' ";
+							"_cal' type='button' aria-hidden='true' class='wc_wdf_cal wc-invite' aria-haspopup='true'";
 					if (shed.isDisabled(childEl)) {
 						launcherHtml += " disabled='disabled'";
 					}
-					launcherHtml += "></button>";
-
-					element.insertAdjacentHTML("beforeend", launcherHtml);
+					launcherHtml += "><i class='fa fa-calendar' aria-hidden='true'></i></button>";
+					if (diagnostic) {
+						diagnostic.insertAdjacentHTML(BEFORE_BEGIN, launcherHtml);
+					} else {
+						element.insertAdjacentHTML(BEFORE_END, launcherHtml);
+					}
 				}
 				// Then add the suggestion list holder to make the combobox role valid.
 				if (!(getSuggestionList(element, -1))) {
-					element.insertAdjacentHTML("beforeend", "<span role='listbox' aria-busy='true'></span>");
+					listHTML = "<span role='listbox' aria-busy='true'></span>";
+					if (diagnostic) {
+						diagnostic.insertAdjacentHTML(BEFORE_BEGIN, listHTML);
+					} else {
+						element.insertAdjacentHTML(BEFORE_END, listHTML);
+					}
 				}
 
 				element.setAttribute("role", "combobox");
@@ -157,7 +166,7 @@ define(["wc/has",
 			 * @param {Element} element The element being focussed.
 			 */
 			function closeDateCombo(element) {
-				var dateField = DATE_FIELD.findAncestor(element),
+				var dateField = instance.get(element),
 					otherDateField;
 				/*
 				 * When a date field combo is closed clear its filters, set its value and then collapse it.
@@ -174,8 +183,7 @@ define(["wc/has",
 						timers.setTimeout(function() {
 							shed.collapse(_df);
 						}, 150);
-					}
-					else {
+					} else {
 						shed.collapse(_df);
 					}
 				}
@@ -189,7 +197,7 @@ define(["wc/has",
 						_collapseHelper(otherDateField);
 					}
 				}
-				if (dateField && isDateInput(element) && shed.isExpanded(element)) {
+				if (dateField && isDateInput(element) && shed.isExpanded(dateField)) {
 					_collapseHelper(dateField);
 				}
 			}
@@ -202,6 +210,13 @@ define(["wc/has",
 			 */
 			function focusListbox(suggestionList) {
 				OPTION_WD = OPTION_WD || new Widget("", "", {"role": "option"});
+
+				function activateOption(option) {
+					if (!shed.isSelected(option)) {
+						listboxAnalog.activate(option);
+					}
+				}
+
 				if (suggestionList && OPTION_WD.findDescendant(suggestionList)) {
 					onchangeSubmit.ignoreNextChange();
 					ajaxRegion.ignoreNextChange();
@@ -211,10 +226,9 @@ define(["wc/has",
 					}
 					// NOTE: this timeout has been tested further and is absolutely required in IE8
 					if (IETimeout) {
-						timers.setTimeout(focus.focusFirstTabstop, IETimeout, suggestionList);
-					}
-					else {
-						focus.focusFirstTabstop(suggestionList);
+						timers.setTimeout(focus.focusFirstTabstop, IETimeout, suggestionList, activateOption);
+					} else {
+						focus.focusFirstTabstop(suggestionList, activateOption);
 					}
 				}
 			}
@@ -359,8 +373,7 @@ define(["wc/has",
 
 				if (DATE_PARTIAL.isOneOfMe(element)) {
 					result = parsers.partial;
-				}
-				else {
+				} else {
 					result = parsers.standard;
 				}
 
@@ -447,8 +460,7 @@ define(["wc/has",
 						if (!shed.isExpanded(dateField)) {
 							shed.expand(dateField);
 						}
-					}
-					else if (shed.isExpanded(dateField)) {
+					} else if (shed.isExpanded(dateField)) {
 						shed.collapse(dateField);
 					}
 				}
@@ -460,7 +472,7 @@ define(["wc/has",
 			 * @function
 			 * @private
 			 * @param {Element} dateField a date field
-			 * @param {integer} [delay] a timeout delay, default to 250 if not set. Set explicitly to 0 to have no delay.
+			 * @param {Number} [delay] a timeout delay, default to 250 if not set. Set explicitly to 0 to have no delay.
 			 */
 			function filterOptions(dateField, delay) {
 				var _delay = delay;
@@ -474,8 +486,7 @@ define(["wc/has",
 							shed.expand(dateField);
 						}
 						showSuggestions(matches, dateField);
-					}
-					else if ((suggestionList = getSuggestionList(dateField))) {
+					} else if ((suggestionList = getSuggestionList(dateField))) {
 						suggestionList.innerHTML = "";
 						suggestionList.setAttribute("aria-busy", "true");
 						if (shed.isExpanded(dateField)) {
@@ -490,8 +501,7 @@ define(["wc/has",
 					}
 					if (delay === 0) {
 						_filter();
-					}
-					else {
+					} else {
 						if (!_delay) {
 							_delay = 125;
 						}
@@ -512,10 +522,9 @@ define(["wc/has",
 					textVal,
 					textBox;
 				if ((value = (field.getAttribute(FAKE_VALUE_ATTRIB) || field.getAttribute("datetime"))) && (textVal = format(value))) {
-					if (Widget.isOneOfMe(field, ALL_RO)) {
+					if (DATE_RO.isOneOfMe(field)) {
 						textContent.set(field, textVal);
-					}
-					else {
+					} else {
 						textBox = instance.getTextBox(field);
 						textBox.value = textVal;
 					}
@@ -527,7 +536,7 @@ define(["wc/has",
 			 * unnecessary artifacts if the input is a native date input.
 			 * @function
 			 * @private
-			 * @param {Element} container A HTML element which is itself or may contain date fields.
+			 * @param {Element|DocumentFragment} [container] A HTML element which is itself or may contain date fields.
 			 */
 			function setUpDateFields(container) {
 				var _container = container || document.body,
@@ -535,19 +544,16 @@ define(["wc/has",
 
 				if (container && DATE_WRAPPER_INCL_RO.isOneOfMe(container)) {
 					fields = [container];
-				}
-				else {
+				} else {
 					fields = DATE_WRAPPER_INCL_RO.findDescendants(_container);
 				}
 
 				Array.prototype.forEach.call(fields, function(next) {
-					if (Widget.isOneOfMe(next, ALL_RO) || isPartial(next)) {
+					if (DATE_RO.isOneOfMe(next) || isPartial(next)) {
 						setInputValue(next);
-					}
-					else if (instance.isLameDateField(next)) {
+					} else if (instance.isLameDateField(next)) {
 						fixLameDateField(next);
-					}
-					else { // proper date inputs
+					} else { // proper date inputs
 						next.removeAttribute(FAKE_VALUE_ATTRIB);
 					}
 				});
@@ -564,6 +570,20 @@ define(["wc/has",
 			 */
 			function ajaxSetup(element, documentFragment) {
 				setUpDateFields(documentFragment);
+			}
+
+			/**
+			 * Update the text box when an option is selected.
+			 *
+			 * @function
+			 * @private
+			 * @param {Element} element The element being selected.
+			 */
+			function shedSelectSubscriber(element) {
+				var dateField;
+				if (element && element.hasAttribute(FAKE_VALUE_ATTRIB) && getSuggestionList(element, 1) && (dateField = instance.get(element))) {
+					setValueFromOption(dateField, element);
+				}
 			}
 
 			/**
@@ -587,8 +607,7 @@ define(["wc/has",
 								optionVal[(element.id)] = instance.getValue(element);
 								filterOptions(element, 0);
 							}
-						}
-						else if (action === shed.actions.COLLAPSE) {
+						} else if (action === shed.actions.COLLAPSE) {
 							if (!shed.isExpanded(element)) {
 								optionVal[(element.id)] = null;
 								openDateCombo = "";
@@ -597,8 +616,7 @@ define(["wc/has",
 									filterTimer = null;
 								}
 							}
-						}
-						else if ((textbox = instance.getTextBox(element))) {
+						} else if ((textbox = instance.getTextBox(element))) {
 							func = getFuncForAction(action);
 							if (func) {
 								shed[func](textbox);  // publish this to make changes to the label
@@ -660,8 +678,7 @@ define(["wc/has",
 							if ((textBox = instance.getTextBox(next)) && textBox.value) {
 								formUpdateManager.writeStateField(stateContainer, name, textBox.value);
 							}
-						}
-						else if ((numVal = instance.getValue(next))) {
+						} else if ((numVal = instance.getValue(next))) {
 							formUpdateManager.writeStateField(stateContainer, name, numVal);
 						}
 					}
@@ -684,7 +701,7 @@ define(["wc/has",
 					return;
 				}
 
-				if ((dateField = DATE_FIELD.findAncestor(element))) {
+				if ((dateField = instance.get(element))) {
 					instance.acceptFirstMatch(element);
 					dateField.removeAttribute(FAKE_VALUE_ATTRIB);
 				}
@@ -699,7 +716,7 @@ define(["wc/has",
 			 * @param {Event} $event The focus/focusin event.
 			 */
 			function focusEvent($event) {
-				var element = $event.target;
+				var element = $event.target, dateField;
 				if ($event.defaultPrevented) {
 					return;
 				}
@@ -713,6 +730,10 @@ define(["wc/has",
 				if (isDateInput(element) && !attribute.get(element, BOOTSTRAPPED)) {
 					attribute.set(element, BOOTSTRAPPED, true);
 					event.add(element, event.TYPE.change, changeEvent);
+				}
+				if ((dateField = instance.get(element)) && !attribute.get(dateField, BOOTSTRAPPED)) {
+					attribute.set(dateField, BOOTSTRAPPED, true);
+					event.add(dateField, event.TYPE.keydown, keydownEvent);
 				}
 				closeDateCombo(element);
 			}
@@ -752,9 +773,9 @@ define(["wc/has",
 				if ($event.defaultPrevented || instance.hasNativeInput(target, true)) {
 					return;
 				}
-				if ((dateField = DATE_FIELD.findAncestor(target)) && !shed.isDisabled(dateField) && getSuggestionList(target, 1)) {
+				if ((dateField = instance.get(target)) && !shed.isDisabled(dateField) && getSuggestionList(target, 1)) {
 					// update on option click
-					setValueFromOption(dateField, target);  // yes, revert to $event.target here: we want the option not the SUGGESTION_LIST
+					// setValueFromOption(dateField, target);  // yes, revert to $event.target here: we want the option not the SUGGESTION_LIST
 					focus.setFocusRequest(instance.getTextBox(dateField), function() {
 						shed.collapse(dateField);
 					});
@@ -763,15 +784,14 @@ define(["wc/has",
 			}
 
 
-			function focusAndSetValue(element, option) {
+			function focusAndSetValue(element/* , option */) {
 				var textbox = instance.getTextBox(element);
-				setValueFromOption(element, option);
+				// setValueFromOption(element, option);
 				if (textbox) {
 					focus.setFocusRequest(textbox, function() {
 						shed.collapse(element);
 					});
-				}
-				else {
+				} else {
 					shed.collapse(element);
 				}
 			}
@@ -779,54 +799,63 @@ define(["wc/has",
 			/**
 			 * Keydown event handler. Used to set values and close the suggestion list. Much of this involves trying to
 			 * capture closing the suggestion list or leaving the component completely and manipulating the input based
-			 * on the sleected (or first) option in teh suggestion list.
+			 * on the selected (or first) option in the suggestion list.
 			 * @function
 			 * @private
 			 * @param {Event} $event The keydown event.
 			 */
 			function keydownEvent($event) {
-				var element,
+				var dateField = $event.currentTarget,
 					keyCode = $event.keyCode,
 					target = $event.target,
-					suggestionList,
-					preventDefault;
+					suggestionList;
 
+				// dateField = instance.get(target);
 				if (instance.hasNativeInput(target, true)) {
 					return;
 				}
 
-				element = DATE_FIELD.findAncestor(target);
-				if (!element || shed.isDisabled(element)) {
+				if (!dateField || shed.isDisabled(dateField)) {
 					return;
 				}
+
 				if (keyCode === KeyEvent.DOM_VK_ESCAPE) {
-					preventDefault = handleEscapeKey(element, target);
-				}
-				else if (keyCode === KeyEvent.DOM_VK_RETURN) {
-					if (handleEnterKey(element, target)) {
-						preventDefault = true;
+					if (handleEscapeKey(dateField, target)) {
+						$event.preventDefault();
 					}
+					return;
 				}
-				else if ((keyCode === KeyEvent.DOM_VK_DOWN || keyCode === KeyEvent.DOM_VK_UP) && !(getSuggestionList(target, 1))) {
-					if (shed.isExpanded(element) && (suggestionList = getSuggestionList(element, -1))) {
+
+				if (keyCode === KeyEvent.DOM_VK_RETURN) {
+					if (handleEnterKey(dateField, target)) {
+						$event.preventDefault();
+					}
+					return;
+				}
+
+				if ((keyCode === KeyEvent.DOM_VK_DOWN || keyCode === KeyEvent.DOM_VK_UP) && !(getSuggestionList(target, 1))) {
+					if (shed.isExpanded(dateField) && (suggestionList = getSuggestionList(dateField, -1))) {
 						focusListbox(suggestionList);
-						preventDefault = true;  // so we don't cause a line scroll
+						$event.preventDefault(); // so we don't cause a line scroll
 					}
+					return;
 				}
-				else if (keyCode === KeyEvent.DOM_VK_SPACE && target.hasAttribute(FAKE_VALUE_ATTRIB) && getSuggestionList(target, 1)) {
-					// SPACE on an option should update the dateField
-					focusAndSetValue(element, target);
-					preventDefault = true;  // so we don't cause a page scroll
+
+//				if (keyCode === KeyEvent.DOM_VK_SPACE && target.hasAttribute(FAKE_VALUE_ATTRIB) && getSuggestionList(target, 1)) {
+//					// SPACE on an option should update the dateField
+//					focusAndSetValue(dateField, target);
+//					$event.preventDefault(); // so we don't cause a page scroll
+//					return;
+//				}
+
+				if (keyCode === KeyEvent.DOM_VK_TAB) {
+					handleTabKey(dateField, target);
+					return;
 				}
-				else if (keyCode === KeyEvent.DOM_VK_TAB) {
-					handleTabKey(element, target);
-				}
-				else if (!key.isMeta(keyCode) && isDateInput(target)) {
-					element.removeAttribute(FAKE_VALUE_ATTRIB);
-					filterOptions(element);
-				}
-				if (preventDefault) {
-					$event.preventDefault();
+
+				if (!key.isMeta(keyCode) && isDateInput(target)) {
+					dateField.removeAttribute(FAKE_VALUE_ATTRIB);
+					filterOptions(dateField);
 				}
 			}
 
@@ -839,8 +868,7 @@ define(["wc/has",
 					if (target.hasAttribute(FAKE_VALUE_ATTRIB) && getSuggestionList(target, 1)) {
 						preventDefault = true;  // so we don't submit from the suggestion list - yes this is needed I checked.
 						focusAndSetValue(element, target);
-					}
-					else if (isDateInput(target)) {
+					} else if (isDateInput(target)) {
 						instance.acceptFirstMatch(target);
 					}
 				}
@@ -860,12 +888,11 @@ define(["wc/has",
 						}
 						// tab from textbox in dateField should update by accepting the first match
 						instance.acceptFirstMatch(target);
-					}
-					else if (target.hasAttribute(FAKE_VALUE_ATTRIB) && getSuggestionList(target, 1)) {
+					} /* else if (target.hasAttribute(FAKE_VALUE_ATTRIB) && getSuggestionList(target, 1)) {
 						// tab from an option should update the dateField
 						setValueFromOption(element, target);
 						shed.collapse(element);
-					}
+					} */
 				}
 			}
 
@@ -873,21 +900,19 @@ define(["wc/has",
 			 * Helper for keydownEvent.
 			 */
 			function handleEscapeKey(element, target) {
-				var preventDefault, textbox;
+				var textbox;
 				if (shed.isExpanded(element)) {
 					// if we ESCAPE when on a SUGGESTION_LIST item focus the textbox
 					if (getSuggestionList(target, 1) && (textbox = instance.getTextBox(element))) {
 						focus.setFocusRequest(textbox, function() {
 							shed.collapse(element);
 						});
-						preventDefault = true;  // so we don't close a dialog which contains the dropdown
-					}
-					else {
+					} else {
 						shed.collapse(element);
-						preventDefault = true;
 					}
+					return true; // so we don't close a dialog which contains the dropdown
 				}
-				return preventDefault;
+				return false;
 			}
 
 			/**
@@ -902,7 +927,7 @@ define(["wc/has",
 				if (this.hasNativeInput(element)) {
 					return;
 				}
-				if ((matches = getMatches(element)) && matches.length && (dateField = DATE_FIELD.findAncestor(element))) {
+				if ((matches = getMatches(element)) && matches.length && (dateField = this.get(element))) {
 					_matches = matches.map(function(next) {
 						return format(next.toXfer());
 					});
@@ -912,7 +937,16 @@ define(["wc/has",
 						_value = format(matches[0].toXfer());
 						if (_value !== element.value) {
 							element.value = _value;
-							timers.setTimeout(event.fire, 0, element, event.TYPE.change);
+							/*
+							 * Do not fire the change event if this update is occuring in a documentFragment.
+							 * For example when processing an AJAX response ajaxSetup will eventually call this function to set up date fields
+							 * before inserting the documentFragment into the DOM. We do not want change events fired in this scenario.
+							 * It leads to potential infinite AJAX triggering if the date field is both a trigger and a target.
+							 * See issue #1455 https://github.com/BorderTech/wcomponents/issues/1455
+							 */
+							if (document.body && document.body.contains(element)) {
+								timers.setTimeout(event.fire, 0, element, event.TYPE.change);
+							}
 						}
 					}
 				}
@@ -961,7 +995,7 @@ define(["wc/has",
 			 */
 			this.getValue = function(element, guess) {
 				var result, textbox, _element;
-				if (element && (_element = DATE_FIELD.findAncestor(element))) {
+				if (element && (_element = this.get(element))) {
 					if ((result = _element.getAttribute(FAKE_VALUE_ATTRIB))) {
 						return result;
 					}
@@ -1000,12 +1034,10 @@ define(["wc/has",
 				if (event.canCapture) {
 					event.add(element, event.TYPE.focus, focusEvent, null, null, true);
 					event.add(element, event.TYPE.blur, blurEvent, null, null, true);
-				}
-				else {
+				} else {
 					event.add(element, event.TYPE.focusin, focusEvent);
 				}
 				event.add(element, event.TYPE.click, clickEvent);
-				event.add(element, event.TYPE.keydown, keydownEvent);
 				formUpdateManager.subscribe(writeState);
 				setUpDateFields();
 			};
@@ -1023,8 +1055,7 @@ define(["wc/has",
 				if (hasNative) {
 					if (forceInput) {
 						textBox = el;
-					}
-					else {
+					} else {
 						textBox = DATE_FIELD.isOneOfMe(el) ? instance.getTextBox(el) : el;
 					}
 					return textBox ? DATE.isOneOfMe(textBox) : false;
@@ -1050,8 +1081,8 @@ define(["wc/has",
 			 * @function module:wc/ui/dateField.isOneOfMe
 			 * @public
 			 * @param {Element} element The DOM element to test
-			 * @param {Boolean} [onlyContainer] Set true to test if the element is exactly the dateField, explicitly
-			 *    false to test if only the input element.
+			 * @param {Boolean} [onlyContainer] Set `true` to test if the element is exactly the dateField, explicitly
+			 *    `false` to test if only the input element.
 			 * @returns {Boolean} true if the passed in element is a dateField or date input textbox sub-component of a
 			 *    dateField
 			 */
@@ -1059,14 +1090,16 @@ define(["wc/has",
 				var result;
 				if (onlyContainer) {
 					result = DATE_WRAPPER_INCL_RO.isOneOfMe(element);
-				}
-				else if (onlyContainer === false) {
+				} else if (onlyContainer === false) {
 					result = INPUT.isOneOfMe(element);
-				}
-				else {
+				} else {
 					result = Widget.isOneOfMe(element, [INPUT, DATE_WRAPPER_INCL_RO]);
 				}
 				return result;
+			};
+
+			this.isReadOnly = function (element) {
+				return DATE_RO.isOneOfMe(element);
 			};
 
 			/**
@@ -1075,6 +1108,7 @@ define(["wc/has",
 			 * @public
 			 */
 			this.postInit = function() {
+				shed.subscribe(shed.actions.SELECT, shedSelectSubscriber);
 				shed.subscribe(shed.actions.ENABLE, shedSubscriber);
 				shed.subscribe(shed.actions.DISABLE, shedSubscriber);
 				shed.subscribe(shed.actions.SHOW, shedSubscriber);
@@ -1084,6 +1118,10 @@ define(["wc/has",
 				shed.subscribe(shed.actions.MANDATORY, shedSubscriber);
 				shed.subscribe(shed.actions.OPTIONAL, shedSubscriber);
 				processResponse.subscribe(ajaxSetup);
+			};
+
+			this.get = function(element) {
+				return DATE_FIELD.findAncestor(element);
 			};
 
 			/*
@@ -1112,7 +1150,7 @@ define(["wc/has",
 		 * @requires module:wc/date/interchange
 		 * @requires module:wc/date/Format
 		 * @requires module:wc/dom/attribute
-		 * @requires module:wc/dom/cancelUpdate
+		 * @requires module:wc/ui/cancelUpdate
 		 * @requires module:wc/dom/event
 		 * @requires module:wc/dom/focus
 		 * @requires module:wc/dom/formUpdateManager

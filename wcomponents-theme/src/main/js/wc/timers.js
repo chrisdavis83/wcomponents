@@ -8,18 +8,17 @@
  *
  * Note that we **do NOT** accept a string as a callback/handler.
  *
- * By native timers we mean {@link http:  // www.whatwg.org/specs/web-apps/current-work/multipage/timers.html#timers}
+ * By native timers we mean http:// www.whatwg.org/specs/web-apps/current-work/multipage/timers.html#timers
  *
  * @module
  * @todo document private members.
  **/
-define(function() {
+define(["wc/global"], function(global) {
 	"use strict";
-	var global = window;
-//	,hasNativeVarargSupport = false;
-//	global.setTimeout(function(varargs) {
-//		hasNativeVarargSupport = !!varargs;
-//	}, 0, true);
+	//	,hasNativeVarargSupport = false;
+	//	global.setTimeout(function(varargs) {
+	//		hasNativeVarargSupport = !!varargs;
+	//	}, 0, true);
 
 	/**
 	 * @constructor
@@ -53,16 +52,14 @@ define(function() {
 				try {
 					if (clear) {
 						delete pendingTimeouts[handle];
-					}
-					else {
+					} else {
 						pendingTimeouts[handle] = true;
 					}
 					pendingCount = Object.keys(pendingTimeouts);
 					pendingCount = pendingCount.length;
 					// console.log("Pending timeouts: ", pendingCount);
 					notify(!!pendingCount);
-				}
-				catch (ignore) {  // don't let errors here break everything else - this is just a testing hook
+				} catch (ignore) {  // don't let errors here break everything else - this is just a testing hook
 					console.error(ignore);
 				}
 			}
@@ -79,8 +76,7 @@ define(function() {
 			if (timeout >= ignoreThreshold) {
 				result = global[type](callback, timeout);
 				callback[CB_HANDLE_PROP] = result;
-			}
-			else {
+			} else {
 				console.info("Ignoring timeout delay!", timeout);
 				callback();
 			}
@@ -114,8 +110,7 @@ define(function() {
 					}
 					handler.apply(global, args); // notify the callback
 					updatePending(handle, true);
-				}
-				finally { // memory leak paranoia
+				} finally { // memory leak paranoia
 					args = null;
 				}
 			};
@@ -131,8 +126,7 @@ define(function() {
 				try {
 					next = subscribers[i];
 					next(pending);
-				}
-				catch (ex) {
+				} catch (ex) {
 					console.error(ex);
 				}
 			}

@@ -12,7 +12,6 @@ import com.github.bordertech.wcomponents.WComponent;
 import com.github.bordertech.wcomponents.WContainer;
 import com.github.bordertech.wcomponents.WDateField;
 import com.github.bordertech.wcomponents.WDecoratedLabel;
-import com.github.bordertech.wcomponents.WImage;
 import com.github.bordertech.wcomponents.WMenu;
 import com.github.bordertech.wcomponents.WMenuItem;
 import com.github.bordertech.wcomponents.WSubMenu;
@@ -20,6 +19,7 @@ import com.github.bordertech.wcomponents.WTable;
 import com.github.bordertech.wcomponents.WTableColumn;
 import com.github.bordertech.wcomponents.WText;
 import com.github.bordertech.wcomponents.WebUtilities;
+import com.github.bordertech.wcomponents.util.HtmlIconUtil;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -35,7 +35,7 @@ import java.util.List;
  * @author Mark Reeves
  * @since 1.0.0
  */
-public class FilterableTableExample extends WContainer {
+public final class FilterableTableExample extends WContainer {
 
 	/**
 	 * The table used in the example.
@@ -264,12 +264,9 @@ public class FilterableTableExample extends WContainer {
 
 		final List<String> found = new ArrayList<>();
 
-//		final WImage filterImage = new WImage("/image/view-filter.png",
-//				"Filter table using this column");
-//		filterImage.setCacheKey("filterImage");
 		final WDecoratedLabel filterSubMenuLabel = new WDecoratedLabel(new WText("\u200b"));
 		filterSubMenuLabel.setToolTip("Filter this column");
-		filterSubMenuLabel.setHtmlClass("wc-icon fa-filter");
+		filterSubMenuLabel.setHtmlClass(HtmlIconUtil.getIconClasses("fa-filter"));
 		final WSubMenu submenu = new WSubMenu(filterSubMenuLabel);
 		submenu.setSelectionMode(SELECTION_MODE);
 		menu.add(submenu);
@@ -284,34 +281,33 @@ public class FilterableTableExample extends WContainer {
 		String cellContent, cellContentMatch;
 		Object bean;
 
-		for (int i = 0; i < rows; ++i) {
-			bean = beanList.get(i);
-			if (bean == null) {
-				continue;
-			}
+		if (beanList != null) {
+			for (int i = 0; i < rows; ++i) {
+				bean = beanList.get(i);
+				if (bean != null) {
+					cellObject = getFilterableTableModel().getBeanPropertyValueFullList(BEAN_PROPERTIES[column], bean);
+					if (cellObject != null) {
+						if (cellObject instanceof Date) {
+							cellContent = new SimpleDateFormat(DATE_FORMAT).format((Date) cellObject);
+						} else {
+							cellContent = cellObject.toString();
+						}
 
-			cellObject = getFilterableTableModel().getBeanPropertyValueFullList(BEAN_PROPERTIES[column], bean);
-			if (cellObject == null) {
-				continue; //nothing to add to the sub menu
-			}
-			if (cellObject instanceof Date) {
-				cellContent = new SimpleDateFormat(DATE_FORMAT).format((Date) cellObject);
-			} else {
-				cellContent = cellObject.toString();
-			}
+						if ("".equals(cellContent)) {
+							cellContent = EMPTY;
+						}
 
-			if ("".equals(cellContent)) {
-				cellContent = EMPTY;
-			}
+						cellContentMatch = (getFilterableTableModel().isCaseInsensitiveMatch()) ? cellContent.
+								toLowerCase() : cellContent;
 
-			cellContentMatch = (getFilterableTableModel().isCaseInsensitiveMatch()) ? cellContent.
-					toLowerCase() : cellContent;
-
-			if (found.indexOf(cellContentMatch) == -1) {
-				item = new WMenuItem(cellContent, new FilterAction());
-				submenu.add(item);
-				add(new WAjaxControl(item, table));
-				found.add(cellContentMatch);
+						if (found.indexOf(cellContentMatch) == -1) {
+							item = new WMenuItem(cellContent, new FilterAction());
+							submenu.add(item);
+							add(new WAjaxControl(item, table));
+							found.add(cellContentMatch);
+						}
+					}
+				}
 			}
 		}
 	}
@@ -517,7 +513,7 @@ public class FilterableTableExample extends WContainer {
 			Object testBean;
 			String itemText;
 			String beanText;
-			Boolean ok = false;
+			boolean ok;
 
 			/* AND filter: do each one */
 			if (firstNameFilterMenu.isVisible()) {

@@ -6,6 +6,7 @@ import com.github.bordertech.wcomponents.BeanProvider;
 import com.github.bordertech.wcomponents.BeanProviderBound;
 import com.github.bordertech.wcomponents.Margin;
 import com.github.bordertech.wcomponents.Request;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WAjaxControl;
 import com.github.bordertech.wcomponents.WAjaxPollingRegion;
 import com.github.bordertech.wcomponents.WButton;
@@ -77,7 +78,7 @@ public class AjaxPollingWButtonExample extends WContainer {
 			public void execute(final ActionEvent event) {
 				myDataComponent.setVisible(true);
 				if (null == poller.getMargin()) {
-					poller.setMargin(new Margin(12, 0, 0, 0)); // push the panel's content off of the button.
+					poller.setMargin(new Margin(Size.LARGE, null, null, null)); // push the panel's content off of the button.
 				}
 
 				fakeServiceCall();

@@ -2,6 +2,7 @@ package com.github.bordertech.wcomponents.render.webxml;
 
 import com.github.bordertech.wcomponents.ComponentModel;
 import com.github.bordertech.wcomponents.Margin;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WMenu;
 import com.github.bordertech.wcomponents.WMenu.SelectMode;
 import com.github.bordertech.wcomponents.WMenuItem;
@@ -89,23 +90,37 @@ public class WMenuRenderer_Test extends AbstractWebXmlRendererTestCase {
 		menu.setMargin(margin);
 		assertXpathNotExists("//ui:menu/ui:margin", menu);
 
-		margin = new Margin(1);
+		margin = new Margin(Size.SMALL);
 		menu.setMargin(margin);
 		assertSchemaMatch(menu);
-		assertXpathEvaluatesTo("1", "//ui:menu/ui:margin/@all", menu);
+		assertXpathEvaluatesTo("sm", "//ui:menu/ui:margin/@all", menu);
 		assertXpathEvaluatesTo("", "//ui:menu/ui:margin/@north", menu);
 		assertXpathEvaluatesTo("", "//ui:menu/ui:margin/@east", menu);
 		assertXpathEvaluatesTo("", "//ui:menu/ui:margin/@south", menu);
 		assertXpathEvaluatesTo("", "//ui:menu/ui:margin/@west", menu);
 
-		margin = new Margin(1, 2, 3, 4);
+		margin = new Margin(Size.SMALL, Size.MEDIUM, Size.LARGE, Size.XL);
 		menu.setMargin(margin);
 		assertSchemaMatch(menu);
 		assertXpathEvaluatesTo("", "//ui:menu/ui:margin/@all", menu);
-		assertXpathEvaluatesTo("1", "//ui:menu/ui:margin/@north", menu);
-		assertXpathEvaluatesTo("2", "//ui:menu/ui:margin/@east", menu);
-		assertXpathEvaluatesTo("3", "//ui:menu/ui:margin/@south", menu);
-		assertXpathEvaluatesTo("4", "//ui:menu/ui:margin/@west", menu);
+		assertXpathEvaluatesTo("sm", "//ui:menu/ui:margin/@north", menu);
+		assertXpathEvaluatesTo("med", "//ui:menu/ui:margin/@east", menu);
+		assertXpathEvaluatesTo("lg", "//ui:menu/ui:margin/@south", menu);
+		assertXpathEvaluatesTo("xl", "//ui:menu/ui:margin/@west", menu);
+	}
+
+	@Test
+	public void testXssEscaping() throws IOException, SAXException, XpathException {
+		WMenu menu = new WMenu();
+		menu.add(new WMenuItem("test"));
+		
+		assertSafeContent(menu);
+
+		menu.setToolTip(getMaliciousAttribute());
+		assertSafeContent(menu);
+
+		menu.setAccessibleText(getMaliciousAttribute());
+		assertSafeContent(menu);
 	}
 
 }

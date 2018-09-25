@@ -1,21 +1,5 @@
-/**
- * Provides actions used by {@link module:wc/ui/subordinate}.
- *
- * This module knows how to perform a subordinate action. Has no knowledge of if and when to perform the action.
- * Instances of this class are used to to populate the "onTrue" and "onFalse" properties of a subordinate rule.
- *
- * Once a subordinate condition has been evaluated to either true of false to corresponding action is executed.
- *
- * @module
- * @requires module:wc/ui/fx
- * @requires module:wc/dom/shed
- * @requires module:wc/has
- *
- * @todo Document private members. Work out why Rick has used this labrynthine constructor initialisation mechanism...
- */
-define(["wc/ui/fx", "wc/dom/shed", "wc/has"],
-	/** @param fx wc/ui/fx @param shed wc/dom/shed @param has wc/has @ignore */
-	function(fx, shed, has) {
+define(["wc/dom/shed", "wc/has"],
+	function(shed, has) {
 		"use strict";
 		var actionRegister = {},  // Map of subordinate action keywords to functions which implement the action.
 			groupRegister = {},
@@ -28,6 +12,16 @@ define(["wc/ui/fx", "wc/dom/shed", "wc/has"],
 		}
 
 		/**
+		 * Provides actions used by {@link module:wc/ui/subordinate}.
+		 *
+		 * This module knows how to perform a subordinate action. Has no knowledge of if and when to perform the action.
+		 * Instances of this class are used to to populate the "onTrue" and "onFalse" properties of a subordinate rule.
+		 *
+		 * Once a subordinate condition has been evaluated to either true of false to corresponding action is executed.
+		 *
+		 * @module
+		 * @requires module:wc/dom/shed
+		 * @requires module:wc/has
 		 * @constructor
 		 * @alias module:wc/ui/SubordinateAction
 		 * @param {module:wc/ui/SubordinateAction~ActionDTO} dto The object defining the action.
@@ -37,8 +31,7 @@ define(["wc/ui/fx", "wc/dom/shed", "wc/has"],
 			if (actionRegister.hasOwnProperty(dto.type)) {
 				// making the function a property of the action gives the correct scope "for free" (no "call" or "bind")
 				this.doToElement = actionRegister[dto.type];
-			}
-			else {
+			} else {
 				throw new TypeError("Not a known action type", dto.type);
 			}
 			this.targets = [];  // one or more identifiers (ids or group names)
@@ -46,8 +39,7 @@ define(["wc/ui/fx", "wc/dom/shed", "wc/has"],
 			dto.targets.forEach(function(target) {
 				try {
 					this.targets.push(new Target(target.id, target.groupId));
-				}
-				catch (ex) {
+				} catch (ex) {
 					console.warn(ex);
 				}
 			}, this);
@@ -67,8 +59,7 @@ define(["wc/ui/fx", "wc/dom/shed", "wc/has"],
 					groupName = group.name;
 					if (groupName) {
 						groupRegister[groupName] = group;
-					}
-					else {
+					} else {
 						console.warn("Can not register a group without a name", group);
 					}
 				}
@@ -80,7 +71,7 @@ define(["wc/ui/fx", "wc/dom/shed", "wc/has"],
 		 * Get a registered component group.
 		 * @function
 		 * @param {String} id The group identifier.
-		 * @returns {?String[]} An array of ids belonging to this group if the group exists otherwise returns null.
+		 * @returns {String[]} An array of ids belonging to this group if the group exists otherwise returns null.
 		 */
 		Action.getGroup = function (id) {
 			var result = groupRegister[id] || null;
@@ -140,12 +131,10 @@ define(["wc/ui/fx", "wc/dom/shed", "wc/has"],
 					idsOnly = true;
 					if (this.id !== null && this.id === id) {
 						result = true;
-					}
-					else if ((group = this.getGroup())) {
+					} else if ((group = this.getGroup())) {
 						result = group.indexOf(id) >= 0;
 					}
-				}
-				finally {
+				} finally {
 					idsOnly = false;
 				}
 				return result;
@@ -156,15 +145,14 @@ define(["wc/ui/fx", "wc/dom/shed", "wc/has"],
 			 * @function module:wc/ui/SubordinateAction~Target#getElement
 			 * @public
 			 * @throws {ReferenceError} if the referenced element does not exist
-			 * @returns {?Element} The element referenced by this target (if applicable)
+			 * @returns {Element} The element referenced by this target (if applicable)
 			 */
 			Target.prototype.getElement = function() {
 				var result = null, element;
 				if (this.id) {
 					if ((element = document.getElementById(this.id))) {
 						result = element;
-					}
-					else {
+					} else {
 						throw new ReferenceError("Could not find element " + this.id);
 					}
 				}
@@ -176,7 +164,7 @@ define(["wc/ui/fx", "wc/dom/shed", "wc/has"],
 			 * @function module:wc/ui/SubordinateAction~Target#getGroup
 			 * @public
 			 * @throws {ReferenceError} if the referenced group does not exist.
-			 * @returns {?Element[]} An array of elements in the group targeted by this instance (if applicable).
+			 * @returns {Element[]} An array of elements in the group targeted by this instance (if applicable).
 			 */
 			Target.prototype.getGroup = function() {
 				var result = null, next, i, len, group;
@@ -184,20 +172,17 @@ define(["wc/ui/fx", "wc/dom/shed", "wc/has"],
 					if ((group = Action.getGroup(this.groupId))) {
 						if (idsOnly) {
 							result = group;
-						}
-						else {
+						} else {
 							result = [];
 							for (i = 0, len = group.length; i < len; i++) {
 								if ((next = document.getElementById(group[i]))) {
 									result[result.length] = next;
-								}
-								else {
+								} else {
 									console.warn("Could not find element", group[i]);
 								}
 							}
 						}
-					}
-					else {
+					} else {
 						throw new ReferenceError("Could not find group " + this.groupId);
 					}
 				}
@@ -237,12 +222,10 @@ define(["wc/ui/fx", "wc/dom/shed", "wc/has"],
 					try {
 						if ((element = next.getElement())) {
 							this.doToElement(element);
-						}
-						else if ((group = next.getGroup())) {
+						} else if ((group = next.getGroup())) {
 							group.forEach(this.doToElement, this);
 						}
-					}
-					catch (ex) {
+					} catch (ex) {
 						console.warn(ex);
 					}
 				}
@@ -467,8 +450,7 @@ define(["wc/ui/fx", "wc/dom/shed", "wc/has"],
 				var originalState = shed.isDisabled(element);
 				if (enable) {
 					shed.enable(element);
-				}
-				else {
+				} else {
 					shed.disable(element);
 				}
 				return (shed.isDisabled(element) !== originalState);
@@ -484,7 +466,6 @@ define(["wc/ui/fx", "wc/dom/shed", "wc/has"],
 				if (repainter) {
 					repainter.checkRepaint(element);
 				}
-				fx.yellowFade(element);
 			}
 		}
 

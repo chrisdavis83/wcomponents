@@ -2,6 +2,7 @@ package com.github.bordertech.wcomponents.render.webxml;
 
 import com.github.bordertech.wcomponents.HeadingLevel;
 import com.github.bordertech.wcomponents.Margin;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WCollapsible;
 import com.github.bordertech.wcomponents.WText;
 import java.io.IOException;
@@ -91,23 +92,23 @@ public class WCollapsibleRenderer_Test extends AbstractWebXmlRendererTestCase {
 		collapsible.setMargin(margin);
 		assertXpathNotExists("//ui:collapsible/ui:margin", collapsible);
 
-		margin = new Margin(1);
+		margin = new Margin(Size.SMALL);
 		collapsible.setMargin(margin);
 		assertSchemaMatch(collapsible);
-		assertXpathEvaluatesTo("1", "//ui:collapsible/ui:margin/@all", collapsible);
+		assertXpathEvaluatesTo("sm", "//ui:collapsible/ui:margin/@all", collapsible);
 		assertXpathEvaluatesTo("", "//ui:collapsible/ui:margin/@north", collapsible);
 		assertXpathEvaluatesTo("", "//ui:collapsible/ui:margin/@east", collapsible);
 		assertXpathEvaluatesTo("", "//ui:collapsible/ui:margin/@south", collapsible);
 		assertXpathEvaluatesTo("", "//ui:collapsible/ui:margin/@west", collapsible);
 
-		margin = new Margin(1, 2, 3, 4);
+		margin = new Margin(Size.SMALL, Size.MEDIUM, Size.LARGE, Size.XL);
 		collapsible.setMargin(margin);
 		assertSchemaMatch(collapsible);
 		assertXpathEvaluatesTo("", "//ui:collapsible/ui:margin/@all", collapsible);
-		assertXpathEvaluatesTo("1", "//ui:collapsible/ui:margin/@north", collapsible);
-		assertXpathEvaluatesTo("2", "//ui:collapsible/ui:margin/@east", collapsible);
-		assertXpathEvaluatesTo("3", "//ui:collapsible/ui:margin/@south", collapsible);
-		assertXpathEvaluatesTo("4", "//ui:collapsible/ui:margin/@west", collapsible);
+		assertXpathEvaluatesTo("sm", "//ui:collapsible/ui:margin/@north", collapsible);
+		assertXpathEvaluatesTo("med", "//ui:collapsible/ui:margin/@east", collapsible);
+		assertXpathEvaluatesTo("lg", "//ui:collapsible/ui:margin/@south", collapsible);
+		assertXpathEvaluatesTo("xl", "//ui:collapsible/ui:margin/@west", collapsible);
 	}
 
 	@Test

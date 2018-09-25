@@ -1,5 +1,6 @@
 package com.github.bordertech.wcomponents;
 
+import com.github.bordertech.wcomponents.util.MemoryUtil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -12,7 +13,7 @@ import java.util.List;
  * that an AJAX trigger component <em>should</em> have an Action attached (usually via setActionOnChanged).
  * </p>
  * <p>
- * During an AJAX request the  whole UI tree is serviced in the action phase but only the 'target' components of this
+ * During an AJAX request the whole UI tree is serviced in the action phase but only the 'target' components of this
  * control will be painted in the response.
  * </p>
  *
@@ -72,7 +73,7 @@ public class WAjaxControl extends AbstractWComponent {
 	 */
 	public WAjaxControl(final AjaxTrigger trigger, final List<? extends AjaxTarget> targets) {
 		this(trigger);
-		getComponentModel().targets = new ArrayList<>(targets);
+		getComponentModel().targets = (List<AjaxTarget>) new ArrayList<>(targets);
 	}
 
 	/**
@@ -102,13 +103,9 @@ public class WAjaxControl extends AbstractWComponent {
 	 */
 	public void addTargets(final List<? extends AjaxTarget> targets) {
 		if (targets != null) {
-			AjaxControlModel model = getOrCreateComponentModel();
-
-			if (model.targets == null) {
-				model.targets = new ArrayList<>();
+			for (AjaxTarget target : targets) {
+				this.addTarget(target);
 			}
-
-			model.targets.addAll(targets);
 		}
 	}
 
@@ -125,6 +122,7 @@ public class WAjaxControl extends AbstractWComponent {
 		}
 
 		model.targets.add(target);
+		MemoryUtil.checkSize(model.targets.size(), this.getClass().getSimpleName());
 	}
 
 	/**
@@ -133,7 +131,9 @@ public class WAjaxControl extends AbstractWComponent {
 	 * @param loadOnce if <code>true</code> the target AJAX trigger only once for each load of a page
 	 */
 	public void setLoadOnce(final boolean loadOnce) {
-		getOrCreateComponentModel().loadOnce = loadOnce;
+		if (loadOnce != isLoadOnce()) {
+			getOrCreateComponentModel().loadOnce = loadOnce;
+		}
 	}
 
 	/**
@@ -144,8 +144,8 @@ public class WAjaxControl extends AbstractWComponent {
 	}
 
 	/**
-	 * Set whether the trigger may fire once or an unlimited number of times. Any value &gt; 0 will result in a
-	 * trigger which can only fire once per page. See
+	 * Set whether the trigger may fire once or an unlimited number of times. Any value &gt; 0 will result in a trigger
+	 * which can only fire once per page. See
 	 * <a href="https://github.com/BorderTech/wcomponents/issues/495">#495</a>.
 	 *
 	 * @param loadCount The trigger count for this AJAX control.
@@ -156,8 +156,8 @@ public class WAjaxControl extends AbstractWComponent {
 	}
 
 	/**
-	 * Get the indicator of whether a trigger may fire once or an unlimited number of times. If loadCount
-	 * &gt; 0 the WAjaxControl may <strong>only fire once per page load</strong>. See
+	 * Get the indicator of whether a trigger may fire once or an unlimited number of times. If loadCount &gt; 0 the
+	 * WAjaxControl may <strong>only fire once per page load</strong>. See
 	 * <a href="https://github.com/BorderTech/wcomponents/issues/495">#495</a>.
 	 *
 	 * @return 1 if the trigger may only load once, otherwise -1
@@ -206,8 +206,8 @@ public class WAjaxControl extends AbstractWComponent {
 
 	/**
 	 * Get the delay period, in milliseconds, between the WAjaxControl being rendered in the view and it being
-	 * <em>automatically</em> triggered. A WAjaxControl with a delay &gt; 0 will result in a request being made
-	 * without a change to any {@link AjaxTrigger} component.
+	 * <em>automatically</em> triggered. A WAjaxControl with a delay &gt; 0 will result in a request being made without
+	 * a change to any {@link AjaxTrigger} component.
 	 *
 	 * @return the delay after page load before AJAX control triggered
 	 */
@@ -218,20 +218,23 @@ public class WAjaxControl extends AbstractWComponent {
 	/**
 	 * <p>
 	 * Set a delay period, in milliseconds, between the WAjaxControl being rendered in the view and it being
-	 * <em>automatically</em> triggered. A WAjaxControl with a delay &gt; 0 will result in a request being made
-	 * without a change to any {@link AjaxTrigger} component.
+	 * <em>automatically</em> triggered. A WAjaxControl with a delay &gt; 0 will result in a request being made without
+	 * a change to any {@link AjaxTrigger} component.
 	 * </p>
 	 * <p>
 	 * The use of a delay may be useful for setting up a trigger which polls for changes in a part of a UI. See
 	 * {@link com.github.bordertech.wcomponents.WAjaxPollingRegion}.
 	 * </p>
-	 * <p>If the trigger is part of a polling region (therefore it is itself updated and potentially re-triggers itself
+	 * <p>
+	 * If the trigger is part of a polling region (therefore it is itself updated and potentially re-triggers itself
 	 * possibly many times) then the delay <strong>must not</strong> be less than 334.</p>
 	 *
 	 * @param delay the delay after page load before AJAX control triggered
 	 */
 	public void setDelay(final int delay) {
-		getOrCreateComponentModel().delay = delay;
+		if (delay != getDelay()) {
+			getOrCreateComponentModel().delay = delay;
+		}
 	}
 
 	/**
@@ -247,16 +250,17 @@ public class WAjaxControl extends AbstractWComponent {
 		if (targets != null && !targets.isEmpty()) {
 			WComponent triggerComponent = trigger == null ? this : trigger;
 
-			UIContext triggerContext = WebUtilities.getPrimaryContext(UIContextHolder.getCurrent(),
-					triggerComponent);
+			// The trigger maybe in a different context
+			UIContext triggerContext = WebUtilities.getContextForComponent(triggerComponent);
 			UIContextHolder.pushContext(triggerContext);
 
+			// TODO The IDs of the targets are based on the Triggers Context. Not good for targets in repeaters
 			try {
 				List<String> targetIds = new ArrayList<>();
 				for (AjaxTarget target : getTargets()) {
 					targetIds.add(target.getId());
 				}
-				AjaxHelper.registerComponents(targetIds, request, triggerComponent.getId());
+				AjaxHelper.registerComponents(targetIds, triggerComponent.getId());
 			} finally {
 				UIContextHolder.popContext();
 			}
@@ -327,15 +331,15 @@ public class WAjaxControl extends AbstractWComponent {
 		private List<AjaxTarget> targets;
 
 		/**
-		 * Specifies that the WAjaxControl may only fire once per load. If false then there is no limit on the number
-		 * of times the trigger may fire.
+		 * Specifies that the WAjaxControl may only fire once per load. If false then there is no limit on the number of
+		 * times the trigger may fire.
 		 */
 		private boolean loadOnce = false;
 
 		/**
-		 * Delay, in milliseconds, between the control loading in the view and an automatic request. If this is set,
-		 * and set to a value greater than 0, the WAjaxControl will fire without <em>any</em> {@link AjaxTrigger}
-		 * being changed/invoked. This can be used to set up a trigger which polls for changes.
+		 * Delay, in milliseconds, between the control loading in the view and an automatic request. If this is set, and
+		 * set to a value greater than 0, the WAjaxControl will fire without <em>any</em> {@link AjaxTrigger} being
+		 * changed/invoked. This can be used to set up a trigger which polls for changes.
 		 */
 		private int delay;
 	}

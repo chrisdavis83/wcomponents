@@ -1,10 +1,4 @@
-/**
- * Utility class for dealing with WAI-ARIA role or implied role of elements.
- *
- * @module
- * @requires module:wc/dom/impliedARIA
- */
-define(["wc/dom/impliedARIA"], /** @param {Object} impliedARIA @ignore */ function(impliedARIA) {
+define(["wc/dom/impliedARIA"], function(impliedARIA) {
 	"use strict";
 
 	/**
@@ -20,7 +14,7 @@ define(["wc/dom/impliedARIA"], /** @param {Object} impliedARIA @ignore */ functi
 		 * @function module:wc/dom/role.get
 		 * @param {Element} element The element to test.
 		 * @param {boolean} [implied] Include getting implied role if true.
-		 * @returns {?String} The WAI-ARIA role of the element, including its implied role if required.
+		 * @returns {String} The WAI-ARIA role of the element, including its implied role if required.
 		 */
 		this.get = function(element, implied) {
 			var role;
@@ -52,5 +46,11 @@ define(["wc/dom/impliedARIA"], /** @param {Object} impliedARIA @ignore */ functi
 		};
 	}
 
-	return /** @alias wc/dom/role */ new Role();
+	/**
+	 * Utility class for dealing with WAI-ARIA role or implied role of elements.
+	 *
+	 * @module wc/dom/role
+	 * @requires module:wc/dom/impliedARIA
+	 */
+	return new Role();
 });

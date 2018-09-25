@@ -9,6 +9,7 @@ import com.github.bordertech.wcomponents.Request;
 import com.github.bordertech.wcomponents.SimpleBeanBoundTableModel;
 import com.github.bordertech.wcomponents.SimpleBeanBoundTableModel.LevelDetails;
 import com.github.bordertech.wcomponents.SimpleBeanTreeTableDataModel;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.TableTreeNode;
 import com.github.bordertech.wcomponents.WAjaxControl;
 import com.github.bordertech.wcomponents.WApplication;
@@ -245,7 +246,7 @@ public class TableLoadPerformance extends WApplication {
 	 */
 	public TableLoadPerformance() {
 		WPanel root = new WPanel();
-		root.setMargin(new Margin(12));
+		root.setMargin(new Margin(Size.LARGE));
 		add(root);
 
 		// Load options
@@ -296,7 +297,7 @@ public class TableLoadPerformance extends WApplication {
 		// Table layouts
 		root.add(tablePanel);
 		tableLayout.setLayout(new ColumnLayout(new int[]{50, 50}, 6, 6));
-		tableLayout.setMargin(new Margin(12, 0, 12, 0));
+		tableLayout.setMargin(new Margin(Size.LARGE, null, Size.LARGE, null));
 		tableLayout.setVisible(false);
 		tablePanel.add(tableLayout);
 

@@ -1,18 +1,18 @@
 define(["wc/dom/attribute",
-		"wc/dom/clearSelection",
-		"wc/dom/event",
-		"wc/dom/getEventOffset",
-		"wc/dom/isAcceptableTarget",
-		"wc/dom/getBox",
-		"wc/dom/initialise",
-		"wc/dom/shed",
-		"wc/dom/uid",
-		"wc/dom/Widget",
-		"wc/has",
-		"wc/ui/ajax/processResponse",
-		"wc/ui/positionable",
-		"wc/ui/resizeable",
-		"wc/config"],
+	"wc/dom/clearSelection",
+	"wc/dom/event",
+	"wc/dom/getEventOffset",
+	"wc/dom/isAcceptableTarget",
+	"wc/dom/getBox",
+	"wc/dom/initialise",
+	"wc/dom/shed",
+	"wc/dom/uid",
+	"wc/dom/Widget",
+	"wc/has",
+	"wc/ui/ajax/processResponse",
+	"wc/ui/positionable",
+	"wc/ui/resizeable",
+	"wc/config"],
 	function(attribute, clearSelection, event, getMouseEventOffset, isAcceptableEventTarget, getBox, initialise, shed, uid, Widget, has, processResponse, positionable, resizeable, wcconfig) {
 		"use strict";
 
@@ -30,8 +30,9 @@ define(["wc/dom/attribute",
 				dragging,
 				offsetX = {},
 				offsetY = {},
-				conf = wcconfig.get("wc/ui/draggable"),
-				KEY_MOVE = ((conf && conf.step) ? conf.step : 8),  // the number of pixels by which a draggable is moved by keyboard
+				conf = wcconfig.get("wc/ui/draggable", {
+					step: 8  // the number of pixels by which a draggable is moved by keyboard
+				}),
 				BS = ns + ".inited";
 
 			/**
@@ -101,8 +102,7 @@ define(["wc/dom/attribute",
 					positionable.clearZeros(moveTarget, true);
 					positionable.setPosition(moveTarget, position.left + x, position.top + y);
 					return true;
-				}
-				finally {
+				} finally {
 					if (animationsDisabled) {
 						resizeable.restoreAnimation(moveTarget);
 					}
@@ -126,16 +126,16 @@ define(["wc/dom/attribute",
 				if (!$event.defaultPrevented && (element = DRAGGABLE.findAncestor(target))) {
 					switch (keyCode) {
 						case KeyEvent.DOM_VK_RIGHT:
-							x = KEY_MOVE;
+							x = conf.step;
 							break;
 						case KeyEvent.DOM_VK_LEFT:
-							x = 0 - KEY_MOVE;
+							x = 0 - conf.step;
 							break;
 						case KeyEvent.DOM_VK_DOWN:
-							y = KEY_MOVE;
+							y = conf.step;
 							break;
 						case KeyEvent.DOM_VK_UP:
-							y = 0 - KEY_MOVE;
+							y = 0 - conf.step;
 							break;
 					}
 				}
@@ -217,8 +217,7 @@ define(["wc/dom/attribute",
 						positionable.clearZeros(element, true);
 						positionable.setPosition(element, left, top);
 					}
-				}
-				finally {
+				} finally {
 					clearSelection();
 					if (animationsDisabled) {
 						resizeable.restoreAnimation(element);
@@ -284,8 +283,7 @@ define(["wc/dom/attribute",
 					if (has("event-ontouchstart")) {
 						event[func](element, event.TYPE.touchstart, touchstartEvent);
 					}
-				}
-				finally {
+				} finally {
 					func = remove ? "remove" : "set";
 					attribute[func](element, BS, true);
 				}
@@ -376,10 +374,6 @@ define(["wc/dom/attribute",
 		/**
 		 * Provides functionality used to move a component around the screen. Components may be moved using a mouse or keyboard.
 		 *
-		 * @typedef {Object} module:wc/ui/draggable.config() Optional module configuration
-		 * @property {int} step The number of pixels to move the draggable element per key press.
-		 * @default 8
-		 *
 		 * @module
 		 * @requires module:wc/dom/attribute
 		 * @requires module:wc/dom/clearSelection
@@ -400,4 +394,9 @@ define(["wc/dom/attribute",
 		var instance = new Draggable();
 		initialise.register(instance);
 		return instance;
+		/**
+		 * @typedef {Object} module:wc/ui/draggable~config Optional module configuration
+		 * @property {int} step The number of pixels to move the draggable element per key press.
+		 * @default 8
+		 */
 	});

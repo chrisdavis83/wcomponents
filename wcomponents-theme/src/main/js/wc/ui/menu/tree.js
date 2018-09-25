@@ -1,17 +1,18 @@
 define(["wc/ui/menu/core",
-		"wc/dom/keyWalker",
-		"wc/dom/shed",
-		"wc/dom/Widget",
-		"wc/array/toArray",
-		"wc/ui/menu/treeItem",
-		"wc/dom/initialise",
-		"wc/has",
-		"wc/dom/classList",
-		"wc/dom/formUpdateManager",
-		"wc/dom/getFilteredGroup",
-		"wc/ui/ajaxRegion",
-		"wc/timers"],
-	function(abstractMenu, keyWalker, shed, Widget, toArray, treeItem, initialise, has, classList, formUpdateManager, getFilteredGroup, ajaxRegion, timers) {
+	"wc/dom/keyWalker",
+	"wc/dom/shed",
+	"wc/dom/Widget",
+	"wc/array/toArray",
+	"wc/ui/menu/treeItem",
+	"wc/dom/initialise",
+	"wc/has",
+	"wc/dom/classList",
+	"wc/dom/formUpdateManager",
+	"wc/dom/getFilteredGroup",
+	"wc/ui/ajaxRegion",
+	"wc/timers",
+	"wc/ui/icon"],
+	function(abstractMenu, keyWalker, shed, Widget, toArray, treeItem, initialise, has, classList, formUpdateManager, getFilteredGroup, ajaxRegion, timers, icon) {
 		"use strict";
 
 		/**
@@ -24,7 +25,8 @@ define(["wc/ui/menu/core",
 		function Tree() {
 			var VOPENER,
 				LEAF_WD,
-				ajaxTimer;
+				ajaxTimer,
+				IMAGE_HOLDER_WD;
 
 			if (has("ie") === 8) {
 				// IE8 fails to repaint closes in a timely manner if the repainter is not included explicitly.
@@ -94,7 +96,7 @@ define(["wc/ui/menu/core",
 			 * @function
 			 * @private
 			 * @param {Element} element The element from which to start searching for the tree root.
-			 * @returns {?Element} A tree root node.
+			 * @returns {Element} A tree root node.
 			 */
 			function getRootHelper(element) {
 				var _root;
@@ -184,7 +186,7 @@ define(["wc/ui/menu/core",
 			/**
 			 * Trees automatically select selectable treeitems on navigation.
 			 *
-			 * @see {@link http://www.w3.org/TR/wai-aria-practices/#TreeView}
+			 * @see http://www.w3.org/TR/wai-aria-practices/#TreeView
 			 * @var
 			 * @type {Boolean}
 			 * @protected
@@ -197,7 +199,7 @@ define(["wc/ui/menu/core",
 			 * Selection in trees is complicated as it depends on the presence of absence of chordal key strokes during
 			 * selection.
 			 *
-			 * @see {@link http://www.w3.org/TR/wai-aria-practices/#TreeView}
+			 * @see http://www.w3.org/TR/wai-aria-practices/#TreeView
 			 * @function module:wc/ui/menu/tree._select
 			 * @protected
 			 * @override
@@ -213,8 +215,7 @@ define(["wc/ui/menu/core",
 				if (root && root.getAttribute("aria-multiselectable")) {
 					if (silent) {
 						shed.select(item, silent);
-					}
-					else {
+					} else {
 						treeItem.activate(item, SHIFT, CTRL);
 					}
 				}
@@ -267,12 +268,10 @@ define(["wc/ui/menu/core",
 							if (isHTree) {
 								this._keyMap[VK_RIGHT] = keyWalker.MOVE_TO.CHILD;
 								this._keyMap[VK_LEFT] = keyWalker.MOVE_TO.PARENT;
-							}
-							else {
+							} else {
 								this._keyMap[VK_LEFT] = this._FUNC_MAP.CLOSE;
 							}
-						}
-						else {
+						} else {
 							this._keyMap[VK_RIGHT] = this._FUNC_MAP.ACTION;
 							this._keyMap[VK_LEFT] = keyWalker.MOVE_TO.PARENT;
 						}
@@ -283,7 +282,7 @@ define(["wc/ui/menu/core",
 			/**
 			 * Sets up the initial keymap for tree menus.
 			 *
-			 * @see {@link http://www.w3.org/TR/wai-aria-practices/#TreeView}
+			 * @see http://www.w3.org/TR/wai-aria-practices/#TreeView
 			 * @function module:wc/ui/menu/tree._setupKeymap
 			 * @protected
 			 * @override
@@ -307,8 +306,7 @@ define(["wc/ui/menu/core",
 			 * @override
 			 */
 			this._setUpWidgets = function() {
-				var opener = new Widget("button", "", { "aria-controls": null });
-
+				var opener = new Widget("", "", { "aria-controls": null });
 				LEAF_WD = LEAF_WD || new Widget("", "", { "role": "treeitem" });
 				this._wd.submenu = new Widget("", "", { "role": "group" });
 				this._wd.branch = LEAF_WD.extend("", { "aria-expanded": null });
@@ -341,30 +339,13 @@ define(["wc/ui/menu/core",
 			};
 
 			/**
-			 * No op.
-			 * @function module:wc/ui/menu/tree._setMenuItemRole
-			 * @protected
-			 * @override
-			 */
-			this._setMenuItemRole = null;
-
-			/**
-			 * No op.
-			 *
-			 * @function module:wc/ui/menu/tree._selectAfterAjax
-			 * @protected
-			 * @override
-			 */
-			this._selectAfterAjax = null;
-
-			/**
 			 * Get the menu element which is able to be "aria-expanded". This is the WSubMenu's content in most menus but is the WSubMenu itself in
 			 * trees.
 			 *
 			 * @function module:wc/ui/menu/tree._getBranchExpandableElement
 			 * @override
 			 * @param {Element} item The start point for the search. This will normally be a 'branch'.
-			 * @returns {?Element} The "expandable" element. This is usually the branch content but is the branch in trees.
+			 * @returns {Element} The "expandable" element. This is usually the branch content but is the branch in trees.
 			 */
 			this._getBranchExpandableElement = function (item) {
 				if (!item) {
@@ -475,12 +456,39 @@ define(["wc/ui/menu/core",
 
 				// selected tree items (would prefer to be devolved to tree item but that just ain't possible ...)
 				Array.prototype.forEach.call(getFilteredGroup(next, {
-					filter: (getFilteredGroup.FILTERS.selected | getFilteredGroup.FILTERS.enabled),
 					ignoreInnerGroups: true
 				}), function(nextSelectedItem) {
 					formUpdateManager.writeStateField(toContainer, rootId, nextSelectedItem.id);
 				}, this);
 				formUpdateManager.writeStateField(toContainer, rootId + "-h", "x");
+			};
+
+			/**
+			 * Listen to AJAX updates that are about to affect a tree.
+			 * @param {Element} element A candidate tree root
+			 * @param {DocumentFragment} content The content that is about to be inserted into the tree
+			 * @param action a wc/ui/ajax/processResponse action
+			 */
+			this.preAjaxSubscriber = function(element, content, action) {
+				var i, kids, newBranch, currentBranch;
+				if (this.isRoot(element) && content && action === "in") {
+					kids = content.childNodes;
+					for (i = 0; kids && i < kids.length; i++) {
+						newBranch = this._getBranch(kids[i]);
+						if (newBranch) {
+							currentBranch = document.getElementById(newBranch.id);
+							if (currentBranch && shed.isSelected(currentBranch)) {
+								/*
+								 * This is really handling an HTree situation:
+								 * HTree branch opening can drive both selection and expansion
+								 * Selection is not updated when we fetch branch content via AJAX so the server thiks the branch is not selected
+								 * the new branch, fetched via AJAX, will therefore be deselcted (which is probably wrong for HTree).
+								 */
+								shed.select(newBranch, true);
+							}
+						}
+					}
+				}
 			};
 
 			/**
@@ -539,14 +547,14 @@ define(["wc/ui/menu/core",
 			 * @param {String} action The action being taken.
 			 */
 			this._shedSubscriber = function(element, action) {
-				var root;
+				var root, iconContainer;
 
 				if (!(element && (root = this.getRoot(element)))) {
 					return;
 				}
 
 				if (action === shed.actions.SELECT || action === shed.actions.DESELECT) {
-					if (root.getAttribute("data-wc-mode")) {
+					if (ajaxRegion.getTrigger(root, true)) {
 						if (ajaxTimer) {
 							timers.clearTimeout(ajaxTimer);
 							ajaxTimer = null;
@@ -556,21 +564,27 @@ define(["wc/ui/menu/core",
 					if (this.isHTree(root) && action === shed.actions.SELECT) {
 						if (this._isBranch(element) && !shed.isExpanded(element)) {
 							this[this._FUNC_MAP.OPEN](element);
-						}
-						else {
+						} else {
 							this.closeAllPaths(root, element);
 						}
 					}
 					return;
 				}
 
+				this.constructor.prototype._shedSubscriber.call(this, element, action);
+				VOPENER = VOPENER || new Widget ("", "wc_leaf_vopener");
+				IMAGE_HOLDER_WD = IMAGE_HOLDER_WD || new Widget("", "wc_leaf_img");
 				if (action === shed.actions.EXPAND) {
-					this.constructor.prototype._shedSubscriber.call(this, element, action);
 					ajaxExpand(element, root);
+					if (!this.isHTree(root) && (iconContainer = VOPENER.findDescendant(element, true))) {
+						icon.change(iconContainer, "fa-caret-down", "fa-caret-right");
+					}
+					if ((iconContainer = this._getBranchOpener(element)) &&
+						(iconContainer = IMAGE_HOLDER_WD.findDescendant(iconContainer, true))) {
+						icon.change(iconContainer, "fa-folder-open-o", "fa-folder-o");
+					}
 					return;
 				}
-
-				this.constructor.prototype._shedSubscriber.call(this, element, action);
 			};
 
 			/**
@@ -637,6 +651,7 @@ define(["wc/ui/menu/core",
 			this._shedCollapseHelper = function (element, root) {
 				var group,
 					groupContainer,
+					iconContainer,
 					_root = root || this.getRoot(element);
 
 				if (!_root) {
@@ -644,6 +659,17 @@ define(["wc/ui/menu/core",
 				}
 
 				if (element && this._isBranch(element)) {
+					VOPENER = VOPENER || new Widget ("", "wc_leaf_vopener");
+					IMAGE_HOLDER_WD = IMAGE_HOLDER_WD || new Widget("", "wc_leaf_img");
+					if (!this.isHTree(root) && (iconContainer = VOPENER.findDescendant(element, true))) {
+						icon.change(iconContainer, "fa-caret-right", "fa-caret-down");
+					}
+
+					if ((iconContainer = this._getBranchOpener(element)) &&
+						(iconContainer = IMAGE_HOLDER_WD.findDescendant(iconContainer, true))) {
+						icon.change(iconContainer, "fa-folder-o", "fa-folder-open-o");
+					}
+
 					groupContainer = this.getSubMenu(element, true);
 					if (groupContainer && (group = getFilteredGroup(groupContainer, {itemWd: this._wd.leaf[0]})) && group.length) {
 						group.forEach(function(next) {
@@ -653,28 +679,6 @@ define(["wc/ui/menu/core",
 							shed.select(element);
 						}
 					}
-				}
-			};
-
-			/**
-			 * Reset selections after Ajax.
-			 *
-			 * @function module:wc/ui/menu/tree._ajaxSubscriber
-			 * @protected
-			 *
-			 * @param {Element} element the ajax target.
-			 * @param {DocumentFragment} documentFragment the content of the response
-			 */
-			this._ajaxSubscriber = function (element, documentFragment/* , action */) {
-				if (element && this.getRoot(element) === this.getFirstMenuAncestor(element)) {
-					Array.prototype.forEach.call(this._wd.branch.findDescendants(documentFragment), function(next) {
-						var id, _el;
-						if ((id = next.id) && (_el = document.getElementById(id))) {
-							if (shed.isSelected(_el)) {
-								shed.select(next, true);
-							}
-						}
-					}, this);
 				}
 			};
 		}
@@ -701,6 +705,7 @@ define(["wc/ui/menu/core",
 		 * @requires module:wc/dom/getFilteredGroup
 		 * @requires module:wc/ui/ajaxRegion
 		 * @requires module:wc/timers
+		 * @requires module:wc/ui/icon
 		 */
 		var instance;
 		Tree.prototype = abstractMenu;

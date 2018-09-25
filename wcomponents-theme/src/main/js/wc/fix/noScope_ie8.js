@@ -45,21 +45,19 @@ define(["wc/dom/Widget", "wc/has"], /** @param Widget @param has @ignore */funct
 					fix = "<" + tagName + " style=\"display:none\" class=\"" + className + "\">Internet Explorer noscope fix</" + tagName + ">";
 					result = fix + htmlOrElement;
 				}
-			}
-			else {
+			} else {
 				result = htmlOrElement;
 				// we have a dom element, so we are removing noscope fixes
 				fix = new Widget(tagName, className);
 				try {
-					Array.prototype.forEach.call(fix.findDescendants(htmlOrElement), function(fix) {
-						var parent = fix.parentNode;
+					Array.prototype.forEach.call(fix.findDescendants(htmlOrElement), function(next) {
+						var parent = next.parentNode;
 						if (parent) {
-							parent.removeChild(fix);
+							parent.removeChild(next);
 							console.info("Removed IE noscope fixer (its work is done)");
 						}
 					});
-				}
-				catch (ex) {
+				} catch (ex) {
 					console.error(ex.message);
 				}
 			}

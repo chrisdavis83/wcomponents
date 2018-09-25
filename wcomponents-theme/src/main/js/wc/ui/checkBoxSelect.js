@@ -1,31 +1,12 @@
-/**
- * Module to provide a grouped set of check boxes with some group-like behaviour which is not inherent in HTML check
- * boxes, though whether this should be implemented or not is another matter since according to
- * {@link http://www.w3.org/TR/wai-aria-practices/#checkbox} strictly speaking checkbox should not get arrow key
- * navigation nor SHIFT+CLICK range toggle support!
- *
- * @module
- * @extends module:wc/dom/ariaAnalog
- *
- * @requires module:wc/dom/ariaAnalog
- * @requires module:wc/dom/Widget
- * @requires module:wc/dom/initialise
- * @requires module:wc/dom/shed
- * @requires module:wc/dom/clearSelection
- * @requires module:wc/dom/group
- * @requires module:wc/dom/getFilteredGroup
- * @requires module:wc/dom/cbrShedPublisher
- */
 define(["wc/dom/ariaAnalog",
-		"wc/dom/Widget",
-		"wc/dom/initialise",
-		"wc/dom/shed",
-		"wc/dom/clearSelection",
-		"wc/dom/group",
-		"wc/dom/getFilteredGroup",
-		"wc/dom/cbrShedPublisher"],
-	/** @param ariaAnalog wc/dom/ariaAnalog @param Widget wc/dom/Widget @param initialise wc/dom/initialise @param shed wc/dom/shed @param clearSelection wc/dom/clearSelection @param group wc/dom/group @param getFilteredGroup wc/dom/getFilteredGroup @ignore */
-	function(ariaAnalog, Widget, initialise, shed, clearSelection, group, getFilteredGroup) {
+	"wc/dom/initialise",
+	"wc/dom/shed",
+	"wc/dom/clearSelection",
+	"wc/dom/group",
+	"wc/dom/getFilteredGroup",
+	"wc/ui/fieldset",
+	"wc/dom/cbrShedPublisher"],
+	function(ariaAnalog, initialise, shed, clearSelection, group, getFilteredGroup, fieldset, cbrShedPublisher) {
 		"use strict";
 
 		/**
@@ -43,7 +24,7 @@ define(["wc/dom/ariaAnalog",
 			 * @type {module:wc/dom/Widget}
 			 * @public
 			 */
-			this.ITEM = new Widget("input", "", {"type": "checkbox"});
+			this.ITEM = cbrShedPublisher.getWidget("cb").clone();
 
 			/**
 			 * The description of a group container since WCheckBoxSelects are grouped by descent.
@@ -51,7 +32,7 @@ define(["wc/dom/ariaAnalog",
 			 * @type {module:wc/dom/Widget}
 			 * @public
 			 */
-			this.CONTAINER = new Widget("fieldset", "wc-checkboxselect");
+			this.CONTAINER = fieldset.getWidget().clone().extend("wc-checkboxselect");
 
 			/**
 			 * The description of a group item.
@@ -124,8 +105,7 @@ define(["wc/dom/ariaAnalog",
 						}
 						if (selectedValArr.indexOf(option.value) > -1) {
 							shed.select(option, silent);
-						}
-						else {
+						} else {
 							shed.deselect(option, silent);
 						}
 						lastOption = option;
@@ -156,7 +136,7 @@ define(["wc/dom/ariaAnalog",
 						isSelected = shed.isSelected(element);
 						selectedFilter = isSelected ? getFilteredGroup.FILTERS.deselected : getFilteredGroup.FILTERS.selected;
 
-						_group = getFilteredGroup(element, {filter: (selectedFilter), asObject: true});
+						_group = getFilteredGroup(element, {filter: (getFilteredGroup.FILTERS.enabled | selectedFilter), asObject: true});
 						filtered = _group.filtered;
 						unfiltered = _group.unfiltered;
 
@@ -189,8 +169,7 @@ define(["wc/dom/ariaAnalog",
 						}
 					}
 					clearSelection();
-				}
-				finally {
+				} finally {
 					inGroupMode = false;
 				}
 			};
@@ -205,7 +184,25 @@ define(["wc/dom/ariaAnalog",
 		}
 
 		CheckBoxSelect.prototype = ariaAnalog;
-		var /** @alias module:wc/ui/checkBoxSelect */ instance = new CheckBoxSelect();
+		/**
+		 * Module to provide a grouped set of check boxes with some group-like behaviour which is not inherent in HTML check
+		 * boxes, though whether this should be implemented or not is another matter since according to
+		 * http://www.w3.org/TR/wai-aria-practices/#checkbox strictly speaking checkbox should not get arrow key
+		 * navigation nor SHIFT+CLICK range toggle support!
+		 *
+		 * @module
+		 * @extends module:wc/dom/ariaAnalog
+		 *
+		 * @requires module:wc/dom/ariaAnalog
+		 * @requires module:wc/dom/Widget
+		 * @requires module:wc/dom/initialise
+		 * @requires module:wc/dom/shed
+		 * @requires module:wc/dom/clearSelection
+		 * @requires module:wc/dom/group
+		 * @requires module:wc/dom/getFilteredGroup
+		 * @requires module:wc/ui/fieldset
+		 */
+		var instance = new CheckBoxSelect();
 		instance.constructor = CheckBoxSelect;
 		initialise.register(instance);
 		return instance;

@@ -1,16 +1,18 @@
 define(["wc/has",
-		"wc/dom/event",
-		"wc/dom/initialise",
-		"wc/dom/focus",
-		"wc/dom/shed",
-		"wc/dom/uid",
-		"wc/dom/Widget",
-		"wc/i18n/i18n",
-		"wc/ui/selectLoader",
-		"wc/timers",
-		"wc/ui/prompt",
-		"wc/ui/ajaxRegion"],
-	function(has, event, initialise, focus, shed, uid, Widget, i18n, selectLoader, timers, prompt, ajaxRegion) {
+	"wc/dom/event",
+	"wc/dom/initialise",
+	"wc/dom/focus",
+	"wc/dom/shed",
+	"wc/dom/uid",
+	"wc/dom/Widget",
+	"wc/i18n/i18n",
+	"wc/ui/selectLoader",
+	"wc/timers",
+	"wc/ui/prompt",
+	"wc/ui/ajaxRegion",
+	"wc/ui/fieldset",
+	"wc/ui/icon"],
+	function(has, event, initialise, focus, shed, uid, Widget, i18n, selectLoader, timers, prompt, ajaxRegion, fieldset, icon) {
 		"use strict";
 
 		/**
@@ -22,11 +24,10 @@ define(["wc/has",
 			var BUTTON_TYPE = {add: 0, remove: 1},
 				MAX = "data-wc-max",
 				queueTimer,
-				CONTAINER = new Widget("fieldset", "wc_mfc"),
+				CONTAINER = fieldset.getWidget().clone().extend("wc_mfc"),
 				FIELD = new Widget("li"),
 				BUTTON = new Widget("button"),
 				SELECT_WD = new Widget("select"),
-				BUTTON_MESSAGE_WD = new Widget("SPAN"),
 				INPUT_WD = new Widget("input"),
 				CONTROLS = [SELECT_WD, INPUT_WD],
 				REMOVE_BUTTON_TITLE;
@@ -50,8 +51,8 @@ define(["wc/has",
 				if (element) {
 					selects = SELECT_WD.findDescendants(element);
 					Array.prototype.forEach.call(selects, function(next) {
-						var id = next.id;
-						selectLoader.load(id);
+						var nextId = next.id;
+						selectLoader.load(nextId);
 					});
 				}
 			}
@@ -90,8 +91,7 @@ define(["wc/has",
 				if (type === BUTTON_TYPE.add) {
 					addNewField(button);
 					tryAjax = true;
-				}
-				else if (type === BUTTON_TYPE.remove) {
+				} else if (type === BUTTON_TYPE.remove) {
 					removeField(button, SHIFT);
 					if (button.type === event.TYPE.submit) {
 						shed.hide(button);
@@ -127,7 +127,7 @@ define(["wc/has",
 			 * @function
 			 * @private
 			 * @param {Element} element Any child of the container.
-			 * @returns {?Element} The container if element is a multi form control or one of its descendent elements.
+			 * @returns {Element} The container if element is a multi form control or one of its descendent elements.
 			 */
 			function getContainer(element) {
 				return CONTAINER.findAncestor(element);
@@ -138,7 +138,7 @@ define(["wc/has",
 			 *
 			 * @param {Element} container A multiFormControl.
 			 * @param {Boolean} [firstOnly] If true only the first field will be returned.
-			 * @returns {?(NodeList|Element)} A collection of fields OR a single fielt if firstOnly is true.
+			 * @returns {(NodeList|Element)} A collection of fields OR a single fielt if firstOnly is true.
 			 */
 			function getFields(container, firstOnly) {
 				var method = firstOnly ? "findDescendant" : "findDescendants",
@@ -167,7 +167,7 @@ define(["wc/has",
 			function resetField(field) {
 				var idWd = new Widget("", "", {id: null}),
 					candidates = idWd.findDescendants(field),
-					labelWd, buttonWd, buttonTextElement,
+					labelWd, buttonWd,
 					nextLabel, nextButton, next, nextId, i;
 				for (i = 0; i < candidates.length; i++) {
 					next = candidates[i];
@@ -183,10 +183,7 @@ define(["wc/has",
 					if (nextButton) {
 						nextButton.setAttribute("aria-controls", nextId);
 						nextButton.title = REMOVE_BUTTON_TITLE;
-						if ((buttonTextElement = BUTTON_MESSAGE_WD.findDescendant(nextButton))) {
-							buttonTextElement.innerHTML = "";
-							buttonTextElement.innerHTML = REMOVE_BUTTON_TITLE;
-						}
+						icon.change(nextButton,"fa-minus-square", "fa-plus-square");
 					}
 					next.id = nextId;
 				}
@@ -227,8 +224,7 @@ define(["wc/has",
 				function processCandidateField($element) {
 					if (SELECT_WD.isOneOfMe($element)) {
 						$element.selectedIndex = 0;
-					}
-					else {
+					} else {
 						$element.value = "";
 					}
 				}
@@ -245,8 +241,7 @@ define(["wc/has",
 						newField = prototypeField.cloneNode(true);
 						if (prototypeField.nextSibling) {
 							prototypeField.parentNode.insertBefore(newField, prototypeField.nextSibling);
-						}
-						else {
+						} else {
 							prototypeField.parentNode.appendChild(newField);
 						}
 
@@ -254,8 +249,7 @@ define(["wc/has",
 						setSelectValues(newField, prototypeField);
 						resetPrototypeField(prototypeField);
 						repaint(element);
-					}
-					else {
+					} else {
 						prompt.alert(i18n.get("mfc_max"));
 					}
 
@@ -278,8 +272,7 @@ define(["wc/has",
 					while (--i > 0) {
 						removeField(fields[i]);
 					}
-				}
-				else if ((field = FIELD.findAncestor(element))) {
+				} else if ((field = FIELD.findAncestor(element))) {
 					container = field.parentNode;
 					container.removeChild(field);
 
@@ -342,8 +335,10 @@ define(["wc/has",
 			 * @param {Element} element a DOM element: in practice BODY
 			 */
 			this.initialise = function(element) {
-				REMOVE_BUTTON_TITLE = i18n.get("mfc_remove");
 				event.add(element, event.TYPE.click, clickEvent);
+				return i18n.translate("mfc_remove").then(function(s) {
+					REMOVE_BUTTON_TITLE = s;
+				});
 			};
 		}
 
@@ -368,6 +363,8 @@ define(["wc/has",
 		 * @requires module:wc/timers
 		 * @requires module:wc/ui/prompt
 		 * @requires module:wc/ui/ajaxRegion
+		 * @requires module:wc/ui/fieldset
+		 * @requires module:wc/ui/icon
 		 * @todo Document private members, fix source order.
 		 */
 		var instance = new MultiFormComponent();

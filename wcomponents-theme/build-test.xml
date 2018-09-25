@@ -3,29 +3,52 @@
 		Build the tests for a given implementation. The resulting tests will contain:
 		1. All the tests from "common" AND
 		2. All the tests for the specific implementation.
-
-		This build must be called with the name of the implementation rootdir set in property:
-		"implementation.name". If not set then the tests from "common" alone will be used.
 	-->
 	<import file="build-import.xml"/>
-
-	<target name="build" description="Build unit tests" depends="init, intern">
-		<antcall target="checkPropertiesExpanded"/>
-		<jsunit srcDir="${intern.target.dir}"/>
-	</target>
-
-	<property name="test.output.rootdir" location="${test.output.dir}/${implementation.name}"/>
-	<property name="intern.target.dir" location="${test.output.rootdir}/intern"/>
+	<property name="test.output.rootdir" location="${build.rootdir}/test-classes/${impl.dir.name}"/>
 	<property name="impl.intern.srcdir" location="${impl.src.dir}/src/test/intern"/>
-	<property name="intern.srcdir" location="${common.test.rootdir}/intern"/>
+	<property name="intern.srcdir" location="${component.rootdir}/src/test/intern"/>
 	<property environment="env"/>
 
+	<!--
+		Intern config options
+	-->
+	<property name="intern.capabilities" value="recordVideo: false, recordScreenshots: false" />
+	<property name="intern.tunnel" value="SauceLabsTunnel" />
+	<property name="intern.tunnel.options" value="verbose: true" />
+	<!-- set true to force build to fail if tests fail when running a local tunnel using tunnel = "SeleniumTunnel" -->
+	<property name="intern.fail.local.test" value="false" />
+	<!--
+		Intern reporters
+		================
+
+		Needs to include the `	reporters: [],` bit (including the comma). See https://theintern.github.io/intern/#reporter-results.
+
+		Some samples:
+
+		simple reporters:
+			reporters: [{id: 'Console'}], - just output to console
+			reporters: [{id: 'JUnit' filename '/PATH/TO/junit.xml'}],
+			reporters: [{id: 'Runner', filename: '/PATH/TO/runner.txt'}],
+
+		coverage reporters:
+			reporters: [{id: 'LcovHtml', directory: '/PATH/TO/'}],
+			reporters: [{id: 'Lcov', filename: '/PATH/TO/lcov.info'}],
+
+	-->
+	<property name="intern.reporters" value=""/>
+
+	<target name="build" description="Build unit tests" depends="intern">
+		<antcall target="checkPropertiesExpanded"/>
+		<jsunit srcDir="${test.output.rootdir}/intern"/>
+	</target>
+
 	<target name="intern">
-		<copy todir="${intern.target.dir}" overwrite="true">
-			<fileset dir="${intern.srcdir}" excludesfile="${excludesfile}">
+		<copy todir="${test.output.rootdir}/intern" overwrite="true">
+			<fileset dir="${intern.srcdir}">
 				<include name="**/*.js"/>
 			</fileset>
-			<fileset dir="${impl.intern.srcdir}" excludesfile="${excludesfile}" erroronmissingdir="false">
+			<fileset dir="${impl.intern.srcdir}" erroronmissingdir="false">
 				<include name="**/*.js"/>
 			</fileset>
 			<filterset>
@@ -38,58 +61,18 @@
 		</copy>
 
 		<!-- NOTE: the two step copy here is so we do not try to apply filters to binary resources -->
-		<copy todir="${intern.target.dir}/resources">
-			<fileset dir="${intern.srcdir}/resources" excludesfile="${excludesfile}" includes="**/*.xml,**/*.html,**/*.css"/>
-			<fileset dir="${impl.intern.srcdir}/resources" excludesfile="${excludesfile}" includes="**/*.xml,**/*.html,**/*.css" erroronmissingdir="false"/>
+		<copy todir="${test.output.rootdir}/intern/resources">
+			<fileset dir="${intern.srcdir}/resources" includes="**/*.xml,**/*.html,**/*.css"/>
+			<fileset dir="${impl.intern.srcdir}/resources" includes="**/*.xml,**/*.html,**/*.css" erroronmissingdir="false"/>
 			<filterchain>
 				<expandproperties/>
 			</filterchain>
 		</copy>
-		<copy todir="${intern.target.dir}/resources">
-			<fileset dir="${intern.srcdir}/resources" excludesfile="${excludesfile}"  excludes="**/*.xml,**/*.html,**/*.css"/>
-			<fileset dir="${impl.intern.srcdir}/resources" excludesfile="${excludesfile}" excludes="**/*.xml,**/*.html,**/*.css" erroronmissingdir="false"/>
+		<copy todir="${test.output.rootdir}/intern/resources">
+			<fileset dir="${intern.srcdir}/resources" excludes="**/*.xml,**/*.html,**/*.css"/>
+			<fileset dir="${impl.intern.srcdir}/resources" excludes="**/*.xml,**/*.html,**/*.css" erroronmissingdir="false"/>
 		</copy>
-		<echo>Copying XSLT to test resources dir ${target.rootdir}/${xslt.target.dir.name}/${xsl.file.to.test}</echo>
-		<copy tofile="${intern.target.dir}/resources/wcomponents-all.xsl" file="${target.rootdir}/${xslt.target.dir.name}/${xsl.file.to.test}" failonerror="false"/><!-- Assumes there are no xsl imports or includes -->
-		<javascript.lint jsdir="${intern.target.dir}"/>
-	</target>
-
-
-	<target name="clean" description="Cleans up all artifacts produced by this build">
-		<delete dir="${intern.target.dir}"/>
-		<echo message="Clean from ${ant.file}"/>
-	</target>
-
-
-	<target name="init" depends="clean">
-		<if>
-			<os family="mac"/>
-			<!-- Mac reports the hostname as the IP address with dashes instead of dots, e.g. 192-168-1-9 -->
-			<then>
-				<propertyregex property="httpHost"
-					input="${env.HOSTNAME}"
-					regexp="^(\d+)-(\d+)-(\d+)-(\d+)$"
-					replace="\1.\2.\3.\4"
-					defaultValue="${env.HOSTNAME}"/>
-			</then>
-		</if>
-		<property name="httpHost" value="${env.HOSTNAME}"/>
-		<property file="${properties.build.constants}"/>
-		<property name="xsl.build.path" value="${implementation.name}/${xslt.target.dir.name}" />
-		<property name="xml.build.path" value="${implementation.name}/${resource.target.dir.name}" />
-		<property name="css.build.path" value="${implementation.name}/${css.target.dir.name}" />
-		<if>
-			<equals arg1="${test.target.mode}" arg2="debug" />
-			<then>
-				<property name="jsunit.path.totest" value="${implementation.name}/${script.debug.target.dir.name}"/>
-				<property name="xsl.file.to.test" value="${xslt.target.file.name}${debug.target.file.name.suffix}.xsl" />
-			</then>
-			<else>
-				<property name="jsunit.path.totest" value="${implementation.name}/${script.target.dir.name}"/>
-				<property name="xsl.file.to.test" value="${xslt.target.file.name}.xsl" />
-			</else>
-		</if>
-		<property name="xsl.build.totest" value="${xsl.build.path}/${xsl.file.to.test}" />
+		<javascript.lint jsdir="${test.output.rootdir}/intern"/>
 	</target>
 
 	<target name="test" depends="build" description="Run the JavaScript unit tests"/>
@@ -100,7 +83,7 @@
 	<macrodef name="jsunit">
 		<attribute name="srcDir" default="${src.dir}"/>
 		<attribute name="configModule" default="intern"/>
-		<attribute name="relativePathToSource" default="target/classes/theme/${implementation.name}/${script.debug.target.dir.name}"/>
+		<attribute name="relativePathToSource" default="target/classes/theme/${implementation.name}/scripts_debug"/>
 		<attribute name="relativePathToTestdir" default="target/test-classes/${implementation.name}"/>
 		<attribute name="relativePathToTests" default="@{relativePathToTestdir}/intern"/>
 		<attribute name="failonerror" default="true"/>
@@ -118,22 +101,22 @@
 					<pathelement location="${unit.test.src.dir.raw}"/>
 				</path>
 			</pathconvert>
-			<fileset dir="${intern.target.dir}" id="unitTests">
+			<fileset dir="${test.output.rootdir}/intern" id="unitTests">
 				<include name="*.js"/>
 			</fileset>
-			<pathconvert pathsep="," property="unit.tests" refid="unitTests">
+			<pathconvert pathsep=",&#10;" property="unit.tests" refid="unitTests">
 				<chainedmapper>
 					<regexpmapper from="([^\/]+)\.js" to="&quot;@{relativePathToTests}/\1&quot;" handledirsep="true"/>
 				</chainedmapper>
 			</pathconvert>
-			<echo>Found unit tests: ${unit.tests}</echo>
+			<echo level="verbose">Found unit tests: ${unit.tests}</echo>
 			<pathconvert targetos="unix" property="test.baseurl">
 				<path>
-					<pathelement location="${intern.target.dir}"/>
+					<pathelement location="${test.output.rootdir}/intern"/>
 				</path>
 			</pathconvert>
 			<copy todir="${test.output.rootdir}" overwrite="true" force="true">
-				<fileset dir="${common.test.rootdir}">
+				<fileset dir="${component.rootdir}/src/test">
 					<include name="@{configModule}.js"/>
 				</fileset>
 				<filterchain>
@@ -142,15 +125,15 @@
 			</copy>
 
 			<property name="intern.executable" location="${basedir}/node_modules/intern/runner.js"/>
-			<echo>Running client side unit tests.
+			<echo level="info">
+Running client side unit tests.
+================================
 If you get errors and need to run them locally the easiest way is to run a local webserver from the theme directory.
 For your convenience we the WComponents theme comes with a jetty server ready to go. After building the tests run (from the theme project):
 
-	mvn jetty:start
+    mvn jetty:start
 
-Now open a web browser and visit:
-
-	http://localhost:8080/target/
+Now open a web browser and visit: http://localhost:8080/target/
 
 Clicky the linky and the tests should run.
 			</echo>
@@ -161,11 +144,12 @@ Clicky the linky and the tests should run.
 			</echo>
 			<if>
 				<and>
+					<equals arg1="${intern.tunnel}" arg2="SauceLabsTunnel"/>
 					<isset property="env.SAUCE_USERNAME"/>
 					<isset property="env.SAUCE_ACCESS_KEY"/>
 				</and>
 				<then>
-					<echo>node ${intern.executable} config=@{relativePathToTestdir}/@{configModule}</echo>
+					<echo level="verbose">node ${intern.executable} config=@{relativePathToTestdir}/@{configModule}</echo>
 					<nodejs.exec cwd="${basedir}" failonerror="true" spawn="false">
 						<arguments>
 							<arg value="${intern.executable}"/>
@@ -173,8 +157,33 @@ Clicky the linky and the tests should run.
 						</arguments>
 					</nodejs.exec>
 				</then>
+				<elseif>
+					<equals arg1="${intern.tunnel}" arg2="SeleniumTunnel"/>
+					<then>
+						<echo level="verbose">node ${intern.executable} config=@{relativePathToTestdir}/@{configModule}</echo>
+						<nodejs.exec cwd="${basedir}" failonerror="${intern.fail.local.test}" spawn="false">
+							<arguments>
+								<arg value="${intern.executable}"/>
+								<arg value="config=@{relativePathToTestdir}/@{configModule}"/>
+							</arguments>
+						</nodejs.exec>
+					</then>
+				</elseif>
+				<elseif>
+					<equals arg1="${intern.tunnel}" arg2="NullTunnel"/>
+					<then>
+						<echo level="info">
+☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠
+Skipping unit tests because you have set a NullTunnel:
+
+To manually start the tests try:
+node ${intern.executable} config=@{relativePathToTestdir}/@{configModule}
+☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠
+						</echo>
+					</then>
+				</elseif>
 				<else>
-					<echo>
+					<echo level="info">
 ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠
 Skipping unit tests because you have not set environment variables:
 
@@ -186,8 +195,8 @@ See: https://theintern.github.io/intern/#hosted-selenium
 					</echo>
 				</else>
 			</if>
-			
-			
+
+
 			<!--
 			<echo>${phantomjs.binary} - -webdriver=4444</echo>
 				<parallel>

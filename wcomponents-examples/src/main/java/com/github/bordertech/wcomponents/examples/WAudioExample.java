@@ -6,6 +6,7 @@ import com.github.bordertech.wcomponents.Audio;
 import com.github.bordertech.wcomponents.AudioResource;
 import com.github.bordertech.wcomponents.Margin;
 import com.github.bordertech.wcomponents.Request;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WAjaxControl;
 import com.github.bordertech.wcomponents.WAudio;
 import com.github.bordertech.wcomponents.WButton;
@@ -89,7 +90,7 @@ public class WAudioExample extends WContainer {
 	private void buildUI() {
 		// build the configuration options UI.
 		WFieldLayout layout = new WFieldLayout(WFieldLayout.LAYOUT_STACKED);
-		layout.setMargin(new Margin(0, 0, 12, 0));
+		layout.setMargin(new Margin(null, null, Size.LARGE, null));
 		add(layout);
 		layout.addField("Autoplay", cbAutoPlay);
 		layout.addField("Loop", cbLoop);

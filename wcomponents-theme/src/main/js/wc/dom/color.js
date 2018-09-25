@@ -1,15 +1,11 @@
-/**
- * Provides colour conversion and manipulation tools.
- *
- * @module
- * @requires module:wc/loader/resource
- * @requires module:wc/xml/xpath
+/*
+ * NOTE: this is only used in wc/dom/getStyle and could potentially be merged with that module.
  */
-define(["wc/loader/resource", "wc/xml/xpath"],
-	/** @param loader wc/loader/resource @param xpath wc/xml/xpath @ignore */
-	function(loader, xpath) {
+define(["wc/loader/resource"],
+	function(loader) {
 		"use strict";
-		var FILE_NAME = "colormap.xml";
+		var FILE_NAME = "colormap.json",
+			lameMap;
 
 		loader.preload(FILE_NAME);
 		/**
@@ -33,22 +29,23 @@ define(["wc/loader/resource", "wc/xml/xpath"],
 			 * @function
 			 * @private
 			 * @param {String} c color literal
-			 * @returns {?String} The hex string for the given color.
+			 * @returns {String} The hex string for the given color.
 			 */
 			function getLiteralFromMap(c) {
-				var result,
-					colormap,
-					match;
+				var colormap;
 				if (c) {
-					colormap = loader.load(FILE_NAME);
-					if (colormap) {
-						match = xpath.query("//color[@name='" + c + "']", true, colormap);
-						if (match) {
-							result = match.getAttribute("hex");
+					if (!lameMap) {
+						// This is a synchronous file load.
+						colormap = loader.load(FILE_NAME, true);
+						if (colormap) {
+							lameMap = JSON.parse(colormap);
 						}
 					}
+					if (lameMap) {
+						return lameMap[c];
+					}
 				}
-				return result;
+				return null;
 			}
 
 			/**
@@ -61,7 +58,7 @@ define(["wc/loader/resource", "wc/xml/xpath"],
 			 * @alias module:wc/dom/color.hex2rgb
 			 * @param {Stering} hex The colour as a hex string.
 			 * @throws {TypeError} Throws a type error if hex is not a string.
-			 * @returns {?Object} The color as an object with properties r:red, g:green and b:blue.
+			 * @returns {Object} The color as an object with properties r:red, g:green and b:blue.
 			 */
 			this.hex2rgb = function (hex) {
 				var result,
@@ -75,7 +72,7 @@ define(["wc/loader/resource", "wc/xml/xpath"],
 						hex = hex.trim();
 						hex = hex.replace(HEX_HASH_RE, "");
 						if (hex.length < 6) {
-							hex = this.convert3digitHexTo6(hex);
+							hex = convert3digitHexTo6(hex);
 						}
 						r = parseInt(hex.substring(0, 2), 16);
 						g = parseInt(hex.substring(2, 4), 16);
@@ -84,21 +81,20 @@ define(["wc/loader/resource", "wc/xml/xpath"],
 						result.g = g;
 						result.b = b;
 					}
-				}
-				else {
+				} else {
 					throw new TypeError("hex can not be null / must be an instance of String");
 				}
 				return result;
 			};
 
-			 /**
+			/**
 			 * Get a String hex colour definition of a colour literal. This method is for browsers that support
 			 * getComputedStyle (eg not Internet Explorer 8)
 			 *
 			 * @function
 			 * @alias module:wc/dom/color.getLiteral
 			 * @param {String} c color literal.
-			 * @returns {?String} The hex string for the given color.
+			 * @returns {String} The hex string for the given color.
 			 */
 			this.getLiteral = function(c) {
 				var tmp,
@@ -117,12 +113,11 @@ define(["wc/loader/resource", "wc/xml/xpath"],
 							if (color) {
 								result = this.rgb2hex(color);
 							}
-						}
-						finally {
+						} finally {
 							document.body.removeChild(tmp);
 						}
-					}
-					else {
+					} else {
+						// really? We really want to support this?
 						result = getLiteralFromMap(c);
 					}
 					literal2hexCache[c] = result || null;  // cache result OR flag not to search again
@@ -141,7 +136,7 @@ define(["wc/loader/resource", "wc/xml/xpath"],
 			 *    red/green/blue values, e.g. [244, 244, 244] or an object with "r", "g" and "b" properties
 			 *    corresponding to red, green and blue values, e.g. {r:244, g:244, b:244}
 			 * @todo rewrite to use red green blue
-			 * @returns {?String} The colour as a hex string.
+			 * @returns {String} The colour as a hex string.
 			 */
 			this.rgb2hex = function (rgb) {
 				var hex,
@@ -152,11 +147,9 @@ define(["wc/loader/resource", "wc/xml/xpath"],
 					hex = ["#"];
 					if (rgb.constructor === String && RGB_RE.test(rgb)) {
 						arrRgb = rgb.match(/\d+/g);
-					}
-					else if (Array.isArray(rgb)) {
+					} else if (Array.isArray(rgb)) {
 						arrRgb = rgb;
-					}
-					else if (rgb.constructor === Object) {
+					} else if (rgb.constructor === Object) {
 						arrRgb = [rgb.r, rgb.g, rgb.b];
 					}
 					if (arrRgb) {
@@ -170,42 +163,14 @@ define(["wc/loader/resource", "wc/xml/xpath"],
 			};
 
 			/**
-			 * Blend two colors together, eg red and yellow make orange. Note the colors must be hex strings.
+			 * Convert a three digit hex string to a 6 digit hex string. The return string has a HASH if the input has a HASH.
 			 *
 			 * @function
-			 * @alias module:wc/dom/color.blend
-			 * @param {String} colorA The first colour to blend as a hex string.
-			 * @param {String} colorB The second colour to blend as a hex string.
-			 * @param {number} [percent] The percentage of the diffeence of colorA and colorB to apply to the blend. If
-			 *    not set (or explicitly 0) then 50% is assumed making an equal blend.
-			 * @returns {Object} The result of the blend as an object with properties r:red, g:green, b:blue.
-			 */
-			this.blend = function (colorA, colorB, percent) {
-				var result;
-				if (!percent && percent !== 0) {
-					percent = 50;
-				}
-				result = {
-					r: Math.round(colorA.r + (colorB.r - colorA.r) * (percent / 100)),
-					g: Math.round(colorA.g + (colorB.g - colorA.g) * (percent / 100)),
-					b: Math.round(colorA.b + (colorB.b - colorA.b) * (percent / 100))
-				};
-				// result = this.rgb2hex(result);
-				return result;
-			};
-
-			/**
-			 * Convert a three digit hex string to a 6 digit hex string. The return string has a HASH if the input has a
-			 * HASH.
-			 *
-			 * @function
-			 * @alias module:wc/dom/color.convert3digitHexTo6
+			 * @private
 			 * @param {String} hex 3 digit hex string.
 			 * @returns {String} 6 digit version of hex arg.
-			 * @example convert3digitHexTo6("#FFF") === "#FFFFFF"
-			 * @example convert3digitHexTo6("FFF") === "FFFFFF"
 			 */
-			this.convert3digitHexTo6 = function convert3digitHexTo6(hex) {
+			function convert3digitHexTo6(hex) {
 				var result,
 					i,
 					next;
@@ -214,8 +179,7 @@ define(["wc/loader/resource", "wc/xml/xpath"],
 					if (HEX_HASH_RE.test(hex)) {
 						hex = hex.replace(HEX_HASH_RE, "");
 						result = ["#"];
-					}
-					else {
+					} else {
 						result = [];
 					}
 					for (i = 0; i < 3; i++) {
@@ -223,14 +187,11 @@ define(["wc/loader/resource", "wc/xml/xpath"],
 						result[result.length] = next;
 						result[result.length] = next;
 					}
-					result = result.join("");
+					return result.join("");
 				}
-				else {
-					console.warn(hex, " is not a 3 digit hex string");
-					result = hex;
-				}
-				return result;
-			};
+				console.warn(hex, " is not a 3 digit hex string");
+				return hex;
+			}
 
 			/**
 			 * Is this a hex string? Includes 3 digit and 6 digit hex strings with or without a hash.
@@ -250,5 +211,12 @@ define(["wc/loader/resource", "wc/xml/xpath"],
 				return result;
 			};
 		}
-		return /** @alias module:wc/dom/color */ new Color();
+
+		/*
+		 * Provides colour conversion and manipulation tools.
+		 *
+		 * @module
+		 * @requires module:wc/loader/resource
+		 */
+		return new Color();
 	});

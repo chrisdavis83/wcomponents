@@ -5,6 +5,7 @@ import com.github.bordertech.wcomponents.AjaxOperation;
 import com.github.bordertech.wcomponents.ComponentModel;
 import com.github.bordertech.wcomponents.DefaultWComponent;
 import com.github.bordertech.wcomponents.Margin;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.UIContext;
 import com.github.bordertech.wcomponents.WButton;
 import com.github.bordertech.wcomponents.WPanel;
@@ -154,10 +155,10 @@ public class WPanelRenderer_Test extends AbstractWebXmlRendererTestCase {
 		panel.setMargin(margin);
 		assertXpathNotExists("//ui:panel/ui:margin", panel);
 
-		margin = new Margin(1);
+		margin = new Margin(Size.SMALL);
 		panel.setMargin(margin);
 		assertSchemaMatch(panel);
-		assertXpathEvaluatesTo("1", "//ui:panel/ui:margin/@all", panel);
+		assertXpathEvaluatesTo("sm", "//ui:panel/ui:margin/@all", panel);
 		assertXpathEvaluatesTo("", "//ui:panel/ui:margin/@north", panel);
 		assertXpathEvaluatesTo("", "//ui:panel/ui:margin/@east", panel);
 		assertXpathEvaluatesTo("", "//ui:panel/ui:margin/@south", panel);
@@ -183,14 +184,14 @@ public class WPanelRenderer_Test extends AbstractWebXmlRendererTestCase {
 		panel.setMargin(margin);
 		assertXpathExists("//ui:panel/ui:margin", panel);
 
-		margin = new Margin(1, 2, 3, 4);
+		margin = new Margin(Size.SMALL, Size.MEDIUM, Size.LARGE, Size.XL);
 		panel.setMargin(margin);
 		assertSchemaMatch(panel);
 		assertXpathEvaluatesTo("", "//ui:panel/ui:margin/@all", panel);
-		assertXpathEvaluatesTo("1", "//ui:panel/ui:margin/@north", panel);
-		assertXpathEvaluatesTo("2", "//ui:panel/ui:margin/@east", panel);
-		assertXpathEvaluatesTo("3", "//ui:panel/ui:margin/@south", panel);
-		assertXpathEvaluatesTo("4", "//ui:panel/ui:margin/@west", panel);
+		assertXpathEvaluatesTo("sm", "//ui:panel/ui:margin/@north", panel);
+		assertXpathEvaluatesTo("med", "//ui:panel/ui:margin/@east", panel);
+		assertXpathEvaluatesTo("lg", "//ui:panel/ui:margin/@south", panel);
+		assertXpathEvaluatesTo("xl", "//ui:panel/ui:margin/@west", panel);
 	}
 
 }

@@ -1,0 +1,9 @@
+
+
+@if $wc-use-respond == true {
+  .wc-messagebox {
+    > h1 > span {
+      @include onscreen(1);
+    }
+  }
+}

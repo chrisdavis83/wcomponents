@@ -1,21 +1,21 @@
 define(["wc/dom/attribute",
-		"wc/dom/classList",
-		"wc/dom/event",
-		"wc/dom/focus",
-		"wc/dom/formUpdateManager",
-		"wc/dom/getFilteredGroup",
-		"wc/dom/keyWalker",
-		"wc/dom/shed",
-		"wc/dom/viewportCollision",
-		"wc/dom/Widget",
-		"wc/key",
-		"wc/ui/ajax/processResponse",
-		"wc/timers",
-		"wc/i18n/i18n",
-		"wc/dom/getBox",
-		"wc/array/toArray",
-		"wc/ui/viewportUtils"
-	],
+	"wc/dom/classList",
+	"wc/dom/event",
+	"wc/dom/focus",
+	"wc/dom/formUpdateManager",
+	"wc/dom/getFilteredGroup",
+	"wc/dom/keyWalker",
+	"wc/dom/shed",
+	"wc/dom/viewportCollision",
+	"wc/dom/Widget",
+	"wc/key",
+	"wc/ui/ajax/processResponse",
+	"wc/timers",
+	"wc/i18n/i18n",
+	"wc/dom/getBox",
+	"wc/array/toArray",
+	"wc/ui/viewportUtils"
+],
 	function(attribute, classList, event, focus, formUpdateManager, getFilteredGroup, keyWalker, shed,
 		viewportCollision, Widget, key, processResponse, timers, i18n, getBox, toArray, viewportUtils) {
 		"use strict";
@@ -29,8 +29,8 @@ define(["wc/dom/attribute",
 
 		var abstractMenu,
 			BOOTSTRAPPED = "wc/ui/menu/bs",
+			BOOTSTRAPPED_TRANSIENT = BOOTSTRAPPED + "-transient",
 			ROLE_ATTRIB = "role",
-			AJAX_CONTEXTLESS_ITEM,
 			postAjaxTimer,
 			focusTimer,
 			collisionTimer,
@@ -41,8 +41,8 @@ define(["wc/dom/attribute",
 				COLLIDE_WEST: "wc_colwest",
 				COLLIDE_SOUTH: "wc_colsth",
 				// no collide north...
-				DEFAULT_DIRECTION: "wc_col" + i18n.get("menu_popout_direction"),
-				AGAINST_DEFAULT: "wc_col" + i18n.get("menu_popout_reverse"),
+				DEFAULT_DIRECTION: null,
+				AGAINST_DEFAULT: null,
 				CLOSER: "wc_closesubmenu"
 			},
 			/**
@@ -60,7 +60,6 @@ define(["wc/dom/attribute",
 			LETTER,
 			activateOnHover,  // used to track the currently open menu to determine whether hover effects are in place
 			openMenu = null,  // used in the focusEvent handler to close a menu if it has lost focus;
-			TRANSIENT_SELECTED_ATTRIB = "data-wc-selected",
 			BUTTON = "button",
 			CLOSE_BUTTON,
 			MENUITEM_ROLE = "menuitem",
@@ -109,7 +108,7 @@ define(["wc/dom/attribute",
 		 * @function
 		 * @public
 		 * @param {Element} element The start point
-		 * @returns {?Element} The menu root node if any.
+		 * @returns {Element} The menu root node if any.
 		 */
 		AbstractMenu.prototype.getFirstMenuAncestor = function (element) {
 			return Widget.findAncestor(element, getFixedWidgets().GENERIC_ROOT);
@@ -161,8 +160,7 @@ define(["wc/dom/attribute",
 				handler;
 			if (methodName === "focusout") {
 				methodName = "blur";
-			}
-			else if (methodName === "focusin") {
+			} else if (methodName === "focusin") {
 				methodName = "focus";
 			}
 			handler = this[methodName + "Event"];
@@ -188,8 +186,7 @@ define(["wc/dom/attribute",
 			if (collision) {
 				if (CLASS.DEFAULT_DIRECTION === CLASS.COLLIDE_EAST) {
 					result = isNotDefaultDirection ? (collision.w < 0) : (collision.e > 0);
-				}
-				else {
+				} else {
 					result = isNotDefaultDirection ? (collision.e > 0) : (collision.w < 0);
 				}
 			}
@@ -244,7 +241,7 @@ define(["wc/dom/attribute",
 		AbstractMenu.prototype._textMatchFilter = function(textNode) {
 			var parent = textNode.parentNode;
 
-			if (shed.isHidden(textNode) || shed.hasDisabledAncestor(textNode, parent) || getFixedWidgets().OFFSCREEN.findAncestor(parent)) {
+			if (shed.isHidden(parent) || shed.hasDisabledAncestor(textNode, parent) || getFixedWidgets().OFFSCREEN.findAncestor(parent)) {
 				return NodeFilter.FILTER_REJECT;
 			}
 			if (textNode.nodeValue) {
@@ -282,8 +279,7 @@ define(["wc/dom/attribute",
 					textNodeContent = node.nodeValue;
 					if (textNodeContent.toLocaleUpperCase().indexOf(letter.toLocaleUpperCase()) === 0) {
 						result = NodeFilter.FILTER_ACCEPT;
-					}
-					else if (textNodeContent) {
+					} else if (textNodeContent) {
 						result = NodeFilter.FILTER_REJECT;
 					}
 				}
@@ -299,11 +295,12 @@ define(["wc/dom/attribute",
 		 * @returns {Boolean}
 		 */
 		AbstractMenu.prototype._isItem = function(element) {
-			var role = element.getAttribute(ROLE_ATTRIB),
+			var role,
 				o;
 			if (this._isBranch(element)) {
 				return true;
 			}
+			role = element.getAttribute(ROLE_ATTRIB);
 			if (!role || this._isOpener(element)) {
 				return false;
 			}
@@ -321,7 +318,7 @@ define(["wc/dom/attribute",
 		 * @function
 		 * @public
 		 * @param {Element} element The element we are testing.
-		 * @returns {?Element} The leaf Element which is or contains element or null if the element is not in a menu
+		 * @returns {Element} The leaf Element which is or contains element or null if the element is not in a menu
 		 *  item.
 		 */
 		AbstractMenu.prototype.getItem = function(element) {
@@ -359,8 +356,7 @@ define(["wc/dom/attribute",
 
 				if (shed.isDisabled(element) || shed.isHidden(element)) {
 					result = NodeFilter.FILTER_REJECT;
-				}
-				else if (instance._isItem(element)) {
+				} else if (instance._isItem(element)) {
 					// branch or leaf
 					result = NodeFilter.FILTER_ACCEPT;
 				}
@@ -371,8 +367,7 @@ define(["wc/dom/attribute",
 						if ((expandable = instance._getBranchExpandableElement(branch)) && !shed.isExpanded(expandable)) {
 							result = NodeFilter.FILTER_REJECT;
 						}
-					}
-					else {
+					} else {
 						result = NodeFilter.FILTER_SKIP;
 					}
 				}
@@ -439,27 +434,26 @@ define(["wc/dom/attribute",
 		 * webkit focus fix to kick in and refocus the original button.
 		 *
 		 * @function
-		 * @protected
+		 * @private
 		 * @param {Element} menu The menu to close.
-		 * @param {Element} element The element which has caused the menu to close (most commonly by receiving focus).
+		 * @param {Element} [element] the element which has caused the menu to close (most commonly by receiving focus). if not set then close all
+		 * @param {Object} instance the singleton instance which is the actual menu controller
+		 * paths.
 		 */
-		AbstractMenu.prototype._closeOpenMenu = function(menu, element) {
+		function closeOpenMenu(menu, element, instance) {
 			try {
 				if (element === window) {
-					this.closeAllPaths(menu, null);
+					instance.closeAllPaths(menu);
+				} else if (!element || element.tabIndex >= 0) {
+					timers.setTimeout(instance.closeAllPaths.bind(instance), 150, menu, element);
+				} else {
+					instance.closeAllPaths(menu, element);
 				}
-				else if (element.tabIndex >= 0) {
-					timers.setTimeout(this.closeAllPaths.bind(this), 150, menu, null);
-				}
-				else {
-					this.closeAllPaths(menu, null);
-				}
-			}
-			finally {
+			} finally {
 				openMenu = null;
 				activateOnHover = null;
 			}
-		};
+		}
 
 		/**
 		 * Gets an instance of TreeWalker for a particular menu.
@@ -538,7 +532,7 @@ define(["wc/dom/attribute",
 		 * @function
 		 * @protected
 		 * @param {Element} start Any menu node but preferably a submenu wrapper element.
-		 * @returns {?Element} The first menu item which is not hidden or disabled or in a closed branch.
+		 * @returns {Element} The first menu item which is not hidden or disabled or in a closed branch.
 		 */
 		AbstractMenu.prototype._getFirstAvailableItem = function(start) {
 			var tw,
@@ -564,7 +558,6 @@ define(["wc/dom/attribute",
 		/**
 		 * Disable/enable all menu items in a given branch.
 		 * @see {@link module:wc/ui/menu/core~_shedSubscriber}.
-		 * @see {@link module:wc/ui/menu/core~fixDisabledAfterAjax}
 		 * @function
 		 * @protected
 		 * @param {Element} branch The menu branch we need to manipulate.
@@ -582,95 +575,6 @@ define(["wc/dom/attribute",
 					continue;
 				}
 				shed[func](next);  // by calling disable/enable on anything we ensure it will be honoured or passed on as appropriate
-			}
-		};
-
-		/**
-		 * We need to investigate the existing DOM to determine the menu type
-		 * and selection mode of the submenu (or menu ancestor) which is then
-		 * used to set the role of menu items and the submenus.
-		 *
-		 * If the role indicates selection of the component is possible we
-		 * will also have to add the correct properties and states to reflect
-		 * the current selection status.
-		 *
-		 * @function
-		 * @protected
-		 * @param {Element} element The reference element (element being replaced).
-		 * @param {DocumentFragment} documentFragment The document fragment which will be inserted.
-		 * @this An instance of a sub-class menu.
-		 */
-		AbstractMenu.prototype._ajaxSubscriber = function (element, documentFragment/* , action */) {
-			/*
-			 * helper to update attributes in the content of an ajaxed-in branch/submenuContent
-			 */
-			function fixBranchContent(nextBranch, useThisContent, inst) {
-				var myContent = useThisContent || getFixedWidgets().SUBMENU.findDescendant(nextBranch, true),
-					immediate = true;
-				if (!myContent) {
-					// I would worry if I had no content since a content holder is always created
-					console.warn("Menu ajax subscriber: transform of submenu content failed to create a content container.");
-					return;
-				}
-
-				if (myContent.nodeType !== Node.ELEMENT_NODE) { // documentFragment
-					immediate = false;
-				}
-				// fix up the menu items in this branch
-				Array.prototype.forEach.call(Widget.findDescendants(myContent, AJAX_CONTEXTLESS_ITEM, immediate),
-					function(nextLeaf) {
-						var okToFix = true,
-							_localBranch;
-						if (!immediate) {
-							// we are ok if we are in the same branch or if we have no branch ancestor
-							_localBranch = inst._getBranch(nextLeaf);
-							if (_localBranch && _localBranch !== nextBranch) {
-								okToFix = false;
-							}
-						}
-						if (okToFix && inst._setMenuItemRole) {
-							inst._setMenuItemRole(nextLeaf, nextBranch);
-						}
-					});
-			}
-			/* before we do anything else make sure we are in the right kind of menu */
-			if (element && this.getRoot(element) === this.getFirstMenuAncestor(element)) {
-				AJAX_CONTEXTLESS_ITEM = AJAX_CONTEXTLESS_ITEM || new Widget("", "", {"role": "dummy"});
-				/*
-				 * If the ajaxTarget is the content of a WSubMenu then we can be sure
-				 * that the ajax is caused by the branch and the action is FILL
-				 * because the content is not directly addressable in the JAVA API.
-				 */
-				if (this.isSubMenu(element)) {
-					/* Now work on branches within the submenu content we are inserting.
-					 * Remember, the submenu content is itself a child of a branch so all branches
-					 * will have a branch ancestor */
-					Array.prototype.forEach.call(this._wd.branch.findDescendants(documentFragment), function(nextBranch) {
-						/*
-						 * Helper for the ajax subscriber. This is a forEach iterator function
-						 * which is used to set up branches in a submenuContent fill response.
-						 *
-						 * Note on the submenuContext element:
-						 * We are dealing explicitly with branches that are inside the submenuContent
-						 * of a branch which is being filled by AJAX. This means that
-						 * if the branch is an immediate child of the submenu content being
-						 * filled it will have an ancestor branch of the parent of that
-						 * submenu content. If the branch is nested inside another branch
-						 * then it should be fairly obvious that it has a branch ancestor!
-						 * So we are always safe to call this._getBranch on the submenuContext of
-						 * any branch in this type of ajax response.
-						 */
-						var submenuContext;
-						if (this._setMenuItemRole) {
-							submenuContext = (this.getSubMenu(nextBranch) || element);
-							this._setMenuItemRole(nextBranch, this._getBranch(submenuContext));
-						}
-						fixBranchContent(nextBranch, null, this);
-					}, this);
-
-					// set menu item attributes on the items directly in the submenuContent
-					fixBranchContent(this._getBranch(element), documentFragment, this);
-				}
 			}
 		};
 
@@ -708,6 +612,9 @@ define(["wc/dom/attribute",
 				box,
 				iCollideInDefaultDirection,
 				iCollideAgainstDefaultDirection;
+
+			CLASS.DEFAULT_DIRECTION = CLASS.DEFAULT_DIRECTION || "wc_col" + i18n.get("menu_popout_direction");
+			CLASS.AGAINST_DEFAULT = CLASS.AGAINST_DEFAULT || "wc_col" + i18n.get("menu_popout_reverse");
 			if (_submenu) {
 				collision = viewportCollision(_submenu);
 				iCollideInDefaultDirection = doICollide(collision);  // we need to know if the submenu would collide east by itself not because its parent submenu collides east
@@ -725,8 +632,7 @@ define(["wc/dom/attribute",
 					classList.add(_submenu, CLASS.DEFAULT_DIRECTION);
 					classList.add(_submenu, CLASS.AGAINST_DEFAULT);
 					console.warn("There is something seriously wrong with this menu design, it overflows both edges of the screen");
-				}
-				else {
+				} else {
 					/* If my parent menu is colliding in the default direction I am deemed
 					 * to be colliding in the default direction until or unless I collide
 					 * in the other direction.
@@ -776,70 +682,6 @@ define(["wc/dom/attribute",
 		}
 
 		/**
-		 * Menu descendants which are inseeted via AJAX may not have enough info in the XML to correctly determine their
-		 * selectable state. This function fixes the selected state after the item is inserted when we have full
-		 * context. The actual selection is subclass specific see {@link  module:wc/ui/menu/core~_selectAfterAjax}
-		 * @function setSelectionStateAfterAjax
-		 * @private
-		 * @param {Element} element The element being inserted.
-		 * @param {Object} instance The subclass.
-		 */
-		function setSelectionStateAfterAjax(element, instance) {
-			var candidates = [],
-				items;
-			if (element.getAttribute(TRANSIENT_SELECTED_ATTRIB)) {
-				candidates[candidates.length] = element;
-			}
-			if (!instance._isLeaf(element)) {
-				// we may also have selected items inside element
-				items = toArray(Widget.findDescendants(element, instance._wd.leaf.concat(instance._wd.branch))).filter(function(next) {
-					return next.getAttribute(TRANSIENT_SELECTED_ATTRIB);
-				});
-				if (items && items.length) {
-					candidates = candidates.concat(items);
-				}
-			}
-			if (instance._selectAfterAjax) {
-				// TODO use this arg not bind!
-				candidates.forEach(instance._selectAfterAjax.bind(instance));
-			}
-		}
-
-		/**
-		 * Disable any menu item which is ajaxed into a menu if it has a disabled ancestor in the originating menu. Yes,
-		 * This is possible because WMenuItem is a stand-alone ajax target.
-		 * @function fixDisabledAfterAjax
-		 * @private
-		 * @param {Element} element The element inserted using AJAX.
-		 * @param {Element} root The target menu's root node.
-		 * @param {Object} instance The subclass.
-		 */
-		function fixDisabledAfterAjax(element, root, instance) {
-			var path = instance._getPathToItem(element, root),
-				next,
-				iHaveBeenDisabled = false;
-			// first go from root to element and find if there are any disabled ancestors
-			while ((next = path.shift())) {
-				if (shed.isDisabled(next)) {
-					shed.disable(element);  // we do want to notify on this because it will disable any children
-					iHaveBeenDisabled = true;
-					break;
-				}
-			}
-			// if we have disabled element then all descendants will be disabled by the shed subscriber and further effort is not required
-			if (!iHaveBeenDisabled && !instance._isLeaf(element)) {
-				// if I am a leaf I have no descendants
-				Array.prototype.forEach.call(instance._wd.branch.findDescendants(element),
-					function(nextBranch) {
-						// an ajax response does not have a context menu so only individual nodes get disabled
-						if (shed.isDisabled(nextBranch)) {
-							instance._disableInBranch(nextBranch, "disable");
-						}
-					});
-			}
-		}
-
-		/**
 		 * After the AJAX malarkey has finished we have to set up some item properties which are not able to be determined
 		 * in XSLT due to lac of menu context, focus into the new submenu and do collision detection if the menu is
 		 * transient and not mobile. NOTE: bound to this as part of the subscription.
@@ -855,8 +697,6 @@ define(["wc/dom/attribute",
 					timers.clearTimeout(postAjaxTimer);
 					postAjaxTimer = null;
 				}
-				fixDisabledAfterAjax(element, root, this);
-				setSelectionStateAfterAjax(element, this);
 				/* if we have just opened a branch we will need to focus it. We know
 				 * we have opened a branch if the submenu content was the ajax target.
 				 * as it is not directly targetable by a generic WAjaxControl. We
@@ -881,8 +721,7 @@ define(["wc/dom/attribute",
 						if (!document.activeElement) {
 							if (focus.canFocus(element)) {
 								focus.setFocusRequest(element);
-							}
-							else {
+							} else {
 								focus.focusFirstTabstop(element);
 							}
 						}
@@ -918,8 +757,7 @@ define(["wc/dom/attribute",
 				if (path.length <= 2) {
 					// path length of 2 means is only root & branch, anything less is an error
 					newTabStopItem = this._getFirstAvailableItem(root);
-				}
-				else {
+				} else {
 					newTabStopItem = path[(path.length - 2)];  // second last item
 				}
 			}
@@ -927,8 +765,7 @@ define(["wc/dom/attribute",
 			if (!document.activeElement || document.activeElement === element || document.activeElement === document.body/* ie */ || document.activeElement === document.documentElement/* ie sometimes does this too */ || (document.activeElement.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_CONTAINS)) {
 				// oh, it is in the hidden/disabled submenu better reset focus. If we have a new tabstop item, set it to that
 				this._focusItem((newTabStopItem || this._getFirstAvailableItem(root)), root);
-			}
-			else if (newTabStopItem) {
+			} else if (newTabStopItem) {
 				setTabstop(newTabStopItem, this);
 			}
 		};
@@ -950,14 +787,12 @@ define(["wc/dom/attribute",
 				// if the focus point is inside the branch then refocus to the opener
 				if ((opener !== document.activeElement) && (branch.compareDocumentPosition(document.activeElement) & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
 					this._focusItem(opener, root);
-				}
-				else {
+				} else {
 					this._remapKeys(opener);
 					// we still have to reset the tabIndex
 					setTabstop(opener, this);
 				}
-			}
-			else {
+			} else {
 				focus.focusFirstTabstop(root);
 			}
 		};
@@ -1022,8 +857,7 @@ define(["wc/dom/attribute",
 			if (action === shed.actions.EXPAND && this._enterOnOpen) {
 				if (this._isBranch(element)) {
 					this._expand(element, root);
-				}
-				else if (this.isSubMenu(element) && (branch = this._getBranch(element))) {
+				} else if (this.isSubMenu(element) && (branch = this._getBranch(element))) {
 					this._expand(branch, root);
 				}
 			}
@@ -1043,10 +877,11 @@ define(["wc/dom/attribute",
 			if (action === shed.actions.EXPAND) {
 				openMenu = root.id;
 				instance._expand(branch, root);
-			}
-			else if (action === shed.actions.COLLAPSE && (content = instance.getSubMenu(branch, true))) {
-				classList.remove(content, CLASS.DEFAULT_DIRECTION);
-				classList.remove(content, CLASS.AGAINST_DEFAULT);
+			} else if (action === shed.actions.COLLAPSE && (content = instance.getSubMenu(branch, true))) {
+				if (CLASS.DEFAULT_DIRECTION) {
+					classList.remove(content, CLASS.DEFAULT_DIRECTION);
+					classList.remove(content, CLASS.AGAINST_DEFAULT);
+				}
 				classList.remove(content, CLASS.COLLIDE_SOUTH);
 				content.style.bottom = "";
 				content.removeAttribute("style");
@@ -1103,8 +938,7 @@ define(["wc/dom/attribute",
 
 			if (this._isBranch(nextSubmenu)) { // tree
 				name = nextSubmenu.id;
-			}
-			else if (this.isSubMenu(nextSubmenu) && (branchItem = this._getBranch(nextSubmenu))) { // menu
+			} else if (this.isSubMenu(nextSubmenu) && (branchItem = this._getBranch(nextSubmenu))) { // menu
 				name = branchItem.id;
 			}
 
@@ -1143,15 +977,14 @@ define(["wc/dom/attribute",
 					return false;
 				}
 				return !shed.isDisabled(nextBranch) && shed.isExpanded(expandable);
-			}, this).forEach(function(next) {
-				writeExpandedState.call(this, next, toContainer);
+			}, this).forEach(function(nextSubMenu) {
+				writeExpandedState.call(this, nextSubMenu, toContainer);
 			}, this);
 
 			Array.prototype.forEach.call(getFilteredGroup(next, {
-				filter: (getFilteredGroup.FILTERS.selected | getFilteredGroup.FILTERS.enabled),
 				ignoreInnerGroups: true
-			}), function(next) {
-				writeSelectedState.call(this, next, toContainer);
+			}), function(NextItem) {
+				writeSelectedState.call(this, NextItem, toContainer);
 			}, this);
 			formUpdateManager.writeStateField(toContainer, next.id + "-h", "x");
 		};
@@ -1175,14 +1008,12 @@ define(["wc/dom/attribute",
 				// if the container is a menu
 				if (this.isRoot(container)) {
 					this.writeMenuState(container, toContainer);
-				}
-				else if ((root = this.getRoot(container))) { // if the container is a menu item of some kind.
+				} else if ((root = this.getRoot(container))) { // if the container is a menu item of some kind.
 					if (this._isBranch(container) || this._isLeaf(container) || this.isSubMenu(container)) {
 						this.writeMenuState(root, toContainer);
 					}
 				}
-			}
-			catch (ex) {
+			} catch (ex) {
 				console.log(ex);
 				throw ex;
 			}
@@ -1377,13 +1208,13 @@ define(["wc/dom/attribute",
 		 * @function
 		 * @public
 		 * @param {Element} item Any HTML element
-		 * @returns {?Element} a menu root element if found and if the menu root for the type of menu is the first
+		 * @returns {Element} a menu root element if found and if the menu root for the type of menu is the first
 		 *    menu root found.
 		 */
 		AbstractMenu.prototype.getRoot = function(item) {
 			var result = this.ROOT.findAncestor(item);
 			if (result && result !== this.getFirstMenuAncestor(item)) { // make sure the first generic root is root
-				 return null;
+				return null;
 			}
 			return result;
 		};
@@ -1404,7 +1235,7 @@ define(["wc/dom/attribute",
 		 * @function
 		 * @protected
 		 * @param {Element} item Any HTML element
-		 * @returns {?Element} A branch element if found.
+		 * @returns {Element} A branch element if found.
 		 */
 		AbstractMenu.prototype._getBranch = function(item) {
 			return this._wd.branch.findAncestor(item);
@@ -1417,7 +1248,7 @@ define(["wc/dom/attribute",
 		 * @function
 		 * @protected
 		 * @param {Element} item The start point for the search. This will normally be a 'branch'.
-		 * @returns {?Element} The "expandable" element. This is usually the branch content but is the branch in trees.
+		 * @returns {Element} The "expandable" element. This is usually the branch content but is the branch in trees.
 		 */
 		AbstractMenu.prototype._getBranchExpandableElement = function (item) {
 			var myBranch;
@@ -1449,7 +1280,7 @@ define(["wc/dom/attribute",
 		 * @param {Boolean} [descending] true to look for a descendant submenu (usually only set when called from a
 		 *    branch item)
 		 * @param {Boolean} [all] Find all descendants. Not used if descending != true.
-		 * @returns {?Element} A submenu element if found.
+		 * @returns {Element} A submenu element if found.
 		 */
 		AbstractMenu.prototype.getSubMenu = function(item, descending, all) {
 			var func;
@@ -1675,10 +1506,10 @@ define(["wc/dom/attribute",
 				extendedCallback;
 
 			if (item && root && (this.getRoot(item) === root) && !shed.isDisabled(item)) {
-				extendedCallback = function(item) {
-					this._remapKeys(item);
+				extendedCallback = function(withItem) {
+					this._remapKeys(withItem);
 					if (callback && typeof callback === "function") {
-						callback(item);
+						callback(withItem);
 					}
 				};
 
@@ -1691,8 +1522,7 @@ define(["wc/dom/attribute",
 
 				if (focus.canFocus(item)) {
 					focus.setFocusRequest(item, extendedCallback.bind(this));
-				}
-				else {
+				} else {
 					focus.focusFirstTabstop(item, extendedCallback.bind(this));
 				}
 			}
@@ -1744,7 +1574,7 @@ define(["wc/dom/attribute",
 		 * @param {Element} [root] The menu root element
 		 * @param {Boolean} [forceCycle] Allows sibling cycling to be forced true or false independent of the menu's
 		 *    default setting
-		 * @returns {?Element} Element if a target appropriate to action is found otherwise null.
+		 * @returns {Element} Element if a target appropriate to action is found otherwise null.
 		 */
 		AbstractMenu.prototype._getTargetItem = function(item, action, root, forceCycle) {
 			var keyWalkerConfig = this._getkeyWalkerConfig(item, root);
@@ -1787,8 +1617,7 @@ define(["wc/dom/attribute",
 					return this[action](item);
 				}
 				target = this._getTargetItem(item, action, root);
-			}
-			else if (keyName && (keyName = keyName.replace(/^DOM_VK_/, "")) && keyName.length === 1 && LETTER.test(keyName)) {
+			} else if (keyName && (keyName = keyName.replace(/^DOM_VK_/, "")) && keyName.length === 1 && LETTER.test(keyName)) {
 				target = this._getTextTarget(item, keyName, root);
 			}
 			if (target) {
@@ -1828,12 +1657,16 @@ define(["wc/dom/attribute",
 			root = ((target === window || target === document) ? null : this.getRoot(target));
 			genericRoot = ((target === window || target === document) ? null : this.getFirstMenuAncestor(target));
 			if (root && (root === genericRoot)) {
+				if (!attribute.get(root, BOOTSTRAPPED)) {
+					attribute.set(root, BOOTSTRAPPED, true);
+					event.add(root, event.TYPE.keydown, eventWrapper.bind(this));
+				}
 				if (openMenu && (localOpenMenu = document.getElementById(openMenu)) && localOpenMenu !== root) {
-					this._closeOpenMenu(localOpenMenu, target);
+					closeOpenMenu(localOpenMenu, target, this);
 				}
 				if (this.isTransient) {
-					if (!attribute.get(root, BOOTSTRAPPED)) {
-						attribute.set(root, BOOTSTRAPPED, true);
+					if (!attribute.get(root, BOOTSTRAPPED_TRANSIENT)) {
+						attribute.set(root, BOOTSTRAPPED_TRANSIENT, true);
 						event.add(root, event.TYPE.mouseover, mouseoverEvent.bind(this));
 					}
 				}
@@ -1844,9 +1677,8 @@ define(["wc/dom/attribute",
 					}
 					setTabstop(item, this);
 				}
-			}
-			else if (!genericRoot && openMenu && (localOpenMenu = document.getElementById(openMenu)) && this.isRoot(localOpenMenu)) {  // focus is not in any menu
-				this._closeOpenMenu(localOpenMenu, target);
+			} else if (!genericRoot && openMenu && (localOpenMenu = document.getElementById(openMenu)) && this.isRoot(localOpenMenu)) {  // focus is not in any menu
+				closeOpenMenu(localOpenMenu, target, this);
 			}
 		};
 
@@ -1870,30 +1702,27 @@ define(["wc/dom/attribute",
 				if (target !== window && (root = this.getRoot(target))) {
 					if ((item = this.getItem(target)) && !shed.isDisabled(item)) {
 						if (openMenu && (localOpenMenu = document.getElementById(openMenu)) && root !== localOpenMenu) {
-							this._closeOpenMenu(localOpenMenu, target);
+							// click in inside a different menu, close the previous open menu.
+							closeOpenMenu(localOpenMenu, null, this);
 						}
 						preventDefault = this[FUNC_MAP.ACTION](target);
 						if (this.isTransient) {
 							if (this._isBranch(item)) {
 								expandable = this._getBranchExpandableElement(item);
 								activateOnHover = expandable ? (shed.isExpanded(expandable) ? root.id : null) : null;
-							}
-							else if (this._isLeaf(item)) {
-								timers.setTimeout(this._closeOpenMenu.bind(this), 0, root, target);
+							} else if (this._isLeaf(item)) {
+								closeOpenMenu(root, null, this);
 							}
 						}
 					}
-				}
-				else if (openMenu && (localOpenMenu = document.getElementById(openMenu)) && this.isRoot(localOpenMenu)) {
+				} else if (openMenu && (localOpenMenu = document.getElementById(openMenu)) && this.isRoot(localOpenMenu)) {
 					// click outside any menu we need to close any open transient menu
-					this._closeOpenMenu(localOpenMenu, target);
+					closeOpenMenu(localOpenMenu, null, this);
 				}
-			}
-			catch (ex) {
+			} catch (ex) {
 				$event.preventDefault(); // in case a link or submit was clicked, don't hide/lose the error
 				console.error("Uncaught exception in AbstractMenu.onClick: ", ex.message);
-			}
-			finally {
+			} finally {
 				if (preventDefault) {
 					$event.preventDefault();
 				}
@@ -1925,83 +1754,19 @@ define(["wc/dom/attribute",
 			}
 		};
 
-		/**
-		 * Set the role attribute on an item which has been added/replaced in an ajax response.
-		 * @see {@link  module:wc/ui/menu/core~_ajaxSubscriber}
-		 *
-		 * @function
-		 * @protected
-		 * @param {Element} component The component which requires the role
-		 * @param {Element} contextElement An element which is used for comparison or to determine the correct role:
-		 *    * when we are replacing an item the context element will be the original;
-		 *    * when we are filling a submenuContent the context will be the content's branch;
-		 *    * when we are updating nested branches inside a response the context is a branch or root.
-		 */
-		AbstractMenu.prototype._setMenuItemRole = function(component, contextElement) {
-			var leaf = this._role.LEAF,
-				value = leaf.noSelection,
-				selectMode,
-				branch = contextElement,
-				TRANSIENT_SELECTABLE_ATTRIB = "data-wc-selectable",
-				isSelectable = component.getAttribute(TRANSIENT_SELECTABLE_ATTRIB),
-				FALSE = "false",
-				selectModeAttrib;
 
-			if (isSelectable !== FALSE && !this._isBranch(component)) {
-				if (!(this._isBranch(branch) || this.isRoot(branch))) {
-					branch = this._getBranch(contextElement) || this.getRoot(contextElement);
-				}
-
-				if (branch) {
-					selectModeAttrib = branch.getAttribute("data-wc-selectmode");
-
-					if (selectModeAttrib === "single") {
-						selectMode = leaf.single;
-					}
-					else if (selectModeAttrib || isSelectable === TRUE) {
-						selectMode = leaf.multi;
-					}
-				}
-				else if (isSelectable === TRUE) {
-					selectMode = leaf.multi;
-				}
-
-				if (selectMode) {
-					value = selectMode;
-					component.setAttribute("aria-checked", FALSE);
-				}
-			}
-			component.setAttribute(ROLE_ATTRIB, value);
-			component.removeAttribute(TRANSIENT_SELECTABLE_ATTRIB);
-		};
-
-		/**
-		 * Sets the selected state of a menu descendant which was inserted via AJAX.
-		 * @see {@link  module:wc/ui/menu/core~setSelectionStateAfterAjax}
-		 * @function
-		 * @protected
-		 * @param {Element} component The element being inserted.
-		 */
-		AbstractMenu.prototype._selectAfterAjax = function(component) {
-			if (component.getAttribute(TRANSIENT_SELECTED_ATTRIB) === TRUE) {
-				this._select(component);
-			}
-			else if (shed.isSelected(component)) {
-				shed.deselect(component, true); // quietly deselect because this item should never have been selected and no one knows it was yet!!
-			}
-			component.removeAttribute(TRANSIENT_SELECTED_ATTRIB);
-		};
 
 		/**
 		 * Sets up the subclass specific {@link module:wc/dom/Widget}s used to describe the various parts of the menu.
 		 *
 		 * @function
-		 * protected
+		 * @protected
 		 */
 		AbstractMenu.prototype._setUpWidgets = function() {
 			var o,
 				leaf = this._role.LEAF;
-			this._wd.submenu = new Widget("", "", { "role": "menu" });
+			// NOTE: the arua-expanded attribute differentiates a sub menu from a column/tree menu's root.
+			this._wd.submenu = new Widget("", "", { "role": "menu" , "aria-expanded" : null});
 			this._wd.branch = new Widget("", "wc-submenu");
 			this._wd.opener = new Widget(BUTTON, "wc-submenu-o");
 			this._wd.leaf = [];
@@ -2028,15 +1793,13 @@ define(["wc/dom/attribute",
 			if (event.canCapture) {
 				event.add(window, event.TYPE.focus, eventWrapper.bind(this), null, null, true);
 				event.add(window, event.TYPE.click, eventWrapper.bind(this));
-			}
-			else {
+			} else {
 				// oddly IE8 does not suffer from the body smaller than the viewport issue!
 				event.add(element, event.TYPE.focusin, eventWrapper.bind(this));
 				event.add(element, event.TYPE.click, eventWrapper.bind(this));
 			}
-			event.add(element, event.TYPE.keydown, eventWrapper.bind(this));
-			if (this._ajaxSubscriber) {
-				processResponse.subscribe(this._ajaxSubscriber.bind(this));
+			if (this.preAjaxSubscriber) {
+				processResponse.subscribe(this.preAjaxSubscriber.bind(this));
 			}
 			processResponse.subscribe(postAjaxSubscriber.bind(this), true);
 			formUpdateManager.subscribe(this.writeState.bind(this));

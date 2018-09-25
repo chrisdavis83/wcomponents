@@ -3,16 +3,13 @@
 		Build the scripts for a given implementation. The resulting scripts will contain:
 		1. All the scripts from "common" AND
 		2. All the scripts for the specific implementation.
-
-		This build must be called with the name of the implementation rootdir set in property:
-		"implementation.name". If not set then the scripts from "common" alone will be used.
 	-->
 	<import file="build-import.xml"/>
 
 	<property name="script.tmp.src.dir" location="${tmp.dir}/src"/>
-	<property name="script.rootdir" location="${common.src.rootdir}/js"/>
-	<property name="impl.script.rootdir" location="${impl.src.main.dir}/js"/>
-	<property name="script.build.target.dir" location="${target.rootdir}/${script.target.dir.name}"/>
+	<property name="script.rootdir" location="${component.rootdir}/src/main/js"/>
+	<property name="impl.script.rootdir" location="${impl.src.dir}/src/main/js"/>
+	<property name="script.build.target.dir" location="${target.rootdir}/scripts"/>
 
 	<target name="build"
 		depends="init, copySrc, optimizeJS, copyLibs"
@@ -20,15 +17,14 @@
 	</target>
 
 	<target name="clean" description="Cleans up all artifacts produced by this build">
-		<delete dir="${script.debug.build.target.dir}"/>
+		<delete dir="${target.rootdir}/scripts_debug"/>
 		<delete dir="${script.build.target.dir}"/>
 		<delete dir="${script.tmp.src.dir}"/>
-		<echo message="Clean from ${ant.file}"/>
+		<echo level="verbose" message="Clean from ${ant.file}"/>
 	</target>
 
 	<target name="init" depends="clean">
-		<property file="${properties.build.constants}"/>
-		<mkdir dir="${script.debug.build.target.dir}"/>
+		<mkdir dir="${target.rootdir}/scripts_debug"/>
 		<mkdir dir="${script.build.target.dir}"/>
 		<mkdir dir="${script.tmp.src.dir}"/>
 	</target>
@@ -46,11 +42,6 @@
 		<stopwatch name="copySrc" action="start"/>
 		<property name="lib.tmp.src.dir" location="${script.tmp.src.dir}/lib"/>
 		<copy file="${basedir}/node_modules/requirejs/require.js" tofile="${lib.tmp.src.dir}/require.js"/>
-		<copy todir="${lib.tmp.src.dir}" overwrite="true">
-			<fileset dir="${basedir}/node_modules/systemjs/dist">
-				<include name="*.*"/>
-			</fileset>
-		</copy>
 		<copy todir="${lib.tmp.src.dir}/getusermedia-js" overwrite="true">
 			<fileset dir="${basedir}/node_modules/getusermedia-js/dist">
 				<include name="**/*"/>
@@ -59,7 +50,7 @@
 		<copy file="${basedir}/node_modules/i18next/i18next.js" tofile="${lib.tmp.src.dir}/i18next.js"/><!-- This is AMD and will be uglified -->
 		<copy file="${basedir}/node_modules/i18next-xhr-backend/i18nextXHRBackend.js" tofile="${lib.tmp.src.dir}/i18nextXHRBackend.js"/><!-- This is AMD and will be uglified -->
 		<copy file="${basedir}/node_modules/sprintf-js/src/sprintf.js" tofile="${lib.tmp.src.dir}/sprintf.js"/>
-		<copy file="${basedir}/node_modules/timezone-js/src/date.js" tofile="${lib.tmp.src.dir}/date.js"/>
+		<copy file="${basedir}/node_modules/requirejs-domready/domReady.js" tofile="${lib.tmp.src.dir}/requirejs/domReady.js"/>
 		<copy todir="${lib.tmp.src.dir}/dojo" overwrite="true">
 			<fileset dir="${basedir}/node_modules/dojo">
 				<include name="domReady.js"/>
@@ -67,10 +58,12 @@
 				<include name="has.js"/>
 			</fileset>
 		</copy>
-		<copy todir="${lib.tmp.src.dir}/handlebars" overwrite="true">
-			<fileset dir="${basedir}/node_modules/handlebars/dist/amd"/>
+		<copy todir="${lib.tmp.src.dir}/mustache" overwrite="true">
+			<fileset dir="${basedir}/node_modules/mustache" includes="**/*.js">
+				<exclude name="*wrappers*"/>
+			</fileset>
 		</copy>
-		<!-- main js -->
+		<!-- core js -->
 		<copy todir="${script.tmp.src.dir}" overwrite="true">
 			<fileset dir="${script.rootdir}" includes="**/*.js"/>
 			<filterchain>
@@ -85,10 +78,6 @@
 			</filterchain>
 		</copy>
 
-		<!-- i18n -->
-		<copy todir="${script.tmp.src.dir}/wc/i18n" overwrite="true">
-			<fileset dir="${i18n.build.target.dir}" includes="*.js"/>
-		</copy>
 		<javascript.lint jsdir="${script.tmp.src.dir}"/>
 		<stopwatch name="copySrc" action="total"/>
 	</target>
@@ -98,20 +87,21 @@
 			Syncs directories from "scripts" to "scripts_debug".
 		-->
 		<property name="lib.build.target.dir" location="${script.build.target.dir}/lib"/>
-		<property name="lib.debug.build.target.dir" location="${script.debug.build.target.dir}/lib"/>
+		<property name="lib.debug.build.target.dir" location="${target.rootdir}/scripts_debug/lib"/>
 		<copy todir="${lib.build.target.dir}/tinymce" >
 			<fileset dir="${basedir}/node_modules/tinymce" includes="**">
 				<exclude name="*jquery*"/>
 			</fileset>
 		</copy>
-		<copy todir="${lib.build.target.dir}/tracking" >
-			<fileset dir="${basedir}/node_modules/tracking" includes="build/**"/>
+		<copy todir="${lib.build.target.dir}/mustache" >
+			<fileset dir="${basedir}/node_modules/mustache" includes="**">
+				<exclude name="*wrappers*"/>
+			</fileset>
 		</copy>
-		<copy todir="${lib.build.target.dir}/bower_components" failonerror="false"><!-- Optionally copy any bower components to the lib dir -->
+		<copy todir="${lib.build.target.dir}/bower_components" failonerror="false">
 			<fileset dir="${basedir}/bower_components" includes="**"/>
 		</copy>
 		<copy file="${basedir}/node_modules/promise-polyfill/Promise.min.js" tofile="${lib.build.target.dir}/Promise.min.js"/>
-		<copy file="${basedir}/node_modules/accessibility-developer-tools/dist/js/axs_testing.js" tofile="${lib.build.target.dir}/axs_testing.js"/>
 		<copy file="${basedir}/node_modules/axe-core/axe.min.js" tofile="${lib.build.target.dir}/axe.min.js"/>
 		<for param="dir">
 			<dirset dir="${lib.build.target.dir}">
@@ -166,7 +156,7 @@
 			</path>
 		</pathconvert>
 		<writeRjsConfig optimizer="uglify2"/>
-		<echo>node ${r.js} -o ${tmp.dir}${file.separator}build-js.js</echo>
+		<echo level="verbose">node ${r.js} -o ${tmp.dir}${file.separator}build-js.js</echo>
 		<nodejs.exec failonerror="true" cwd="${target.rootdir}">
 			<arguments>
 				<arg value="${r.js}"/>
@@ -174,22 +164,10 @@
 				<arg value="${tmp.dir}${file.separator}build-js.js"/>
 			</arguments>
 		</nodejs.exec>
-<!--		<copy todir="${script.debug.build.target.dir}">
-			 Copy the unminified files produced by r.js + uglify2 to the target directory, renaming them to what we expect.
-			<fileset dir="${optimized.script.tmp.src.dir}" includes="**/*.js.src.js"/>
-			<globmapper from="*.js.src.js" to="*.js"/>
-		</copy>
-		<copy todir="${script.debug.build.target.dir}">
-			 Copy the unminified files produced by r.js + closure compiler to the target directory, renaming them to what we expect.
-			<fileset dir="${optimized.script.tmp.src.dir}" includes="**/*.js.src"/>
-			<globmapper from="*.js.src" to="*.js"/>
-		</copy>-->
-		<copy todir="${script.debug.build.target.dir}">
-			<!-- Copy the unminified files to the target directory -->
+		<copy todir="${target.rootdir}/scripts_debug">
 			<fileset dir="${script.tmp.src.dir}" includes="**/*"/>
 		</copy>
 		<copy todir="${script.build.target.dir}">
-			<!-- Copy the minified files to the target directory. -->
 			<fileset dir="${optimized.script.tmp.src.dir}" includes="**/*"/>
 		</copy>
 		<stopwatch name="optimizeJS" action="total"/>
@@ -211,6 +189,7 @@
 	optimizeAllPluginResources: true,
 	generateSourceMaps: false,
 	dir: "${optimized.script.tmp.src.dir.unix}",
+	logLevel: ${rjs.log.level},
 	modules: [{
 		name: "wc/common"
 	}],
@@ -227,3 +206,4 @@
 	</macrodef>
 
 </project>
+

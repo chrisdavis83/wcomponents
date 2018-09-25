@@ -31,8 +31,7 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 				 */
 				if (typeof node.xml === "string") {
 					result = node.xml;
-				}
-				else if (window.XMLSerializer) {
+				} else if (window.XMLSerializer) {
 					serializer = serializer || new window.XMLSerializer();
 					result = serializer.serializeToString(node);
 				}
@@ -50,15 +49,15 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 		this.from = function(xmlstring) {
 			var domParser;
 
-			function useDomParser(xmlstring) {
-				return domParser.parseFromString(xmlstring, "text/xml");
+			function useDomParser(onXmlString) {
+				return domParser.parseFromString(onXmlString, "text/xml");
 			}
 
-			function useActiveX(xmlstring) {
+			function useActiveX(onXmlString) {
 				var xmlObj = new window.ActiveXObject("Microsoft.XMLDOM");
 				xmlObj.async = false;
-				if (!(xmlObj.loadXML(xmlstring))) {
-					throw new Error("Unable to parse XML string\n" + xmlstring);
+				if (!(xmlObj.loadXML(onXmlString))) {
+					throw new Error("Unable to parse XML string\n" + onXmlString);
 				}
 				return xmlObj;
 			}
@@ -67,15 +66,13 @@ define(["wc/has"], /** @param has wc/has @ignore */ function(has) {
 				if (has("activex")) {
 					this.from = useActiveX;
 					return useActiveX(xmlstring);
-				}
-				else if (window.DOMParser) {
+				} else if (window.DOMParser) {
 					domParser = new window.DOMParser();
 					this.from = useDomParser;
 					return useDomParser(xmlstring);
 				}
 				return null;
-			}
-			finally {
+			} finally {
 				xmlstring = null;
 			}
 		};

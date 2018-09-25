@@ -8,13 +8,13 @@
  * @requires module:wc/dom/initialise
  * @requires module:wc/dom/Widget
  * @requires module:wc/ui/popup
- * @requires module:wc/dom/cancelUpdate
+ * @requires module:wc/ui/cancelUpdate
  * @requires module:wc/dom/shed
  * @requires module:wc/ui/launchLink
  * @requires module:wc/ui/redirect
  */
-define(["wc/dom/event", "wc/dom/initialise", "wc/dom/Widget", "wc/ui/popup", "wc/dom/cancelUpdate", "wc/dom/shed", "wc/ui/launchLink", "wc/ui/redirect"],
-	/** @param event wc/dom/event @param initialise wc/dom/initialise @param Widget wc/dom/Widget @param popup wc/ui/popup @param cancelUpdate wc/dom/cancelUpdate @param shed wc/dom/shed @param launchLink wc/ui/launchLink @param redirect wc/ui/redirect @ignore */
+define(["wc/dom/event", "wc/dom/initialise", "wc/dom/Widget", "wc/ui/popup", "wc/ui/cancelUpdate", "wc/dom/shed", "wc/ui/launchLink", "wc/ui/redirect"],
+	/** @param event wc/dom/event @param initialise wc/dom/initialise @param Widget wc/dom/Widget @param popup wc/ui/popup @param cancelUpdate wc/ui/cancelUpdate @param shed wc/dom/shed @param launchLink wc/ui/launchLink @param redirect wc/ui/redirect @ignore */
 	function(event, initialise, Widget, popup, cancelUpdate, shed, launchLink, redirect) {
 		"use strict";
 
@@ -39,12 +39,10 @@ define(["wc/dom/event", "wc/dom/initialise", "wc/dom/Widget", "wc/ui/popup", "wc
 				if (!$event.defaultPrevented && (element = BUTTON.findAncestor($event.target)) && !shed.isDisabled(element) && (url = element.getAttribute("data-wc-url")) && !popup.isOneOfMe(element) && !launchLink.isInlineLink(element)) {
 					if (CANCEL_LINK.isOneOfMe(element) && (form = FORM.findAncestor(element)) && cancelUpdate.cancelSubmission(form)) {
 						$event.preventDefault();
-					}
-					else if (redirect.isLaunchUrl(url)) {
+					} else if (redirect.isLaunchUrl(url)) {
 						$event.preventDefault();  // since we have prevented the link action we're going to have to do it ourselves
 						redirect.register(url);  // redirect (poorly named) knows how to "do stuff" with URLs.
-					}
-					else {
+					} else {
 						window.location.href = url;
 						$event.preventDefault();
 					}

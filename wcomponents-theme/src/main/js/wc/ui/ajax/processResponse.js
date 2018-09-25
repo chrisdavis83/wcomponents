@@ -1,9 +1,9 @@
 define(["wc/Observer",
-		"wc/dom/tag",
-		"wc/dom/toDocFragment",
-		"wc/dom/Widget",
-		"wc/template"],
-	function(Observer, tag, toDocFragment, Widget, template) {
+	"wc/dom/tag",
+	"wc/dom/toDocFragment",
+	"wc/dom/Widget",
+	"wc/timers"],
+	function(Observer, tag, toDocFragment, Widget, timers) {
 		"use strict";
 		/**
 		 * @constructor
@@ -12,6 +12,38 @@ define(["wc/Observer",
 		 */
 		function AjaxProcessor() {
 			var observer,
+				errorUtils = {
+					ajaxAttr: "data-wc-ajaxalias",
+					replaceElement: function(element) {
+						// not all elements can contain an error message (e.g. img, iframe, input) so replace it
+						var errorElement = document.createElement("span");
+						element.parentNode.replaceChild(errorElement, element);
+						errorElement.id = element.id;
+						errorElement.className = "wc_magic";  // if this happened to be lazy, let it be so once more
+						if (element.hasAttribute(this.ajaxAttr)) {
+							errorElement.setAttribute(this.ajaxAttr, element.getAttribute(this.ajaxAttr));
+						}
+						return errorElement;
+					},
+					flagError: function(args) {
+						// fake flagError if there is a problem loading the helper
+						var element = this.replaceElement(args.element);
+						element.innerHTML = args.message;
+					},
+					fetch: function(callback) {
+						var cb = function(errors) {
+							if (errors && errors.flagError) {
+								errorUtils._errors = errors;
+							}
+							if (callback) {  // could be a prefetch
+								callback(errorUtils._errors || errorUtils);
+							}
+						};
+						if (this._errors) {
+							cb(this._errors);
+						}
+					}
+				},
 				FORM,
 				OBSERVER_GROUP = "after";
 
@@ -30,7 +62,7 @@ define(["wc/Observer",
 			 * @function module:wc/ui/ajax/processResponse.subscribe
 			 * @param {Function} subscriber A callback function, will be passed the args: (element, content, action).
 			 * @param {Boolean} [after] Indicates that the subscriber is to the post-insertion publisher.
-			 * @returns {?Function} The result of observer.subscribe
+			 * @returns {Function} The result of observer.subscribe
 			 */
 			this.subscribe = function(subscriber, after) {
 				var group = null;
@@ -82,13 +114,11 @@ define(["wc/Observer",
 							doc = toDocFragment(response);
 							processResponseHtml(doc, trigger);
 							resolve();
-						}
-						else {
+						} else {
 							reject("Unknown response type");
 						}
 					});
-				}
-				else {
+				} else {
 					promise = Promise.reject("Response is empty");
 				}
 				return promise;
@@ -96,12 +126,19 @@ define(["wc/Observer",
 
 			function processResponseHtml(documentFragment, trigger) {
 				var content, targets,
-					next, targetId, element, doc, action, i;
+					next, targetId, element, doc, action, i,
+					onError = function() {
+						require(["wc/ajax/handleError"], function(handleError) {
+							// The AJAX response was malformed BUT reported as being successful.
+							var message = handleError.getErrorMessage({ status: 200 });
+							// This may not display perfectly but it's better than literally nothing
+							trigger.onerror(message, trigger);
+						});
+					};
 				if (documentFragment) {
 					if (documentFragment.querySelector) {
 						doc = documentFragment.querySelector(".wc-ajaxresponse");
-					}
-					else {
+					} else {
 						doc = documentFragment.firstElementChild || documentFragment.firstChild;
 					}
 					if (doc) {
@@ -119,12 +156,10 @@ define(["wc/Observer",
 									action = next.getAttribute("data-action");
 									content = document.createDocumentFragment();
 									while (next.firstChild) {
-										template.process({ source: next.firstChild });
 										content.appendChild(next.firstChild);
 									}
 									insertPayloadIntoDom(element, content, action, trigger, false);
-								}
-								else {
+								} else {
 									console.warn("Could not find element", targetId);
 								}
 							}
@@ -133,15 +168,15 @@ define(["wc/Observer",
 						if (doc.children.length) {
 							document.body.appendChild(documentFragment);
 						}
-					}
-					else {
+					} else {
 						console.warn("Response does not appear well formed");
+						onError();
 					}
-				}
-				else {
+				} else {
 					console.warn("Response is empty");
+					onError();
 				}
-			};
+			}
 
 			/**
 			 * If there was an error attempt to inform the user of this.
@@ -151,14 +186,22 @@ define(["wc/Observer",
 			 * @param {module:wc/ajax/Trigger} trigger The trigger which triggered the ajax request.
 			 */
 			this.processError = function(response, trigger) {
-				var i, element, ids = trigger.loads;
-				if (ids && response) {
-					for (i = 0; i < ids.length; i++) {
-						element = document.getElementById(ids[i]);
-						if (element) {
-							element.innerHTML = response;  // this should just be a plain text message, hopefully never HTML
+				var i, element, ids = trigger.loads,
+					callback = function(feedback) {
+						var errorElement;
+						for (i = 0; i < ids.length; i++) {
+							element = document.getElementById(ids[i]);
+							if (element) {
+								errorElement = errorUtils.replaceElement(element);
+								feedback.flagError({
+									element: errorElement,
+									message: response
+								});
+							}
 						}
-					}
+					};
+				if (ids && response) {
+					errorUtils.fetch(callback);
 				}
 			};
 
@@ -184,8 +227,7 @@ define(["wc/Observer",
 					case instance.actions.REPLACE:
 						if (element.tagName !== tag.BODY) {
 							actionMethod = replaceElement;
-						}
-						else {
+						} else {
 							console.warn("Refuse to replace BODY element, use action", instance.actions.FILL);
 						}
 						break;
@@ -216,8 +258,7 @@ define(["wc/Observer",
 								observer.setFilter(OBSERVER_GROUP);
 								observer.notify(nextElement, action, triggerId);
 							});
-						}
-						else {
+						} else {
 							observer.setFilter(OBSERVER_GROUP);
 							observer.notify(_element, action, triggerId);
 						}
@@ -274,8 +315,7 @@ define(["wc/Observer",
 				while ((child = _content.firstChild)) {
 					if (child.nodeType === Node.ELEMENT_NODE) {
 						result[result.length] = parent.insertBefore(child, element);
-					}
-					else {
+					} else {
 						_content.removeChild(child);
 					}
 				}
@@ -284,8 +324,7 @@ define(["wc/Observer",
 
 				if (result.length === 1) {
 					result = result[0];
-				}
-				else if (!result.length) {
+				} else if (!result.length) {
 					result = null;
 				}
 				insertScripts(scripts, parent);
@@ -301,7 +340,7 @@ define(["wc/Observer",
 			 * @private
 			 * @param {Element} element The containing element in the original document.
 			 * @param {DocumentFragment} content The document fragment containing the replacement(s).
-			 * @returns {?Element}
+			 * @returns {Element}
 			 */
 			function replaceIn(element, content) {
 				var child,
@@ -315,12 +354,10 @@ define(["wc/Observer",
 					if ((id = child.id)) {
 						if ((_element = document.getElementById(id))) {
 							result = replaceElement(_element, wrapper);
-						}
-						else {
+						} else {
 							result = appendElementContent(element, wrapper);
 						}
-					}
-					else {
+					} else {
 						result = appendElementContent(element, wrapper);
 					}
 
@@ -361,8 +398,7 @@ define(["wc/Observer",
 					}
 					if ((src = next.getAttribute(srcAttr))) {
 						newScript.setAttribute(srcAttr, src);
-					}
-					else {
+					} else {
 						textProp = next.textContent ? "textContent" : "text";
 						newScript[textProp] = next[textProp];
 					}
@@ -383,16 +419,14 @@ define(["wc/Observer",
 				try {
 					if (typeof content.querySelectorAll !== "undefined") {
 						scripts = content.querySelectorAll(tag.SCRIPT);
-					}
-					else {
+					} else {
 						scripts = content.getElementsByTagName(tag.SCRIPT);
 					}
 
 					for (i = 0; i < scripts.length; i++) {
 						result[result.length] = scripts[i].parentNode.removeChild(scripts[i]);
 					}
-				}
-				catch (ex) {
+				} catch (ex) {
 					console.error("Could not extract scripts from content ", ex.message);
 				}
 				return result;
@@ -414,8 +448,7 @@ define(["wc/Observer",
 				if (content) {
 					if (typeof content.querySelectorAll !== "undefined") {
 						checkDuplicateIdsElement(content);
-					}
-					else if (content.constructor === String) {
+					} else if (content.constructor === String) {
 						checkDuplicateIdsHtml(content);
 					}
 				}
@@ -452,17 +485,28 @@ define(["wc/Observer",
 
 				return result;
 			}
+
+			/*
+			 * Prefetch the error handler.
+			 *
+			 * - Why not fetch it right up front? Because it is only required under exceptional conditions.
+			 * - Why not wait until an error occurs to fetch it? Because the error may also prevent modules being loaded.
+			 * - Why not use HTML5 link preloading to fetch it (loader/prefetch.js)?
+			 * Technical reasons: this would fetch the module but not its dependencies.
+			 * Non-technical reasons: "request counters" and "byte counters" do not understand that the preload would
+			 * utilize browser idle time to asynchronously load resources in a way that does not adversly affect the user.
+			 */
+			timers.setTimeout(errorUtils.fetch, 60000);
 		}
 
 		/**
 		 * This part of ajaxRegion is responsible for processing the AJAX response and updating the page accordingly.
 		 * @module
 		 * @requires module:wc/Observer
-		 * @requires module:wc/xml/xpath
 		 * @requires module:wc/dom/tag
 		 * @requires module:wc/dom/toDocFragment
 		 * @requires module:wc/dom/Widget
-		 * @requires module:wc/template
+		 * @requires module:wc/timers
 		 *
 		 * @todo re-order code, document private memebers.
 		 */

@@ -3,6 +3,7 @@ package com.github.bordertech.wcomponents.container;
 import com.github.bordertech.wcomponents.ActionEscape;
 import com.github.bordertech.wcomponents.Environment;
 import com.github.bordertech.wcomponents.Escape;
+import com.github.bordertech.wcomponents.FatalErrorPage;
 import com.github.bordertech.wcomponents.FatalErrorPageFactory;
 import com.github.bordertech.wcomponents.Request;
 import com.github.bordertech.wcomponents.Response;
@@ -20,7 +21,6 @@ import com.github.bordertech.wcomponents.util.ConfigurationProperties;
 import com.github.bordertech.wcomponents.util.Factory;
 import com.github.bordertech.wcomponents.util.SerializationUtil;
 import com.github.bordertech.wcomponents.util.SystemException;
-import com.github.bordertech.wcomponents.util.mock.MockRequest;
 import java.io.IOException;
 import java.io.PrintWriter;
 import org.apache.commons.logging.Log;
@@ -43,14 +43,6 @@ public abstract class AbstractContainerHelper {
 	 * The logger instance for this class.
 	 */
 	private static final Log LOG = LogFactory.getLog(AbstractContainerHelper.class);
-
-	/**
-	 * The default session attribute key for where the UIContext is stored in the underlying session.
-	 *
-	 * @deprecated portal specific
-	 */
-	@Deprecated
-	public static final String UICONTEXT_PORTLET_SESSION_KEY = "UIContext";
 
 	/**
 	 * The session attribute key for where propogated errors are stored in the underlying session.
@@ -81,10 +73,11 @@ public abstract class AbstractContainerHelper {
 		if (webComponent instanceof WComponent) {
 			// No interceptor supplied but we need one to make things simple.
 			// Dummy up a pass-through/do-nothing interceptor.
-			this.interceptor = new InterceptorComponent();
-			this.interceptor.setBackingComponent(webComponent);
+			InterceptorComponent inter = new InterceptorComponent();
+			inter.setBackingComponent(webComponent);
+			setInterceptor(inter);
 		} else if (webComponent instanceof InterceptorComponent) {
-			this.interceptor = (InterceptorComponent) webComponent;
+			setInterceptor((InterceptorComponent) webComponent);
 		} else {
 			throw new IllegalArgumentException("Unexpected extension of WebComponent supplied.");
 		}
@@ -95,6 +88,13 @@ public abstract class AbstractContainerHelper {
 	 */
 	public InterceptorComponent getInterceptor() {
 		return interceptor;
+	}
+
+	/**
+	 * @param interceptor the current interceptor
+	 */
+	protected void setInterceptor(final InterceptorComponent interceptor) {
+		this.interceptor = interceptor;
 	}
 
 	/**
@@ -117,11 +117,11 @@ public abstract class AbstractContainerHelper {
 		UIContext uic = getUIContext();
 		if (requestImpliesNew() || uic == null) {
 			LOG.debug("Preparing a new session");
-			newConversation = Boolean.TRUE;
+			setNewConversation(Boolean.TRUE);
 			uic = createUIContext();
 			setUIContext(uic);
 		} else {
-			newConversation = Boolean.FALSE;
+			setNewConversation(Boolean.FALSE);
 			// In Development mode, simulate running in a cluster
 			cycleUIContext();
 		}
@@ -141,7 +141,7 @@ public abstract class AbstractContainerHelper {
 
 		try {
 			// Check user context has been prepared
-			if (newConversation == null) {
+			if (getNewConversation() == null) {
 				throw new IllegalStateException(
 						"User context has not been prepared before the action phase");
 			}
@@ -160,8 +160,6 @@ public abstract class AbstractContainerHelper {
 			uic.clearRequestScratchMap();
 
 			prepareRequest();
-
-			clearPropogatedError();
 
 			Request req = getRequest();
 			getInterceptor().attachResponse(getResponse());
@@ -206,7 +204,7 @@ public abstract class AbstractContainerHelper {
 
 		try {
 			// Check user context has been prepared
-			if (newConversation == null) {
+			if (getNewConversation() == null) {
 				throw new IllegalStateException(
 						"User context has not been prepared before the render phase");
 			}
@@ -270,6 +268,20 @@ public abstract class AbstractContainerHelper {
 			UIContextHolder.reset();
 			dispose();
 		}
+	}
+
+	/**
+	 * @return flag if new conversation
+	 */
+	protected Boolean getNewConversation() {
+		return newConversation;
+	}
+
+	/**
+	 * @param newConversation the new conversation flag
+	 */
+	protected void setNewConversation(final Boolean newConversation) {
+		this.newConversation = newConversation;
 	}
 
 	/**
@@ -370,26 +382,24 @@ public abstract class AbstractContainerHelper {
 		// Prepare an implementation of a wcomponent Request suitable to the
 		// type of
 		// container we are running in.
-		if (request == null) {
-			request = createRequest();
+		if (getRequest() == null) {
+			setRequest(createRequest());
 		}
 
 		// Update the wcomponent Request for the current phase of the request
 		// processing.
-		updateRequest(request);
+		updateRequest(getRequest());
 	}
 
 	/**
 	 * Marks the helper as disposed. A disposed helper does not take part in action or render processing.
 	 */
-	protected void dispose() {
+	public void dispose() {
 		LOG.debug("Disposing ContainerHelper instance");
-
-		if (request != null) {
-			request = null;
+		if (getRequest() != null) {
+			setRequest(null);
 		}
-
-		disposed = true;
+		setDisposed(true);
 	}
 
 	/**
@@ -400,6 +410,13 @@ public abstract class AbstractContainerHelper {
 	 */
 	protected boolean isDisposed() {
 		return disposed;
+	}
+
+	/**
+	 * @param disposed true if disposed
+	 */
+	protected void setDisposed(final boolean disposed) {
+		this.disposed = disposed;
 	}
 
 	/**
@@ -421,6 +438,13 @@ public abstract class AbstractContainerHelper {
 	 */
 	protected Request getRequest() {
 		return request;
+	}
+
+	/**
+	 * @param request the request for the helper
+	 */
+	protected void setRequest(final Request request) {
+		this.request = request;
 	}
 
 	/**
@@ -453,7 +477,6 @@ public abstract class AbstractContainerHelper {
 		if (newConversation == null) {
 			throw new IllegalStateException("Don't yet know the status of the conversation.");
 		}
-
 		return newConversation.booleanValue();
 	}
 
@@ -542,7 +565,7 @@ public abstract class AbstractContainerHelper {
 			LOG.error("Unable to remember error from action phase beyond this request");
 		} else {
 			LOG.debug("Remembering error from action phase");
-			getRequest().setAppSessionAttribute(ACTION_ERROR_KEY, error);
+			getRequest().setAttribute(ACTION_ERROR_KEY, error);
 		}
 	}
 
@@ -553,7 +576,7 @@ public abstract class AbstractContainerHelper {
 	 */
 	private boolean havePropogatedError() {
 		Request req = getRequest();
-		return req != null && req.getAppSessionAttribute(ACTION_ERROR_KEY) != null;
+		return req != null && req.getAttribute(ACTION_ERROR_KEY) != null;
 	}
 
 	/**
@@ -565,36 +588,24 @@ public abstract class AbstractContainerHelper {
 		Request req = getRequest();
 
 		if (req != null) {
-			return (Throwable) req.getAppSessionAttribute(ACTION_ERROR_KEY);
+			return (Throwable) req.getAttribute(ACTION_ERROR_KEY);
 		}
 
 		return null;
 	}
 
 	/**
-	 * Clear the errors.
-	 */
-	private void clearPropogatedError() {
-		Request req = getRequest();
-
-		if (req.getAppSessionAttribute(ACTION_ERROR_KEY) != null) {
-			LOG.debug("Clearing error remembered from previous action phase");
-			req.setAppSessionAttribute(ACTION_ERROR_KEY, null);
-		}
-	}
-
-	/**
 	 * Last resort error handling.
 	 *
 	 * @param error the error to handle.
-	 * @throws IOException if there is an error writing the error html.
+	 * @throws IOException if there is an error writing the error HTML.
 	 */
 	public void handleError(final Throwable error) throws IOException {
+
 		LOG.debug("Start handleError...");
 
 		// Should the session be removed upon error?
 		boolean terminate = ConfigurationProperties.getTerminateSessionOnError();
-
 		// If we are unfriendly, terminate the session
 		if (terminate) {
 			invalidateSession();
@@ -606,17 +617,10 @@ public abstract class AbstractContainerHelper {
 		FatalErrorPageFactory factory = Factory.newInstance(FatalErrorPageFactory.class);
 		WComponent errorPage = factory.createErrorPage(friendly, error);
 
-		UIContextHolder.pushContext(new UIContextImpl());
-		String html = null;
+		String html = renderErrorPageToHTML(errorPage);
 
-		try {
-			html = WebUtilities.render(new MockRequest(), errorPage);
-		} finally {
-			UIContextHolder.popContext();
-		}
-
+		// Setup the response
 		Response response = getResponse();
-
 		response.setContentType(WebUtilities.CONTENT_TYPE_HTML);
 
 		// Make sure not cached
@@ -627,6 +631,50 @@ public abstract class AbstractContainerHelper {
 		getPrintWriter().println(html);
 
 		LOG.debug("End handleError");
+	}
+
+	/**
+	 * Render the error page component to HTML.
+	 *
+	 * @param errorPage the error page component
+	 * @return the error page as HTML
+	 */
+	protected String renderErrorPageToHTML(final WComponent errorPage) {
+
+		// Check if using the default error page
+		boolean defaultErrorPage = errorPage instanceof FatalErrorPage;
+
+		String html = null;
+
+		// If not default implementation of error page, Transform error page to HTML
+		if (!defaultErrorPage) {
+			// Set UIC and Environment (Needed for Theme Paths)
+			UIContext uic = new UIContextImpl();
+			uic.setEnvironment(createEnvironment());
+			UIContextHolder.pushContext(uic);
+			try {
+				html = WebUtilities.renderWithTransformToHTML(errorPage);
+			} catch (Exception e) {
+				LOG.warn("Could not transform error page.", e);
+			} finally {
+				UIContextHolder.popContext();
+			}
+		}
+
+		// Not transformed. So just render.
+		if (html == null) {
+			UIContextHolder.pushContext(new UIContextImpl());
+			try {
+				html = WebUtilities.render(errorPage);
+			} catch (Exception e) {
+				LOG.warn("Could not render error page.", e);
+				html = "System error occurred but could not render error page.";
+			} finally {
+				UIContextHolder.popContext();
+			}
+		}
+
+		return html;
 	}
 
 	/**

@@ -15,16 +15,16 @@
  * @requires module:wc/i18n/i18n
  */
 define(["wc/dom/attribute",
-		"wc/dom/event",
-		"wc/dom/initialise",
-		"wc/dom/shed",
-		"wc/ui/multiSelectPair",
-		"wc/ui/validation/isComplete",
-		"wc/ui/validation/minMax",
-		"wc/ui/validation/required",
-		"wc/ui/validation/validationManager",
-		"wc/ui/getFirstLabelForElement",
-		"wc/i18n/i18n"],
+	"wc/dom/event",
+	"wc/dom/initialise",
+	"wc/dom/shed",
+	"wc/ui/multiSelectPair",
+	"wc/ui/validation/isComplete",
+	"wc/ui/validation/minMax",
+	"wc/ui/validation/required",
+	"wc/ui/validation/validationManager",
+	"wc/ui/getFirstLabelForElement",
+	"wc/i18n/i18n"],
 	/** @param attribute wc/dom/attribute @param event wc/dom/event @param initialise wc/dom/initialise @param shed wc/dom/shed @param multiSelectPair wc/ui/multiSelectPair @param isComplete wc/ui/validation/isComplete @param minMax wc/ui/validation/minMax @param required wc/ui/validation/required @param validationManager wc/ui/validation/validationManager @param getFirstLabelForElement wc/ui/getFirstLabelForElement @param i18n wc/i18n/i18n @ignore */
 	function(attribute, event, initialise, shed, multiSelectPair, isComplete, minMax, required, validationManager, getFirstLabelForElement, i18n) {
 		"use strict";
@@ -68,11 +68,23 @@ define(["wc/dom/attribute",
 			 */
 			function clickEvent($event) {
 				var element = $event.target, container;
-				if (!$event.defaultPrevented && !shed.isDisabled(element) && (container = getContainer(element))) {
-					revalidate(container);
+				if ($event.defaultPrevented || ! element || shed.isDisabled(element)) {
+					return;
 				}
+				container = getContainer(element);
+				if (!container) {
+					return;
+				}
+				if (validationManager.isValidateOnChange()) {
+					if (validationManager.isInvalid(container)) {
+						revalidate(container);
+					} else {
+						validate(container);
+					}
+					return;
+				}
+				revalidate(container);
 			}
-
 
 			/**
 			 * Gets the "selected items" list from a WMultiSelectPair.
@@ -93,17 +105,43 @@ define(["wc/dom/attribute",
 			 * @param {module:wc/dom/event} $event A wrapped keydown event.
 			 */
 			function keydownEvent($event) {
-				var selectList, keyCode = $event.keyCode, selectType, container;
+				var selectList, keyCode = $event.keyCode, selectType, container, carryOn;
 				// this is cheaper than any other test in this function
 				if ($event.defaultPrevented || !(keyCode === KeyEvent.DOM_VK_RETURN || keyCode === KeyEvent.DOM_VK_RIGHT || keyCode === KeyEvent.DOM_VK_LEFT)) {
 					return;
 				}
-				if ((selectList = SELECT.findAncestor($event.target)) && (container = getContainer(selectList))) {
-					selectType = multiSelectPair.getListType(selectList);
-					if ((selectType || selectType === 0) && (keyCode === KeyEvent.DOM_VK_RETURN || (keyCode === KeyEvent.DOM_VK_RIGHT && selectType === multiSelectPair.LIST_TYPE_AVAILABLE) || (keyCode === KeyEvent.DOM_VK_LEFT && selectType === multiSelectPair.LIST_TYPE_CHOSEN))) {
-						revalidate(container);
-					}
+				selectList = SELECT.findAncestor($event.target);
+				if (!selectList) {
+					return;
 				}
+				container = getContainer(selectList);
+				if (!container) {
+					return;
+				}
+				selectType = multiSelectPair.getListType(selectList);
+				if (!(selectType || selectType === 0)) {
+					return;
+				}
+				carryOn = keyCode === KeyEvent.DOM_VK_RETURN;
+				if (!carryOn) {
+					carryOn = keyCode === KeyEvent.DOM_VK_RIGHT && selectType === multiSelectPair.LIST_TYPE_AVAILABLE;
+				}
+				if (!carryOn) {
+					carryOn = keyCode === KeyEvent.DOM_VK_LEFT && selectType === multiSelectPair.LIST_TYPE_CHOSEN;
+				}
+				if (!carryOn) {
+					return;
+				}
+				if (validationManager.isValidateOnChange()) {
+					if (validationManager.isInvalid(container)) {
+						revalidate(container);
+					} else {
+						validate(container);
+					}
+					return;
+				}
+
+				revalidate(container);
 			}
 
 
@@ -187,12 +225,12 @@ define(["wc/dom/attribute",
 			 */
 			function validate(container) {
 				var obj = {container: container,
-							widget: CONTAINER,
-							constraint: required.CONSTRAINTS.CLASSNAME,
-							filter: _filter,
-							position: "beforeEnd",
-							messageFunc: _requiredMessageFunc
-						},
+						widget: CONTAINER,
+						constraint: required.CONSTRAINTS.CLASSNAME,
+						filter: _filter,
+						position: "beforeEnd",
+						messageFunc: _requiredMessageFunc
+					},
 					_required = required.complexValidationHelper(obj),
 					result = true;
 
@@ -219,8 +257,7 @@ define(["wc/dom/attribute",
 			this.initialise = function(element) {
 				if (event.canCapture) {
 					event.add(element, event.TYPE.focus, focusEvent, null, null, true);
-				}
-				else {
+				} else {
 					event.add(element, event.TYPE.focusin, focusEvent);
 				}
 			};

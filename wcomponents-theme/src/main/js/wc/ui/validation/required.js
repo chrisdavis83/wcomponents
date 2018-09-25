@@ -1,10 +1,10 @@
 define([
-	"wc/ui/getFirstLabelForElement",
 	"wc/ui/validation/isComplete",
 	"wc/dom/Widget",
 	"wc/i18n/i18n",
-	"wc/ui/validation/validationManager"],
-	function(getFirstLabelForElement, isComplete, Widget, i18n, validationManager) {
+	"wc/ui/validation/validationManager",
+	"wc/ui/feedback"],
+	function(isComplete, Widget, i18n, validationManager, feedback) {
 		"use strict";
 		/**
 		 * @constructor
@@ -34,8 +34,7 @@ define([
 			 * @returns {String} A formatted error message.
 			 */
 			function getRequiredMessage(element) {
-				var label = getFirstLabelForElement(element, true) || element.title || i18n.get("validation_common_unlabelledfield");
-				return i18n.get("validation_common_incomplete", label);
+				return i18n.get("validation_common_incomplete", validationManager.getLabelText(element));
 			}
 
 			/**
@@ -46,37 +45,12 @@ define([
 			 * @param {module:wc/ui/validation/required~config} [config] Configuration object.
 			 */
 			function flagAllThese(elements, config) {
-				var position, attachToFunc, messageFunc = getRequiredMessage;
+				var messageFunc = (config && config.messageFunc) ? config.messageFunc : getRequiredMessage;
 
-				/**
-				 * Flag individual omponents in an error state.
-				 * @function
-				 * @private
-				 * @param {Element} element An element in an invalid state.
-				 */
-				function _flagMe(element) {
-					var message = messageFunc(element),
-						obj = { element: element, message: message };
-					if (position) {
-						obj["position"] = position;
-					}
-					if (attachToFunc) {
-						obj["attachTo"] = attachToFunc(element);
-					}
-					validationManager.flagError(obj);
-				}
-
-				if (config) {
-					position = config.position;
-					attachToFunc = config.attachTo;
-					if (config.messageFunc) {
-						messageFunc = config.messageFunc;
-					}
-				}
-
-				Array.prototype.forEach.call(elements, _flagMe);
+				Array.prototype.forEach.call(elements, function (next) {
+					feedback.flagError({ element: next, message: messageFunc(next)});
+				});
 			}
-
 
 			/**
 			 * Gets all required instances of a given Widget in a container.
@@ -103,8 +77,7 @@ define([
 					var extendedWidget = nextWidget;  // if no extension just return itself
 					if (typeof exObj === "string") {
 						extendedWidget = nextWidget.extend(exObj);
-					}
-					else if (exObj) {
+					} else if (exObj) {
 						extendedWidget = nextWidget.extend("", exObj);
 					}
 					return extendedWidget;
@@ -136,17 +109,14 @@ define([
 				if (!Array.isArray(widget) && (widget = _mapFn(widget))) {
 					if (widget.isOneOfMe(container)) {
 						result = [container];
-					}
-					else {
+					} else {
 						result = widget.findDescendants(container);
 					}
-				}
-				else {
+				} else {
 					reqWidget = widget.map(_mapFn);
 					if (Widget.isOneOfMe(container, reqWidget)) {
 						result = [container];
-					}
-					else {
+					} else {
 						result = Widget.findDescendants(container, reqWidget);
 					}
 				}
@@ -155,7 +125,6 @@ define([
 				}
 				return result || [];
 			};
-
 
 			/**
 			 * Determines if a given element is not 'complete' and therefore fails a mandatory test.
@@ -168,7 +137,6 @@ define([
 			function isNotComplete(element) {
 				return !isComplete.isComplete(element);
 			}
-
 
 			/**
 			 * the majority of components required validation is all the same: a component is required or aria-required,
@@ -247,12 +215,12 @@ define([
 		 * components. There are a lot of similarities though so I have included a few public functions which will suffice for
 		 * all required testing for most components.
 		 *
-		 * @module wc/ui/validation/required
-		 * @requires module:wc/ui/getFirstLabelForElement
+		 * @module
 		 * @requires module:wc/ui/validation/isComplete
 		 * @requires module:wc/dom/Widget
 		 * @requires module:wc/i18n/i18n
 		 * @requires module:wc/ui/validation/validationManager
+		 * @requires module:wc/ui/feedback
 		 */
 		var instance = new ValidateRequired();
 		return instance;
@@ -268,9 +236,5 @@ define([
 		 *    {@link module:wc/ui/validation/required~flagAllThese}
 		 * @property {Function} [messageFunc] A function to get the error message. Defaults to
 		 *    {@link module:wc/ui/validation/required~getRequiredMessage}.
-		 * @property {String} [position] String as per insertAdjacentHTML - where to put the error message box
-		 *    (see {@link module:wc/ui/validation/validationManager}). Defaults to "afterEnd".
-		 * @property {Function} [attachTo] A function used to determine to which element to attach the message
-		 *    box; only set if the component needs it.
 		 */
 	});

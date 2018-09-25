@@ -1,32 +1,16 @@
-/**
- * Provides functionality to undertake client validation of WMultiDropdown and WMultiTextField.
- *
- * @module wc/ui/validation/multiFormComponent
- * @requires module:wc/dom/attribute
- * @requires module:wc/dom/event
- * @requires module:wc/dom/initialise
- * @requires module:wc/dom/Widget
- * @requires module:wc/i18n/i18n
- * @requires module:wc/ui/multiFormComponent
- * @requires module:wc/array/unique
- * @requires module:wc/ui/getFirstLabelForElement
- * @requires external:lib/sprintf
- * @requires module:wc/ui/validation/required
- * @requires module:wc/ui/validation/validationManager
- */
 define(["wc/dom/attribute",
-		"wc/dom/event",
-		"wc/dom/initialise",
-		"wc/dom/Widget",
-		"wc/i18n/i18n",
-		"wc/ui/multiFormComponent",
-		"wc/array/unique",
-		"wc/ui/getFirstLabelForElement",
-		"lib/sprintf",
-		"wc/ui/validation/required",
-		"wc/ui/validation/validationManager"],
-	/** @param attribute wc/dom/attribute @param event wc/dom/event @param initialise wc/dom/initialise @param Widget wc/dom/Widget @param i18n wc/i18n/i18n @param multiFormComponent wc/ui/multiFormComponent @param unique wc/array/unique @param getFirstLabelForElement wc/ui/getFirstLabelForElement @param sprintf lib/sprintf @param required wc/ui/validation/required @param validationManager wc/ui/validation/validationManager @ignore */
-	function(attribute, event, initialise, Widget, i18n, multiFormComponent, unique, getFirstLabelForElement, sprintf, required, validationManager) {
+	"wc/dom/event",
+	"wc/dom/initialise",
+	"wc/dom/Widget",
+	"wc/i18n/i18n",
+	"wc/ui/multiFormComponent",
+	"wc/array/unique",
+	"lib/sprintf",
+	"wc/ui/validation/required",
+	"wc/ui/validation/validationManager",
+	"wc/ui/validation/isComplete",
+	"wc/ui/feedback"],
+	function(attribute, event, initialise, Widget, i18n, multiFormComponent, unique, sprintf, required, validationManager, isComplete, feedback) {
 		"use strict";
 		/**
 		 * @constructor
@@ -66,6 +50,39 @@ define(["wc/dom/attribute",
 				return result;
 			}
 
+			/**
+			 * An array filter function to determine if a particular component is "complete". Passed in to
+			 * {@link module:wc/ui/validation/isComplete}
+			 * @function
+			 * @private
+			 * @param {Element} next A multi form component.
+			 * @returns {boolean} true if the selected items list in the component has one or more options.
+			 */
+			function amIComplete(next) {
+				var candidates = INPUT_WD.findDescendants(next);
+				if (!(candidates && candidates.length)) {
+					candidates = SELECT_WD.findDescendants(next);
+				}
+				if (!(candidates && candidates.length)) {
+					return false;
+				}
+
+				// candidates = toArray(candidates);
+				return Array.prototype.some.call(candidates, function (n) {
+					return isComplete.isComplete(n);
+				});
+			}
+
+			/**
+			 * Test if a container is complete if it is, or contains, WMultiSelectPairs.
+			 * @function
+			 * @private
+			 * @param {Element} container A container element, mey be a WMultiSelectPair wrapper.
+			 * @returns {boolean} true if the container is complete.
+			 */
+			function _isComplete(container) {
+				return isComplete.isCompleteHelper(container, CONTAINER, amIComplete);
+			}
 
 			/**
 			 * Array filter function for selecting invalid multi form controls. The filter will also flag these invalid
@@ -88,8 +105,7 @@ define(["wc/dom/attribute",
 						count = unique(Array.prototype.filter.call(count, selectValidOptionFilter), function(a, b) {
 							return a.selectedIndex - b.selectedIndex;
 						}).length;
-					}
-					else if ((count = INPUT_WD.findDescendants(next)) && count.length) {
+					} else if ((count = INPUT_WD.findDescendants(next)) && count.length) {
 						// WMultiTextField may have empty inputs to fool the validator!
 						count = unique(Array.prototype.filter.call(count, function(input) {
 							return input.value;
@@ -98,8 +114,7 @@ define(["wc/dom/attribute",
 						}).length;
 						underFlag = "validation_multitext_undermin";
 						overFlag = "validation_multitext_overmax";
-					}
-					else {
+					} else {
 						// set it to zero because otherwise it will be a zero length nodelist and not equivalent of false
 						count = 0;
 					}
@@ -109,8 +124,7 @@ define(["wc/dom/attribute",
 							isInvalid = true;
 							flag = i18n.get(underFlag);
 							limit = min;
-						}
-						else if (max && count > max) {
+						} else if (max && count > max) {
 							isInvalid = true;
 							flag = i18n.get(overFlag);
 							limit = max;
@@ -133,9 +147,8 @@ define(["wc/dom/attribute",
 			 * @param {int} limit The max/min number of values/selections.
 			 */
 			function _flag(element, flag, limit) {
-				var label = getFirstLabelForElement(element, true) || element.title,
-					message = sprintf.sprintf(flag, label, limit);
-				validationManager.flagError({element: element, message: message, position: "beforeEnd"});
+				var message = sprintf.sprintf(flag, validationManager.getLabelText(element), limit);
+				feedback.flagError({element: element, message: message});
 			}
 
 			/**
@@ -150,9 +163,9 @@ define(["wc/dom/attribute",
 				var result = true,
 					controls,
 					obj = {container: container,
-							widget: CONTAINER,
-							constraint: required.CONSTRAINTS.CLASSNAME,
-							position: "beforeEnd"},
+						widget: CONTAINER,
+						constraint: required.CONSTRAINTS.CLASSNAME,
+						position: "beforeEnd"},
 					_required = required.complexValidationHelper(obj);
 
 				if ((controls = (CONTAINER.isOneOfMe(container)) ? [container] : CONTAINER.findDescendants(container))) {
@@ -185,22 +198,23 @@ define(["wc/dom/attribute",
 			function changeEvent($event) {
 				var container = getContainer($event.target);
 				if (container) {
+					if (validationManager.isValidateOnChange()) {
+						if (validationManager.isInvalid(container)) {
+							revalidate(container);
+							return;
+						}
+						validate(container);
+						return;
+					}
 					revalidate(container);
 				}
 			}
 
-			/**
-			 * Browsers which cannot capture change events have to attach the event to each component.
-			 * @function
-			 * @private
-			 * @param {module:wc/dom/event} $event a focus[in] event as wrapped by the WComponent event module.
-			 */
-			function focusEvent($event) {
-				var element,
-					BOOTSTRAPPED = "validation.multiFormComponent.bs";
-				if (!$event.defaultPrevented && (element = $event.target) && !attribute.get(element, BOOTSTRAPPED) && Widget.isOneOfMe(element, multiFormComponent.getInputWidget())) {
-					attribute.set(element, BOOTSTRAPPED, true);
-					event.add(element, event.TYPE.change, changeEvent);
+			function blurEvent($event) {
+				var element = $event.target,
+					container = getContainer(element);
+				if (container && !validationManager.isInvalid(container)) {
+					validate(container);
 				}
 			}
 
@@ -220,15 +234,39 @@ define(["wc/dom/attribute",
 			}
 
 			/**
+			 * Browsers which cannot capture change events have to attach the event to each component.
+			 * @function
+			 * @private
+			 * @param {module:wc/dom/event} $event a focus[in] event as wrapped by the WComponent event module.
+			 */
+			function focusEvent($event) {
+				var element = $event.target,
+					BOOTSTRAPPED = "validation.multiFormComponent.bs",
+					container;
+				if (element && !attribute.get(element, BOOTSTRAPPED) && Widget.isOneOfMe(element, multiFormComponent.getInputWidget())) {
+					attribute.set(element, BOOTSTRAPPED, true);
+					event.add(element, event.TYPE.change, changeEvent);
+					container = getContainer(element);
+					if (container && !attribute.get(container, BOOTSTRAPPED) && validationManager.isValidateOnBlur()) {
+						attribute.set(container, BOOTSTRAPPED, true);
+						if (event.canCapture) {
+							event.add(container, event.TYPE.blur, blurEvent, 1, null, true);
+						} else {
+							event.add(container, event.TYPE.focusout, blurEvent);
+						}
+					}
+				}
+			}
+
+			/**
 			 * Initialisation callback to set up event listeners.
 			 * @function module:wc/ui/validation/multiFormComponent.initialise
 			 * @param {Element} element A DOM element: in practice ths is usually document.body.
 			 */
 			this.initialise = function(element) {
 				if (event.canCapture) {
-					event.add(element, event.TYPE.change, changeEvent, null, null, true);
-				}
-				else {
+					event.add(element, event.TYPE.focus, focusEvent, null, null, true);
+				} else {
 					event.add(element, event.TYPE.focusin, focusEvent);
 				}
 				event.add(element, event.TYPE.click, clickEvent, 1);  // we want the click handler late so that add/remove runs first.
@@ -240,10 +278,27 @@ define(["wc/dom/attribute",
 			 */
 			this.postInit = function() {
 				validationManager.subscribe(validate);
+				isComplete.subscribe(_isComplete);
 			};
 		}
 
-		var /** @alias module:wc/ui/validation/multiFormComponent */ instance = new ValidationMultiFormComponent();
+		/**
+		 * Provides functionality to undertake client validation of WMultiDropdown and WMultiTextField.
+		 *
+		 * @module
+		 * @requires wc/dom/attribute
+		 * @requires wc/dom/event
+		 * @requires wc/dom/initialise
+		 * @requires wc/dom/Widget
+		 * @requires wc/i18n/i18n
+		 * @requires wc/ui/multiFormComponent
+		 * @requires wc/array/unique
+		 * @requires external:lib/sprintf
+		 * @requires wc/ui/validation/required
+		 * @requires wc/ui/validation/validationManager
+		 * @requires wc/ui/feedback
+		 */
+		var instance = new ValidationMultiFormComponent();
 		initialise.register(instance);
 		return instance;
 	});

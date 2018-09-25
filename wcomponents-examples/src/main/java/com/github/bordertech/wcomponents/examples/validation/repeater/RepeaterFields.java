@@ -2,6 +2,7 @@ package com.github.bordertech.wcomponents.examples.validation.repeater;
 
 import com.github.bordertech.wcomponents.Action;
 import com.github.bordertech.wcomponents.Margin;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WButton;
 import com.github.bordertech.wcomponents.WDataRenderer;
 import com.github.bordertech.wcomponents.WField;
@@ -27,7 +28,7 @@ public class RepeaterFields extends WDataRenderer {
 	 */
 	public RepeaterFields() {
 		WFieldLayout fields = new WFieldLayout();
-		fields.setMargin(new Margin(0, 0, 12, 0));
+		fields.setMargin(new Margin(null, null, Size.LARGE, null));
 		add(fields);
 
 		nameText = new WTextField();
@@ -39,7 +40,7 @@ public class RepeaterFields extends WDataRenderer {
 		repeater.setRepeatedComponent(new RepeaterComponent());
 		add(repeater);
 		WPanel buttonPanel = new WPanel(WPanel.Type.FEATURE);
-		buttonPanel.setMargin(new Margin(12, 0, 0, 0));
+		buttonPanel.setMargin(new Margin(Size.LARGE, null, null, null));
 		add(buttonPanel);
 		buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		submitBtn = new WButton("Submit", 'S');

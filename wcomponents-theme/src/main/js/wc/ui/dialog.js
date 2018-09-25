@@ -1,15 +1,18 @@
 define(["wc/dom/classList",
-		"wc/dom/event",
-		"wc/dom/initialise",
-		"wc/dom/shed",
-		"wc/dom/Widget",
-		"wc/i18n/i18n",
-		"wc/ui/ajaxRegion",
-		"wc/ui/ajax/processResponse",
-		"wc/ui/containerload",
-		"wc/timers",
-		"wc/ui/dialogFrame"],
-	function(classList, event, initialise, shed, Widget, i18n, ajaxRegion, processResponse, eagerLoader, timers, dialogFrame) {
+	"wc/dom/event",
+	"wc/dom/initialise",
+	"wc/dom/shed",
+	"wc/dom/tag",
+	"wc/dom/uid",
+	"wc/dom/Widget",
+	"wc/i18n/i18n",
+	"wc/ui/ajaxRegion",
+	"wc/ui/ajax/processResponse",
+	"wc/ui/containerload",
+	"wc/timers",
+	"wc/ui/dialogFrame",
+	"wc/ui/getForm"],
+	function(classList, event, initialise, shed, tag, uid, Widget, i18n, ajaxRegion, processResponse, eagerLoader, timers, dialogFrame, getForm) {
 		"use strict";
 
 		/**
@@ -24,23 +27,23 @@ define(["wc/dom/classList",
 				BASE_CLASS = "wc-dialog",
 				registry = {},
 				registryByDialogId = {},
-				UNIT = "px",
 				keepContentOnClose = false,
 				openOnLoadTimer,
 				openThisDialog,
 				GET_ATTRIB = "data-wc-get";
 
 			/**
-			 * Opens a dialog on page load.
+			 * Ensure a dialog trigger element has the aria-haspopup attribute.
+			 *
 			 * @function
 			 * @private
+			 * @param {String} id the id of the element to manipulate
 			 */
-			function openOnLoad() {
-				if (openThisDialog) {
-					if (openOnLoadTimer) {
-						timers.clearTimeout(openOnLoadTimer);
-					}
-					openOnLoadTimer = timers.setTimeout(openDlg, 100, openThisDialog);
+			function setHasPopup(id) {
+				var popupAttr = "aria-haspopup",
+					el = document.getElementById(id);
+				if (el && !el.getAttribute(popupAttr)) {
+					el.setAttribute(popupAttr, "true");
 				}
 			}
 
@@ -52,25 +55,29 @@ define(["wc/dom/classList",
 			 * @param {module:wc/ui/dialog~regObject} dialogObj The dialog dto.
 			 */
 			function _register(dialogObj) {
-				var triggerId = dialogObj.triggerid || dialogObj.id;
+				var triggerId = dialogObj.triggerid || dialogObj.id,
+					add = function(title) {
+						registry[triggerId] = {
+							id: dialogObj.id,
+							className: BASE_CLASS + (dialogObj.className ? (" " + dialogObj.className) : ""),
+							width: dialogObj.width,
+							height: dialogObj.height,
+							modal: dialogObj.modal || false,
+							openerId: dialogObj.triggerid,
+							title: dialogObj.title || title
+						};
+						registryByDialogId[dialogObj.id] = triggerId;
+
+						if (dialogObj.open) {
+							openThisDialog = triggerId;
+						}
+					};
 
 				if (triggerId) {
-					registry[triggerId] = {
-						id: dialogObj.id,
-						className: BASE_CLASS + (dialogObj.className ? (" " + dialogObj.className) : ""),
-						formId: dialogObj.form,
-						width: dialogObj.width,
-						height: dialogObj.height,
-						initWidth: dialogObj.width,  // useful if we do not allow resize below initial size
-						initHeight: dialogObj.height,
-						modal: dialogObj.modal || false,
-						openerId: dialogObj.triggerid,
-						title: dialogObj.title || i18n.get("dialog_noTitle")
-					};
-					registryByDialogId[dialogObj.id] = triggerId;
-
-					if (dialogObj.open) {
-						openThisDialog = triggerId;
+					if (dialogObj.title) {
+						add(dialogObj.title);
+					} else {
+						i18n.translate("dialog_noTitle").then(add);  // This is called too early for a synchronous i18n call
 					}
 				}
 			}
@@ -96,20 +103,37 @@ define(["wc/dom/classList",
 			 * @private
 			 * @param {Element} element the start element
 			 * @param {boolean} ignoreAncestor if {@code} true then stop without checking ancestors for a trigger
-			 * @returns {?Element} a dialog trigger element if found
+			 * @returns {Element} a dialog trigger element if found
 			 */
 			function getTrigger(element, ignoreAncestor) {
-				var parent = element,
-					id = parent.id;
-				if (registry[id]) {
+				var parent,
+					id = element.id,
+					regObj;
+
+				if (element.tagName === tag.FORM) {
+					return null;
+				}
+				if ((regObj = registry[id])) {
+					if (regObj.id === id) {
+						// Auto open on load dialogs are their own trigger
+						return null;
+					}
 					return element;
 				}
 				if (ignoreAncestor) {
 					return null;
 				}
+				parent = element;
 				while ((parent = parent.parentNode) && parent.nodeType === Node.ELEMENT_NODE) {
+					if (parent.tagName === tag.FORM) {
+						return null;
+					}
 					if ((id = parent.id)) {
-						if (registry[id]) {
+						if ((regObj = registry[id])) {
+							if (regObj.id === id) {
+								// Auto open on load dialogs are their own trigger
+								return null;
+							}
 							return parent;
 						}
 					}
@@ -149,6 +173,9 @@ define(["wc/dom/classList",
 
 				// Are we opening a dialog?
 				if ((_element = getTrigger(element)) && !isInsideDialog(element.id)) {
+					if (shed.isDisabled(_element)) { // This is needed because IE is broken and we have a potential race with the global fix.
+						return false;
+					}
 					instance.open(_element);
 					return isSubmitElement(_element);
 				}
@@ -167,8 +194,7 @@ define(["wc/dom/classList",
 				// we need to know if a click is on an ajax trigger inside a dialog
 				if ((trigger = ajaxRegion.getTrigger(element, true))) {
 					_element = element;
-				}
-				else {
+				} else {
 					// this is a chrome thing: it honours clicks on img elements and does not pass them through to the underlying link/button
 					ANCHOR = ANCHOR || new Widget("A");
 					_element = Widget.findAncestor(element, [ BUTTON, ANCHOR ]);
@@ -196,7 +222,7 @@ define(["wc/dom/classList",
 			 * @param {String} triggerId The id of the trigger.
 			 */
 			function openDlg(triggerId) {
-				var regObj = registry[triggerId];
+				var regObj = registry[triggerId], trigger, form, formId;
 
 				function populateOnLoad() {
 					var content = dialogFrame.getContent(),
@@ -207,21 +233,25 @@ define(["wc/dom/classList",
 						if (!(openThisDialog && openThisDialog === triggerId) && (openerId = regObj.openerId)) {
 							opener = document.getElementById(openerId);
 							content.setAttribute(GET_ATTRIB, openerId + "=" + (opener ? encodeURIComponent(opener.value) : "x"));
-						}
-						else {
+						} else {
 							content.removeAttribute(GET_ATTRIB);
 						}
 						classList.add(content, "wc_magic");
 						classList.add(content, "wc_dynamic");
 						eagerLoader.load(content, false, false);
-					}
-					else {
+					} else {
 						console.warn("Could not find dialog content wrapper.");
 					}
 					openThisDialog = null;
 				}
 
 				if (regObj) {
+					if (!regObj.formId) {
+						if ((trigger = document.getElementById(triggerId)) && (form = getForm(trigger))) {
+							formId = form.id || (form.id = uid());
+							regObj["formId"] = formId;
+						}
+					}
 					dialogFrame.open(regObj).then(populateOnLoad).catch(function(err) {
 						console.warn(err);
 						openThisDialog = null; // belt **and** braces
@@ -247,19 +277,10 @@ define(["wc/dom/classList",
 				}
 			}
 
-			function saveDialogDimensions(element, regObj) {
-				if (element.style.width) {
-					regObj["width"] = element.style.width.replace(UNIT, "");
-				}
-				if (element.style.height) {
-					regObj["height"] = element.style.height.replace(UNIT, "");
-				}
-			}
-
 			/**
 			 * Get a registry object based on a WDialog id attribute.
 			 * @param {String} id the ID of the WDialog to get.
-			 * @returns {?module:wc/ui/dialog~regObject} the registry object if found.
+			 * @returns {module:wc/ui/dialog~regObject} the registry object if found.
 			 */
 			function getRegistryObjectByDialogId(id) {
 				var triggerId = registryByDialogId[id];
@@ -282,14 +303,9 @@ define(["wc/dom/classList",
 					regObj;
 				if (element && element === dialogFrame.getDialog() && (content = dialogFrame.getContent()) && (id = content.id) && (regObj = getRegistryObjectByDialogId(id))) { // we are ONLY interested in WDialog inited dialogs.
 					try {
-						saveDialogDimensions(element, regObj);
-						/*
-						 * NOTE: clear the content and dimensions AFTER resetting all the registry settings.
-						 */
 						dialogFrame.unsetAllDimensions();
 						dialogFrame.resetContent(keepContentOnClose, (keepContentOnClose ? "" : regObj.id));
-					}
-					finally {
+					} finally {
 						keepContentOnClose = false;
 					}
 				}
@@ -302,6 +318,9 @@ define(["wc/dom/classList",
 			 * @param {Event} $event a click event.
 			 */
 			function clickEvent($event) {
+				if ($event.defaultPrevented) {
+					return;
+				}
 				if (activateClick($event.target)) {
 					$event.preventDefault();
 				}
@@ -336,7 +355,20 @@ define(["wc/dom/classList",
 			this.register = function(array) {
 				if (array && array.length) {
 					array.forEach(_register);
-					initialise.addCallback(openOnLoad);
+					initialise.addCallback(function() {
+						var o;
+						for (o in registry) {
+							if (registry.hasOwnProperty(o)) {
+								setHasPopup(o);
+							}
+						}
+						if (openThisDialog) {
+							if (openOnLoadTimer) {
+								timers.clearTimeout(openOnLoadTimer);
+							}
+							openOnLoadTimer = timers.setTimeout(openDlg, 0, openThisDialog);
+						}
+					});
 				}
 			};
 
@@ -345,7 +377,7 @@ define(["wc/dom/classList",
 			 * @function module:wc/ui/dialog.open
 			 * @public
 			 * @param {Element} trigger an element which _should_ be a dialog trigger.
-			 * @returns {boolean} true if the element will trigger a dialog on change or click.
+			 * @returns {boolean} `true` if the element will trigger a dialog on change or click.
 			 */
 			this.open = function(trigger) {
 				var element = getTrigger(trigger);
@@ -385,15 +417,8 @@ define(["wc/dom/classList",
 		/**
 		 * @typedef {Object} module:wc/ui/dialog~regObject An object which stores information about a dialog.
 		 * @property {String} id The WDialog id.
-		 * @property {String} formId The id of the form the dialog is in (more useful than you may think).
 		 * @property {int} [width] The dialog width in px.
 		 * @property {int} [height] The dialog height in px.
-		 * @property {int} [initWidth] The dialog width in px as set by the Java. This is used if the theme allows
-		 *    resizing but prevents a dialog being made smaller than its intial size. This property is not in the
-		 *    registration object passed in to the module.
-		 * @property {int} [initHeight] The dialog height in px as set by the Java. This is used if the theme allows
-		 *    resizing but prevents a dialog being made smaller than its intial size. This property is not in the
-		 *    registration object passed in to the module.
 		 * @property {Boolean} [modal] Is the dialog modal?
 		 * @property {String} [title] The WDialog title. If not set a default title is used.
 		 * @property {Boolean} [open] If true then the dialog is to be open on page load. This is passed in as part of

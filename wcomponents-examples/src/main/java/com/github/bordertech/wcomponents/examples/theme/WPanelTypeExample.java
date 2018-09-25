@@ -5,6 +5,7 @@ import com.github.bordertech.wcomponents.ActionEvent;
 import com.github.bordertech.wcomponents.HeadingLevel;
 import com.github.bordertech.wcomponents.Margin;
 import com.github.bordertech.wcomponents.Request;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WAjaxControl;
 import com.github.bordertech.wcomponents.WButton;
 import com.github.bordertech.wcomponents.WCheckBox;
@@ -235,7 +236,7 @@ public class WPanelTypeExample extends WContainer {
 	 */
 	private void buildConfigOptions() {
 		WFieldLayout layout = new WFieldLayout(WFieldLayout.LAYOUT_STACKED);
-		layout.setMargin(new Margin(0, 0, 12, 0));
+		layout.setMargin(new Margin(null, null, Size.LARGE, null));
 		layout.addField("Select a WPanel Type", panelType);
 		contentField = layout.addField("Panel content", panelContent);
 		headingField = layout.addField("heading", tfHeading);

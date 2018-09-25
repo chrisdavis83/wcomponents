@@ -1,16 +1,16 @@
 define(["wc/dom/initialise",
-		"wc/dom/Widget",
-		"wc/i18n/i18n",
-		"wc/dom/attribute",
-		"wc/dom/event",
-		"wc/ui/getFirstLabelForElement",
-		"lib/sprintf",
-		"wc/ui/dateField",
-		"wc/ui/validation/required",
-		"wc/ui/validation/validationManager",
-		"wc/ui/textField",
-		"wc/config"],
-	function(initialise, Widget, i18n, attribute, event, getFirstLabelForElement, sprintf, dateField, required, validationManager, textField, wcconfig) {
+	"wc/dom/Widget",
+	"wc/i18n/i18n",
+	"wc/dom/attribute",
+	"wc/dom/event",
+	"wc/dom/shed",
+	"lib/sprintf",
+	"wc/ui/dateField",
+	"wc/ui/validation/required",
+	"wc/ui/validation/validationManager",
+	"wc/ui/feedback",
+	"wc/config"],
+	function(initialise, Widget, i18n, attribute, event, shed, sprintf, dateField, required, validationManager, feedback, wcconfig) {
 		"use strict";
 		/**
 		 * @constructor
@@ -22,12 +22,19 @@ define(["wc/dom/initialise",
 				TEXT = INPUT.extend("", {type: "text"}),
 				EMAIL = INPUT.extend("", {type: "email"}),
 				BOOTSTRAPPED = "validation.textInput.bs",
-				INPUT_WIDGETS = textField.getWidget(),
+				INPUT_WIDGETS,
 				WITH_PATTERN,
 				PATTERNS,
 				WITH_MIN,
 				DEFAULT_RX = /^(?:\".+\"|[a-zA-Z0-9\.!#\$%&'\*\+/=\?\^_`\{\|\}~]+)@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/,
 				RX_STRING = "";
+
+			function setUpWidgets() {
+				var types = ["password", "tel", "file"];  // input types which are not needed for validation other than mandatory-ness.
+				INPUT_WIDGETS = (types.map(function(next) {
+					return INPUT.extend("", {"type": next});
+				})).concat(EMAIL);  // we do not include type text here, we have to do special processing with it
+			}
 
 			/**
 			 * Test for an input which we are interested in.
@@ -37,6 +44,9 @@ define(["wc/dom/initialise",
 			 * @returns {Boolean} true if the element is an input which we need to test.
 			 */
 			function isValidatingInput(element) {
+				if (!INPUT_WIDGETS) {
+					setUpWidgets();
+				}
 				return Widget.isOneOfMe(element, INPUT_WIDGETS) || (TEXT.isOneOfMe(element) && !dateField.isOneOfMe(element));
 			}
 
@@ -48,17 +58,9 @@ define(["wc/dom/initialise",
 			 * @param {String} flag The framework for the error message in sprintf format.
 			 */
 			function _flagError(element, flag) {
-				var label = getFirstLabelForElement(element, true) || element.title || i18n.get("validation_common_unlabelledfield"),
-					message = sprintf.sprintf(flag, label),
-					attachTo = null;
+				var message = sprintf.sprintf(flag, validationManager.getLabelText(element));
 
-				if (element.id && element.name && (element.id !== element.name)) {
-					// not a stand alone text input so a WMultiTextField;
-					attachTo = element.parentNode.lastChild;
-				}
-				validationManager.flagError({element: element,
-											message: message,
-											attachTo: attachTo});
+				feedback.flagError({element: element, message: message});
 			}
 
 			/**
@@ -87,19 +89,19 @@ define(["wc/dom/initialise",
 					// pattern (first email)
 					if (EMAIL.isOneOfMe(element)) {
 						if (RX_STRING === "") {
-							conf = wcconfig.get("wc/ui/validation/textField");
-							RX_STRING = conf && conf.rx ? conf.rx : null;
+							conf = wcconfig.get("wc/ui/validation/textField", {
+								rx: null
+							});
+							RX_STRING = conf.rx;
 						}
 
 						regexp = RX_STRING ? new RegExp(RX_STRING) : DEFAULT_RX;
 						patternFlag = i18n.get("validation_email_format");
-					}
-					else if ((mask = element.getAttribute("pattern"))) {
+					} else if ((mask = element.getAttribute("pattern"))) {
 						try {
 							regexp = new RegExp("^(?:" + mask + ")$");
 							patternFlag = i18n.get("validation_common_pattern");
-						}
-						catch (e) {
+						} catch (e) {
 							regexp = null;
 							// console.log("cannot convert input mask to regular expression, assuming valid");
 						}
@@ -108,8 +110,7 @@ define(["wc/dom/initialise",
 						if (flag) {
 							patternFlag = patternFlag.replace("%s ", "");
 							flag = sprintf.sprintf(concatenator, flag, patternFlag);
-						}
-						else {
+						} else {
 							flag = patternFlag;
 						}
 						result = true;
@@ -121,7 +122,6 @@ define(["wc/dom/initialise",
 				return result;
 			}
 
-
 			/**
 			 * Validates all of the constrained fields we are interested in in a given container.
 			 * @function
@@ -131,24 +131,21 @@ define(["wc/dom/initialise",
 			 * @returns {Boolean} true if the container is valid.
 			 */
 			function validate(container) {
+				if (!INPUT_WIDGETS) {
+					setUpWidgets();
+				}
 				var candidates,
 					_requiredTextFields = true,
-					validConstrained = true;
-
-				function _getWrapper(element) {
-					if (element.type === "password") {
-						return element;
-					}
-					return element.parentNode;
-				}
+					validConstrained = true,
+					helperObj = {container: container,
+						widget: INPUT_WIDGETS.concat(TEXT),
+						filter: function(next) {
+							return !(next.value || dateField.isOneOfMe(next));
+						}
+					};
 
 				/* This does required validation for all text-style inputs apart from date fields.*/
-				_requiredTextFields = required.complexValidationHelper({container: container,
-																		widget: INPUT_WIDGETS.concat(TEXT),
-																		filter: function(next) {
-																			return !(dateField.isOneOfMe(next) || next.value);
-																		},
-																		attachTo: _getWrapper});
+				_requiredTextFields = required.complexValidationHelper(helperObj);
 
 				// do the constraint tests
 				WITH_PATTERN = WITH_PATTERN || INPUT.extend("", {"pattern": null});
@@ -170,13 +167,26 @@ define(["wc/dom/initialise",
 			 */
 			function changeEvent($event) {
 				var element = $event.target;
-				if (isValidatingInput(element)) {
-					validationManager.revalidationHelper(element, validate);
+				if (validationManager.isValidateOnChange()) {
+					if (validationManager.isInvalid(element)) {
+						validationManager.revalidationHelper(element, validate);
+						return;
+					}
+					validate(element);
+					return;
+				}
+				validationManager.revalidationHelper(element, validate);
+			}
+
+			function blurEvent($event) {
+				var element = $event.target;
+				if (!element.value && shed.isMandatory(element)) {
+					validate(element);
 				}
 			}
 
 			/**
-			 * Focus event listener to attach change events on first focus in browsers which do not capture.
+			 * Focus event listener to attach change events on first focus.
 			 * @function
 			 * @private
 			 * @param {wc/dom/event} $event A wrapped focus[in] event.
@@ -186,6 +196,13 @@ define(["wc/dom/initialise",
 				if (!$event.defaultPrevented && !attribute.get(element, BOOTSTRAPPED) && isValidatingInput(element)) {
 					attribute.set(element, BOOTSTRAPPED, true);
 					event.add(element, event.TYPE.change, changeEvent, 1);
+					if (validationManager.isValidateOnBlur()) {
+						if (event.canCapture) {
+							event.add(element, event.TYPE.blur, blurEvent, 1, null, true);
+						} else {
+							event.add(element, event.TYPE.focusout, blurEvent);
+						}
+					}
 				}
 			}
 
@@ -196,9 +213,8 @@ define(["wc/dom/initialise",
 			 */
 			this.initialise = function(element) {
 				if (event.canCapture) {
-					event.add(element, event.TYPE.change, changeEvent, 1, null, true);
-				}
-				else {
+					event.add(element, event.TYPE.focus, focusEvent, 1, null, true);
+				} else {
 					event.add(element, event.TYPE.focusin, focusEvent);
 				}
 			};
@@ -216,24 +232,26 @@ define(["wc/dom/initialise",
 		 * Provides functionality to undertake client validation for text inputs including WTextField, WEmailField,
 		 * WPhoneNumberField and WPasswordField.
 		 *
-		 * @typedef {Object} module:wc/ui/validation/textField.config() Optional module configuration.
-		 * @property {String} rx The email regular expression as a string.
+		 * @module
 		 *
-		 * @module wc/ui/validation/textField
-		 * @requires module:wc/dom/initialise
-		 * @requires module:wc/dom/Widget
-		 * @requires module:wc/i18n/i18n
-		 * @requires module:wc/dom/attribute
-		 * @requires module:wc/dom/event
-		 * @requires module:wc/ui/getFirstLabelForElement
+		 * @requires wc/dom/initialise
+		 * @requires wc/dom/Widget
+		 * @requires wc/i18n/i18n
+		 * @requires wc/dom/attribute
+		 * @requires wc/dom/event
+		 * @requires wc/dom/shed
 		 * @requires external:lib/sprintf
-		 * @requires module:wc/ui/dateField
-		 * @requires module:wc/ui/validation/required
-		 * @requires module:wc/ui/validation/validationManager
-		 * @requires module:wc/ui/textField
-		 * @requires module:wc/config
+		 * @requires wc/ui/dateField
+		 * @requires wc/ui/validation/required
+		 * @requires wc/ui/validation/validationManager
+		 * @requires wc/ui/feedback
+		 * @requires wc/config
 		 */
 		var instance = new ValidationTextInput();
 		initialise.register(instance);
 		return instance;
+		/**
+		 * @typedef {Object} module:wc/ui/validation/textField.config Optional module configuration.
+		 * @property {String} rx The email regular expression as a string.
+		 */
 	});

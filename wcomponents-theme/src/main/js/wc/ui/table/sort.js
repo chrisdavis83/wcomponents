@@ -1,35 +1,14 @@
-/**
- * Provides table sort controls. A column is sorted by an algorithm controlled by the server application. There is no
- * client side sorting.
- *
- * @module
- * @requires module:wc/dom/initialise
- * @requires module:wc/dom/event
- * @requires module:wc/dom/formUpdateManager
- * @requires module:wc/dom/attribute
- * @requires module:wc/dom/group
- * @requires module:wc/ui/ajaxRegion
- * @requires module:wc/ui/ajax/processResponse
- * @requires module:wc/ui/onloadFocusControl
- * @requires module:wc/dom/isEventInLabel
- * @requires module:wc/dom/isAcceptableTarget
- * @requires module:wc/dom/shed
- * @requires module:wc/ui/table/common
- */
 define(["wc/dom/initialise",
-		"wc/dom/event",
-		"wc/dom/formUpdateManager",
-		"wc/dom/attribute",
-		"wc/dom/group",
-		"wc/ui/ajaxRegion",
-		"wc/ui/ajax/processResponse",
-		"wc/ui/onloadFocusControl",
-		"wc/dom/isEventInLabel",
-		"wc/dom/isAcceptableTarget",
-		"wc/dom/shed",
-		"wc/ui/table/common"],
-	/** @param initialise @param event @param formUpdateManager @param attribute @param ajaxRegion @param processResponse @param onloadFocusControl @param isEventInLabel @param isAcceptableEventTarget @param shed @param common @ignore */
-	function(initialise, event, formUpdateManager, attribute, group, ajaxRegion, processResponse, onloadFocusControl, isEventInLabel, isAcceptableEventTarget, shed, common) {
+	"wc/dom/event",
+	"wc/dom/formUpdateManager",
+	"wc/dom/attribute",
+	"wc/dom/group",
+	"wc/ui/ajaxRegion",
+	"wc/dom/isEventInLabel",
+	"wc/dom/isAcceptableTarget",
+	"wc/dom/shed",
+	"wc/ui/table/common"],
+	function(initialise, event, formUpdateManager, attribute, group, ajaxRegion, isEventInLabel, isAcceptableEventTarget, shed, common) {
 		"use strict";
 
 		/**
@@ -49,7 +28,7 @@ define(["wc/dom/initialise",
 				SORTABLE_TABLE = common.TABLE.extend("", {"sortable": null}),
 				THEAD = common.THEAD.clone(),
 				SORT_CONTROL = common.TH.extend("", {"aria-sort": null}),
-				ID_EXTENDER = "_thh",
+				// ID_EXTENDER = "_thh",
 				BOOTSTRAPPED = "wc.ui.table.sort.BS",
 				SORT_ATTRIB = "sorted",
 				ARIA_SORT_ATTRIB = "aria-sort",
@@ -60,25 +39,6 @@ define(["wc/dom/initialise",
 
 			function getWrapper(element) {
 				return TABLE_WRAPPER.findAncestor(element);
-			}
-
-			/**
-			 * Provides a post insertion subscriber to {@link module:wc/ui/ajax/processResponse} which will
-			 * attempt to refocus the replacement sort control when one of the unsorted sort controls is the ajax
-			 * trigger.
-			 *
-			 * @function
-			 * @private
-			 * @param {Element} element The element being replaced.
-			 * @param {String} action The ajax action, not required for this function.
-			 * @param {String} triggerId The id of the original AJAX trigger.
-			 */
-			function ajaxSubscriber(element, action, triggerId) {
-				if (element && triggerId && triggerId.indexOf(ID_EXTENDER) > 0 && TABLE_WRAPPER.isOneOfMe(element)) {
-					if (document.getElementById(triggerId)) {
-						onloadFocusControl.requestFocus(triggerId);
-					}
-				}
 			}
 
 
@@ -93,7 +53,7 @@ define(["wc/dom/initialise",
 			 * @param {Element} element A sortable column header. Element must already have been determined to be a
 			 *    SORT_CONTROL and since we have already extracted this from $event we may as well pass it in as
 			 *    an arg rather than re-testing.
-			 * @returns {?Element} The first interactive ancestor element of the event target if any. This may or may
+			 * @returns {Element} The first interactive ancestor element of the event target if any. This may or may
 			 *    not be the collapsible header.
 			 */
 			function toggleEventHelper($event, element) {
@@ -115,8 +75,7 @@ define(["wc/dom/initialise",
 						}
 						element.setAttribute(SORT_ATTRIB, "1");
 						element.setAttribute(ARIA_SORT_ATTRIB, "ascending");
-					}
-					else {
+					} else {
 						element.setAttribute(SORT_ATTRIB, "1 reversed");
 						element.setAttribute(ARIA_SORT_ATTRIB, "descending");
 					}
@@ -151,8 +110,8 @@ define(["wc/dom/initialise",
 
 			function writeState(container, stateContainer) {
 				Array.prototype.forEach.call(SORTABLE_TABLE.findDescendants(container), function(next) {
-					var container = getWrapper(next),
-						tableId = container.id,
+					var nextContainer = getWrapper(next),
+						tableId = nextContainer.id,
 						sortedColumn;
 
 					// we need to do the reverse look-up to allow for the possibility of nested tables.
@@ -168,20 +127,36 @@ define(["wc/dom/initialise",
 			this.initialise = function(element) {
 				if (event.canCapture) {
 					event.add(element, event.TYPE.focus, focusEvent, null, null, true);
-				}
-				else {
+				} else {
 					event.add(element, event.TYPE.focusin, focusEvent);
 				}
 				event.add(element, event.TYPE.click, clickEvent);
 			};
 
 			this.postInit = function() {
-				processResponse.subscribe(ajaxSubscriber, true);
 				formUpdateManager.subscribe(writeState);
 			};
 		}
 
-		var /** @alias module:wc/ui/table/sort */ instance = new Sort();
+		/**
+		 * Provides table sort controls. A column is sorted by an algorithm controlled by the server application. There is no
+		 * client side sorting.
+		 *
+		 * @module
+		 * @alias module:wc/ui/table/sort
+		 * @requires module:wc/dom/initialise
+		 * @requires module:wc/dom/event
+		 * @requires module:wc/dom/formUpdateManager
+		 * @requires module:wc/dom/attribute
+		 * @requires module:wc/dom/group
+		 * @requires module:wc/ui/ajaxRegion
+		 * @requires module:wc/ui/ajax/processResponse
+		 * @requires module:wc/dom/isEventInLabel
+		 * @requires module:wc/dom/isAcceptableTarget
+		 * @requires module:wc/dom/shed
+		 * @requires module:wc/ui/table/common
+		 */
+		var instance = new Sort();
 		initialise.register(instance);
 		return instance;
 	});

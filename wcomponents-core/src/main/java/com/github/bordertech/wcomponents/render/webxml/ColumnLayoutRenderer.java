@@ -1,6 +1,7 @@
 package com.github.bordertech.wcomponents.render.webxml;
 
 import com.github.bordertech.wcomponents.Renderer;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WComponent;
 import com.github.bordertech.wcomponents.WPanel;
 import com.github.bordertech.wcomponents.XmlStringBuilder;
@@ -11,6 +12,7 @@ import com.github.bordertech.wcomponents.servlet.WebXmlRenderContext;
  * This {@link Renderer} renders the children of a {@link WPanel} which have been arranged using a {@link ColumnLayout}.
  *
  * @author Yiannis Paschalidis
+ * @author Mark Reeves
  * @since 1.0.0
  */
 final class ColumnLayoutRenderer extends AbstractWebXmlRenderer {
@@ -27,13 +29,15 @@ final class ColumnLayoutRenderer extends AbstractWebXmlRenderer {
 		XmlStringBuilder xml = renderContext.getWriter();
 		ColumnLayout layout = (ColumnLayout) panel.getLayout();
 		int childCount = panel.getChildCount();
-		int hgap = layout.getHgap();
-		int vgap = layout.getVgap();
+		Size hgap = layout.getHorizontalGap();
+		String hgapString = hgap == null ? null : hgap.toString();
+		Size vgap = layout.getVerticalGap();
+		String vgapString = vgap == null ? null : vgap.toString();
 		int cols = layout.getColumnCount();
 
 		xml.appendTagOpen("ui:columnlayout");
-		xml.appendOptionalAttribute("hgap", hgap > 0, hgap);
-		xml.appendOptionalAttribute("vgap", vgap > 0, vgap);
+		xml.appendOptionalAttribute("hgap", hgapString);
+		xml.appendOptionalAttribute("vgap", vgapString);
 		xml.appendClose();
 
 		// Column Definitions

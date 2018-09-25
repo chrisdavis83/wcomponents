@@ -42,10 +42,11 @@ final class WSingleSelectRenderer extends AbstractWebXmlRenderer {
 			xml.appendOptionalAttribute("disabled", listBox.isDisabled(), "true");
 			xml.appendOptionalAttribute("required", listBox.isMandatory(), "true");
 			xml.appendOptionalAttribute("submitOnChange", listBox.isSubmitOnChange(), "true");
-			xml.appendOptionalAttribute("tabIndex", component.hasTabIndex(), listBox.getTabIndex());
 			xml.appendOptionalAttribute("toolTip", component.getToolTip());
 			xml.appendOptionalAttribute("accessibleText", component.getAccessibleText());
 			xml.appendOptionalAttribute("rows", rows >= 2, rows);
+			String autocomplete = listBox.getAutocomplete();
+			xml.appendOptionalAttribute("autocomplete", !Util.empty(autocomplete), autocomplete);
 		}
 		xml.appendAttribute("single", "true");
 
@@ -76,6 +77,9 @@ final class WSingleSelectRenderer extends AbstractWebXmlRenderer {
 			}
 		}
 
+		if (!readOnly) {
+			DiagnosticRenderUtil.renderDiagnostics(listBox, renderContext);
+		}
 		xml.appendEndTag("ui:listbox");
 	}
 

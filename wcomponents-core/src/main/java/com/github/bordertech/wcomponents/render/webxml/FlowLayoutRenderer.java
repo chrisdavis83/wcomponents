@@ -1,6 +1,7 @@
 package com.github.bordertech.wcomponents.render.webxml;
 
 import com.github.bordertech.wcomponents.Renderer;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WComponent;
 import com.github.bordertech.wcomponents.WPanel;
 import com.github.bordertech.wcomponents.XmlStringBuilder;
@@ -11,6 +12,7 @@ import com.github.bordertech.wcomponents.servlet.WebXmlRenderContext;
  * This {@link Renderer} renders the children of a {@link WPanel} which have been arranged using a {@link FlowLayout}.
  *
  * @author Yiannis Paschalidis
+ * @author Mark Reeves
  * @since 1.0.0
  */
 final class FlowLayoutRenderer extends AbstractWebXmlRenderer {
@@ -26,7 +28,8 @@ final class FlowLayoutRenderer extends AbstractWebXmlRenderer {
 		WPanel panel = (WPanel) component;
 		XmlStringBuilder xml = renderContext.getWriter();
 		FlowLayout layout = (FlowLayout) panel.getLayout();
-		int gap = layout.getGap();
+		Size gap = layout.getSpace();
+		String gapString = gap != null ? gap.toString() : null;
 		FlowLayout.Alignment align = layout.getAlignment();
 
 		xml.appendTagOpen("ui:flowlayout");
@@ -77,7 +80,7 @@ final class FlowLayoutRenderer extends AbstractWebXmlRenderer {
 							getContentAlignment());
 			}
 		}
-		xml.appendOptionalAttribute("gap", gap > 0, gap);
+		xml.appendOptionalAttribute("gap", gapString);
 
 		xml.appendClose();
 

@@ -5,6 +5,7 @@ import com.github.bordertech.wcomponents.ActionEvent;
 import com.github.bordertech.wcomponents.Margin;
 import com.github.bordertech.wcomponents.OptionGroup;
 import com.github.bordertech.wcomponents.Request;
+import com.github.bordertech.wcomponents.Size;
 import com.github.bordertech.wcomponents.WButton;
 import com.github.bordertech.wcomponents.WContainer;
 import com.github.bordertech.wcomponents.WFieldLayout;
@@ -45,6 +46,11 @@ public class WMultiSelectExample extends WContainer {
 
 		add(new ExamplePanel(groups));
 
+		WMultiSelect icao = new WMultiSelect("icao");
+		WFieldLayout layout = new WFieldLayout(WFieldLayout.LAYOUT_STACKED);
+		add(layout);
+		layout.addField("Caced list", icao);
+
 	}
 
 	/**
@@ -77,10 +83,10 @@ public class WMultiSelectExample extends WContainer {
 		 * @param options the options to display in the multi-select pair.
 		 */
 		private ExamplePanel(final List options) {
-			setMargin(new Margin(0, 0, 12, 0));
+			setMargin(new Margin(null, null, Size.LARGE, null));
 			WFieldLayout layout = new WFieldLayout();
 			add(layout);
-			layout.setMargin(new Margin(0, 0, 6, 0));
+			layout.setMargin(new Margin(null, null, Size.MEDIUM, null));
 
 			multi = new WMultiSelect(options);
 			layout.addField("Select items", multi);

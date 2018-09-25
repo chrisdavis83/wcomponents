@@ -1,17 +1,10 @@
-/**
- * @module wc/ui/validation/minMax
- * @requires module:wc/ui/getFirstLabelForElement
- * @requires module:wc/i18n/i18n
- * @requires external:lib/sprintf
- * @requires module:wc/ui/validation/validationManager
- *
- */
+
 define(["wc/ui/getFirstLabelForElement",
-		"wc/i18n/i18n",
-		"lib/sprintf",
-		"wc/ui/validation/validationManager"],
-	/** @param getFirstLabelForElement wc/ui/getFirstLabelForElement @param i18n wc/i18n/i18n @param sprintf lib/sprintf @param validationManager wc/ui/validation/validationManager @ignore */
-	function(getFirstLabelForElement, i18n, sprintf, validationManager) {
+	"wc/i18n/i18n",
+	"lib/sprintf",
+	"wc/ui/validation/validationManager",
+	"wc/ui/feedback"],
+	function(getFirstLabelForElement, i18n, sprintf, validationManager, feedback) {
 		"use strict";
 
 		/**
@@ -32,12 +25,9 @@ define(["wc/ui/getFirstLabelForElement",
 				selectedFunc = conf.selectedFunc,
 				filter = conf.filter || _filter,
 				selectionElementFunc = conf.selectFunc,
-				flagFunc = conf.flag || _flag,
-				position = conf.position,
-				attachToFunc = conf.attachTo,
+				flagFunc = conf.flag || flagError,
 				minText = conf.minText || "validation_common_undermin",
 				maxText = conf.maxText || "validation_common_overmax",
-				result = true,
 				selectables;
 			if (!(widget && container)) {
 				return true;
@@ -70,8 +60,7 @@ define(["wc/ui/getFirstLabelForElement",
 							isInvalid = true;
 							limit = min;
 							flag = i18n.get(minText);
-						}
-						else if (max && count > max) {
+						} else if (max && count > max) {
 							isInvalid = true;
 							limit = max;
 							flag = i18n.get(maxText);
@@ -97,31 +86,32 @@ define(["wc/ui/getFirstLabelForElement",
 			 * @param {String} [secondaryLabel] The text content of an inner label to add context to complex error
 			 *    messages. This is used for validation of WMultiSelectPair.
 			 */
-			function _flag(selectable, flag, limit, secondaryLabel) {
-				var label = getFirstLabelForElement(selectable, true) || selectable.title || i18n.get("validation_common_unlabelledfield"),
-					message = sprintf.sprintf(flag, label, limit, secondaryLabel),
-					obj = {element: selectable, message: message};
-				if (position) {
-					obj["position"] = position;
-				}
-				if (attachToFunc) {
-					obj["attachTo"] = attachToFunc(selectable);
-				}
-				validationManager.flagError(obj);
+			function flagError(selectable, flag, limit, secondaryLabel) {
+				var message = sprintf.sprintf(flag, validationManager.getLabelText(selectable), limit, secondaryLabel);
+
+				feedback.flagError({element: selectable, message: message});
 			}
 
-			if (widget && container) {
-				if (widget.isOneOfMe(container)) {
-					selectables = [container].filter(filter);
-				}
-				else {
-					selectables = Array.prototype.filter.call(widget.findDescendants(container), filter);
-				}
-				if (selectables && selectables.length) {
-					result = false;
-				}
+			if (widget.isOneOfMe(container)) {
+				selectables = [container].filter(filter);
+			} else {
+				selectables = Array.prototype.filter.call(widget.findDescendants(container), filter);
 			}
-			return result;
+			if (selectables && selectables.length) {
+				return false;
+			}
+			return true;
+		}
+		/**
+		 * @module
+		 * @requires wc/ui/getFirstLabelForElement
+		 * @requires wc/i18n/i18n
+		 * @requires external:lib/sprintf
+		 * @requires wc/ui/validation/validationManager
+		 * @requires wc/ui/feedback
+		 *
+		 */
+		return minMax;
 
 		/**
 		 * The configuration object for the module's return function.
@@ -136,10 +126,5 @@ define(["wc/ui/getFirstLabelForElement",
 		 *    flag function.
 		 * @property {String} [minText] The i18n argument for errors where fewer than min options are selected.
 		 * @property {String} [maxText] The i18n argument for errors where more than max options are selected.
-		 * @property {Element} [attachTo] Element to which the error is attached if not the element being tested.
-		 * @property {String} [position] Used as argument for insertAdjacentHTML, defaults to "afterEnd".
 		 */
-		}
-
-		return minMax;
 	});

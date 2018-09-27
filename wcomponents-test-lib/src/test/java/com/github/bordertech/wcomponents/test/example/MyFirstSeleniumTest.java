@@ -4,7 +4,6 @@ package com.github.bordertech.wcomponents.test.example;
 import com.github.bordertech.wcomponents.test.selenium.*;
 import com.github.bordertech.wcomponents.test.selenium.driver.SeleniumWComponentsWebDriver;
 import com.github.bordertech.wcomponents.test.selenium.element.SeleniumWTextFieldWebElement;
-import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

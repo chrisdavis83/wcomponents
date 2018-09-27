@@ -1,16 +1,12 @@
 package com.github.bordertech.wcomponents.test.selenium.driver;
 
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.remote.DesiredCapabilities;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 
 /**
  * <p>
@@ -127,20 +123,7 @@ public final class WebDriverCache {
 		// Check pool of drivers
 		SeleniumWComponentsWebDriver<T> wcompDriver = checkPoolOfDrivers(driverType);
 		if (wcompDriver == null) {
-			final ChromeOptions chromeOptions = new ChromeOptions();
-			chromeOptions.addArguments("--headless");
-			chromeOptions.addArguments("--disable-gpu");
-			chromeOptions.addArguments("--disable-dev-shm-usage");
-			chromeOptions.addArguments("--no-sandbox");
-
-			final DesiredCapabilities dc = new DesiredCapabilities();
-			dc.setJavascriptEnabled(true);
-			dc.setCapability(
-				ChromeOptions.CAPABILITY, chromeOptions
-			);
-
-			return new SeleniumWComponentsWebDriver(new ChromeDriver(dc));
-//			wcompDriver = SeleniumWComponentsWebDriverFactory.createDriver(driverType);
+			wcompDriver = SeleniumWComponentsWebDriverFactory.createDriver(driverType);
 		}
 		return registerDriver(driverType, wcompDriver, driverId);
 	}

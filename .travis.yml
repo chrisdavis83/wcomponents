@@ -1,6 +1,7 @@
 before_install:
 - echo "MAVEN_OPTS='-Xmx512m -XX:MaxPermSize=128m'" > ~/.mavenrc
 - mvn clean
+- google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://localhost &
 
 language: Java
 jdk:

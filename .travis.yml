@@ -3,6 +3,8 @@ before_install:
 - mvn clean
 - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://localhost &
 
+
+
 language: Java
 jdk:
   - oraclejdk8

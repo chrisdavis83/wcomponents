@@ -1,5 +1,7 @@
 addons:
-  - chrome: stable
+  apt:
+    packages:
+      - google-chrome-stable
 
 before_install:
 - echo "MAVEN_OPTS='-Xmx512m -XX:MaxPermSize=128m'" > ~/.mavenrc

@@ -1,4 +1,4 @@
-package com.github.bordertech.wcomponents.test.example;
+package com.github.bordertech.wcomponents.test.components;
 
 
 import com.github.bordertech.wcomponents.*;

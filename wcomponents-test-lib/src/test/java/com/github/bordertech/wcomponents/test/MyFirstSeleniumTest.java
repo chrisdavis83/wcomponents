@@ -1,6 +1,7 @@
-package com.github.bordertech.wcomponents.test.example;
+package com.github.bordertech.wcomponents.test;
 
 
+import com.github.bordertech.wcomponents.test.components.ExampleUI;
 import com.github.bordertech.wcomponents.test.selenium.ByLabel;
 import com.github.bordertech.wcomponents.test.selenium.MultiBrowserRunner;
 import com.github.bordertech.wcomponents.test.selenium.SeleniumJettyTestCase;

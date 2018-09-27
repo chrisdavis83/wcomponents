@@ -1,14 +1,17 @@
 package com.github.bordertech.wcomponents.test.example;
 
 
-import com.github.bordertech.wcomponents.test.selenium.*;
+import com.github.bordertech.wcomponents.test.selenium.ByLabel;
+import com.github.bordertech.wcomponents.test.selenium.MultiBrowserRunner;
+import com.github.bordertech.wcomponents.test.selenium.SeleniumJettyTestCase;
 import com.github.bordertech.wcomponents.test.selenium.driver.SeleniumWComponentsWebDriver;
 import com.github.bordertech.wcomponents.test.selenium.element.SeleniumWTextFieldWebElement;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
-
+@RunWith(MultiBrowserRunner.class)
 public class MyFirstSeleniumTest extends SeleniumJettyTestCase {
 
 
